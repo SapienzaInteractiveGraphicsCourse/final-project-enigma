@@ -1,82 +1,88 @@
-// Nel tuo main.js
 import * as THREE from 'three';
-import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { setupCamera } from './camera.js';
 
-// 1. Riferimento al contenitore HTML creato nel passo precedente
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+dracoLoader.setDecoderConfig({ type: 'js' });
+
 const container = document.getElementById('canvas-container');
 
-// 2. Creazione della Scena
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1a1a1a); // Sfondo grigio scuro per lo showroom
+scene.background = new THREE.Color(0x1a1a1a);
 
-// 3. Configurazione della Telecamera (Prospettica)
-// Parametri: Campo visivo (FOV), Aspect Ratio, Distanza Minima (Near), Distanza Massima (Far)
 const camera = new THREE.PerspectiveCamera(
-    45, 
+    60, 
     container.clientWidth / container.clientHeight, 
     0.1, 
     1000
 );
-camera.position.set(0, 2, 6); // Posizionata in alto (Y=2) e arretrata (Z=6)
+camera.position.set(0, 1, 6);
 
-// 4. Creazione del Renderizzatore WebGL
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(container.clientWidth, container.clientHeight);
-// Impostiamo la gestione dei colori lineare per una resa più realistica (fondamentale per PBR)
 renderer.outputColorSpace = THREE.SRGBColorSpace; 
 container.appendChild(renderer.domElement);
 
-// 5. Configurazione delle Luci (Essenziali per vedere il modello)
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Luce diffusa per evitare ombre piatte e nere
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5); // Luce diretta (simula un faro dello showroom)
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
 directionalLight.position.set(5, 10, 7);
 scene.add(directionalLight);
 
-// 6. Caricamento del file .obj
-const loader = new OBJLoader();
+const controls = setupCamera(camera, renderer);
+
+// Istanziamo il caricatore
+const loader = new GLTFLoader();
+loader.setDRACOLoader(dracoLoader);
+
 loader.load(
-    // Inserisci qui il percorso del tuo file .obj (es. 'models/car.obj')
-    'supra.obj', 
-    (object) => {
-        // Questa funzione viene eseguita quando il modello è caricato correttamente
-        object.position.set(0, 0, 0); // Centra l'oggetto nell'origine
-        
-        /* NOTA DI OTTIMIZZAZIONE: 
-           Se il modello è gigantesco o microscopico, puoi ridimensionarlo qui:
-           object.scale.set(0.1, 0.1, 0.1);
-        */
-        
-        scene.add(object);
-        console.log("Modello caricato con successo nella scena!");
+    'car_1/car.glb', 
+    (gltf) => {
+        const auto = gltf.scene;
+
+        auto.traverse((child) => {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
+
+        auto.scale.set(1, 1, 1); 
+        auto.position.set(0, 0, 0);
+
+        scene.add(auto);
+
+        console.log("Auto caricata con successo! Ecco la struttura:", auto);
+
+        const portieraSinistra = auto.getObjectByName('Portiera_Sinistra');
+        if(portieraSinistra) {
+            console.log("Portiera trovata e pronta per l'animazione!");
+        }
+    },
+    (xhr) => {
+        console.log( Math.round(xhr.loaded / xhr.total * 100) + '% caricato' );
     },
     (error) => {
-        // Callback in caso di errori di percorso o di parsing del file
-        console.error("Errore durante il caricamento del modello:", error);
+        console.error("Errore durante il caricamento del file GLB:", error);
     }
 );
 
-// 7. Gestione del Ridimensionamento della Finestra (Responsiveness)
 window.addEventListener('resize', () => {
     const width = container.clientWidth;
     const height = container.clientHeight;
     
     camera.aspect = width / height;
-    camera.updateProjectionMatrix(); // Notifica a Three.js il cambio di proporzioni
+    camera.updateProjectionMatrix();
     renderer.setSize(width, height);
 });
 
-// 8. Loop di Rendering Continuo
 function animate() {
     requestAnimationFrame(animate);
-    
-    // [Spazio per le future animazioni JavaScript richieste dal progetto]
-    // Esempio: se volessi far ruotare l'intera scena lentamente:
-    // scene.rotation.y += 0.005;
-
+    controls.update();
     renderer.render(scene, camera);
 }
 
-// Avvia il ciclo
 animate();
