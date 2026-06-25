@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Graphics - Car Showroom</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="importmap">
+        {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+        }
+    </script>
+</head>
+<body>
+    <div class="app-container">
+        
+        <aside class="sidebar">
+            <h2>Pannello di Controllo</h2>
+
+            <div class="control-group">
+                <label for="colorPicker">Vernice Carrozzeria</label>
+                <input type="color" id="colorPicker" value="#ff0000">
+            </div>
+
+            <div class="control-group">
+                <button id="btnLights">Accendi/Spegni Fari</button>
+            </div>
+
+            <div class="control-group">
+                <button id="btnDoor">Apri/Chiudi Portiera</button>
+            </div>
+        </aside>
+
+        <main id="canvas-container">
+            </main>
+
+    </div>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>
