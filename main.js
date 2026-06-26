@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { setupMaterials, setBodyColor } from './color.js';
 import { setupCamera } from './camera.js';
+import './ui.js';
 
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
@@ -28,9 +30,11 @@ container.appendChild(renderer.domElement);
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 5.5);
 directionalLight.position.set(5, 10, 7);
 scene.add(directionalLight);
+
+const controls = setupCamera(camera, renderer);
 
 const floorGeometry = new THREE.PlaneGeometry(20, 20);
 const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.8 });
@@ -39,9 +43,6 @@ floor.rotation.x = -Math.PI / 2;
 floor.receiveShadow = true;
 scene.add(floor);
 
-const controls = setupCamera(camera, renderer);
-
-// Istanziamo il caricatore
 const loader = new GLTFLoader();
 loader.setDRACOLoader(dracoLoader);
 
@@ -61,16 +62,14 @@ loader.load(
         auto.position.set(0, 0, 0);
 
         scene.add(auto);
-
-        console.log("Auto caricata con successo! Ecco la struttura:", auto);
-
-        const portieraSinistra = auto.getObjectByName('Portiera_Sinistra');
-        if(portieraSinistra) {
+        setupMaterials(auto);
+        
+        const left_door = auto.getObjectByName('Left_door');
+        if(left_door) {
             console.log("Portiera trovata e pronta per l'animazione!");
         }
     },
     (xhr) => {
-        console.log( Math.round(xhr.loaded / xhr.total * 100) + '% caricato' );
     },
     (error) => {
         console.error("Errore durante il caricamento del file GLB:", error);
