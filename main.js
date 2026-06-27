@@ -70,11 +70,10 @@ function toggleAnimationCallback(model, buttonName, animationName) {
             animation.activeTween = null;
         }
 
+        const target = !model.state.doorOpen ? animation.to : animation.from;
         model.state.doorOpen = !model.state.doorOpen;
 
         const position = animation.part.position;
-        const target = !model.state.doorOpen ? animation.to : animation.from;
-
         const totalDistance = animation.from.distanceTo(animation.to);
         const remainingDistance = position.distanceTo(target);
         const fraction = totalDistance > 0 ? remainingDistance / totalDistance : 1;
