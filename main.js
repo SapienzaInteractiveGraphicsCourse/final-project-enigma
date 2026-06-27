@@ -57,12 +57,12 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-function toggleAnimationCallback(model, buttonName, animationName) {
+function toggleAnimationCallback(model, stateKey, buttonName, animationName) {
     const button = document.getElementById(buttonName);
 
     button.onclick = () => {
         const animation = model.animations[animationName];
-        if (!animation) {
+        if (!animation || !(stateKey in model.state)) {
             return;
         }
 
@@ -71,10 +71,11 @@ function toggleAnimationCallback(model, buttonName, animationName) {
             animation.activeTween = null;
         }
 
-        const targetPosition = !model.state.doorOpen ? animation.toPosition : animation.fromPosition;
-        const targetQuaternion = !model.state.doorOpen ? animation.toQuaternion : animation.fromQuaternion;
+        const state = model.state[stateKey];
+        const targetPosition = !state ? animation.toPosition : animation.fromPosition;
+        const targetQuaternion = !state ? animation.toQuaternion : animation.fromQuaternion;
 
-        model.state.doorOpen = !model.state.doorOpen;
+        model.state[stateKey] = !model.state[stateKey];
 
         const position = animation.part.position;
 
@@ -104,8 +105,8 @@ function toggleAnimationCallback(model, buttonName, animationName) {
 }
 
 function setupButtonsCallback(model) {
-    toggleAnimationCallback(model, 'btnLeftDoor', 'Left_door');
-    toggleAnimationCallback(model, 'btnRightDoor', 'Right_door');
+    toggleAnimationCallback(model, "leftDoorOpen", 'btnLeftDoor', 'Left_door');
+    toggleAnimationCallback(model, "rightDoorOpen", 'btnRightDoor', 'Right_door');
 }
 
 window.onload = () => {
