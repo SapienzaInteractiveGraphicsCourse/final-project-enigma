@@ -48,9 +48,9 @@ export function loadModel(modelDescription, scene) {
 
                 let fromPosition = part.position.clone();
                 let toPosition = part.position.clone();
-                if (description.to) {
+                if (description.position) {
                     fromPosition = part.position.clone();
-                    toPosition = new THREE.Vector3(description.to.x, description.to.y, description.to.z);
+                    toPosition = new THREE.Vector3(description.position.x, description.position.y, description.position.z);
                 }
 
                 let fromQuaternion = part.quaternion.clone();
