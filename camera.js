@@ -9,6 +9,14 @@ let isDragging = false;
 let previousMousePosition = { x: 0, y: 0 };
 const euler = new THREE.Euler(0, 0, 0, 'YXZ');
 
+const views = {
+    Front: new THREE.Vector3(0, 1, 6),
+    Back: new THREE.Vector3(0, 1, -6),
+    Left: new THREE.Vector3(-6, 1, 0),
+    Right: new THREE.Vector3(6, 1, 0),
+    Top: new THREE.Vector3(0, 6, 0.1)
+};
+
 window.addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
     if (keys.hasOwnProperty(key)) keys[key] = true;
@@ -23,6 +31,53 @@ document.getElementById('btnCameraMode').addEventListener('click', (e) => {
     const newMode = toggleCameraMode();
     e.target.textContent = newMode === 'orbit' ? 'Switch to First Person' : 'Switch to Orbit';
 });
+
+function animateCameraTransition(camera, targetPosition) {
+    if (currentCameraMode !== 'orbit') return; 
+    
+    let step = 0;
+    const startPos = camera.position.clone();
+    const startTarget = orbitControls.target.clone();
+    const endTarget = new THREE.Vector3(0, 0, 0); 
+    
+    // Convertiamo le coordinate in Sferiche (Raggio, Inclinazione, Angolo Orizzontale)
+    // Questo permette alla telecamera di "orbitare" morbidamente in modo circolare
+    const startSpherical = new THREE.Spherical().setFromVector3(startPos);
+    const endSpherical = new THREE.Spherical().setFromVector3(targetPosition);
+
+    // Evitiamo che la telecamera faccia giri più lunghi del necessario (es. girare di 270° invece che di 90°)
+    let thetaDiff = endSpherical.theta - startSpherical.theta;
+    while (thetaDiff > Math.PI) thetaDiff -= Math.PI * 2;
+    while (thetaDiff < -Math.PI) thetaDiff += Math.PI * 2;
+    endSpherical.theta = startSpherical.theta + thetaDiff;
+
+    function transition() {
+        step += 0.025; // Velocità animazione
+        if (step <= 1) {
+            // Easing "easeInOutCubic" per partenze e arrivi dolci e lenti
+            const easeStep = step < 0.5 ? 4 * step * step * step : 1 - Math.pow(-2 * step + 2, 3) / 2;
+            
+            // Creiamo il punto sferico intermedio calcolando la media pesata degli angoli
+            const currentSpherical = new THREE.Spherical(
+                THREE.MathUtils.lerp(startSpherical.radius, endSpherical.radius, easeStep),
+                THREE.MathUtils.lerp(startSpherical.phi, endSpherical.phi, easeStep),
+                THREE.MathUtils.lerp(startSpherical.theta, endSpherical.theta, easeStep)
+            );
+            
+            // Convertiamo di nuovo in X,Y,Z e aggiorniamo la telecamera
+            camera.position.setFromSpherical(currentSpherical);
+            orbitControls.target.lerpVectors(startTarget, endTarget, easeStep);
+            
+            orbitControls.update();
+            requestAnimationFrame(transition);
+        } else {
+            camera.position.copy(targetPosition);
+            orbitControls.target.copy(endTarget);
+            orbitControls.update();
+        }
+    }
+    transition();
+}
 
 export function setupCamera(camera, renderer) {
     orbitControls = new OrbitControls(camera, renderer.domElement);
@@ -89,6 +144,12 @@ export function setupCamera(camera, renderer) {
     window.addEventListener('touchend', () => {
         isDragging = false;
     });
+
+    document.getElementById('btnViewFront')?.addEventListener('click', () => animateCameraTransition(camera, views.Front));
+    document.getElementById('btnViewBack')?.addEventListener('click', () => animateCameraTransition(camera, views.Back));
+    document.getElementById('btnViewLeft')?.addEventListener('click', () => animateCameraTransition(camera, views.Left));
+    document.getElementById('btnViewRight')?.addEventListener('click', () => animateCameraTransition(camera, views.Right));
+    document.getElementById('btnViewTop')?.addEventListener('click', () => animateCameraTransition(camera, views.Top));
 
     return orbitControls;
 }

@@ -150,7 +150,7 @@ button:active {
 }
 
 /* -------------------------------------
-   STILE TOGGLE SWITCH (Animazioni)
+   TOGGLE SWITCH
 -------------------------------------- */
 .toggle-switch {
     display: flex;
@@ -165,12 +165,10 @@ button:active {
     user-select: none;
 }
 
-/* Nascondiamo il bruttissimo checkbox originale */
 .toggle-switch input[type="checkbox"] {
     display: none;
 }
 
-/* Creiamo il "binario" del nostro interruttore */
 .toggle-switch .slider {
     position: relative;
     width: 44px;
@@ -180,7 +178,6 @@ button:active {
     transition: background-color 0.3s ease;
 }
 
-/* Creiamo il "pallino" dell'interruttore */
 .toggle-switch .slider::before {
     content: "";
     position: absolute;
@@ -194,12 +191,10 @@ button:active {
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
-/* Quando il checkbox è 'checked', cambiamo il colore del binario */
 .toggle-switch input[type="checkbox"]:checked + .slider {
     background-color: #0078d4;
 }
 
-/* Quando il checkbox è 'checked', spostiamo il pallino a destra */
 .toggle-switch input[type="checkbox"]:checked + .slider::before {
     transform: translateX(20px);
 }
@@ -214,4 +209,73 @@ canvas {
     display: block; 
     width: 100% !important;
     height: 100% !important;
+}
+
+/* -------------------------------------
+   COMPASS
+-------------------------------------- */
+.camera-compass {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    display: grid;
+    grid-template-columns: 40px 40px 40px;
+    grid-template-rows: 40px 40px 40px;
+    gap: 4px;
+    z-index: 100;
+    background-color: rgba(37, 37, 38, 0.7);
+    padding: 10px;
+    border-radius: 50%;
+    border: 1px solid #3e3e42;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.compass-btn {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 50%;
+    background-color: #333337;
+    color: #cccccc;
+    font-size: 0.75rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.compass-btn:hover {
+    background-color: #0078d4;
+    color: white;
+    transform: scale(1.1);
+}
+
+#btnViewBack { 
+    grid-column: 2; 
+    grid-row: 1; 
+}
+
+#btnViewLeft { 
+    grid-column: 1; 
+    grid-row: 2; 
+}
+
+#btnViewTop { 
+    grid-column: 2; 
+    grid-row: 2; 
+    background-color: #4a4a4d; 
+}
+
+#btnViewRight { 
+    grid-column: 3; 
+    grid-row: 2; 
+}
+
+#btnViewFront { 
+    grid-column: 2; 
+    grid-row: 3; 
 }
