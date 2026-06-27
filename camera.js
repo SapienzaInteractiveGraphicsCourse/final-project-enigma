@@ -19,6 +19,11 @@ window.addEventListener('keyup', (event) => {
     if (keys.hasOwnProperty(key)) keys[key] = false;
 });
 
+document.getElementById('btnCameraMode').addEventListener('click', (e) => {
+    const newMode = toggleCameraMode();
+    e.target.textContent = newMode === 'orbit' ? 'Switch to First Person' : 'Switch to Orbit';
+});
+
 export function setupCamera(camera, renderer) {
     orbitControls = new OrbitControls(camera, renderer.domElement);
     orbitControls.enableDamping = true;
@@ -134,3 +139,4 @@ export function updateCameraMovement(camera) {
         camera.position.z = Math.max(-9.5, Math.min(9.5, camera.position.z));
     }
 }
+
