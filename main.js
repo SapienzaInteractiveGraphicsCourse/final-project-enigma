@@ -23,10 +23,10 @@ function animate(scene, camera, renderer, steerControl) {
 }
 
 function setupButtonsCallback(model) {
-    toggleAnimationCallback(model, "leftDoorOpen", 'btnLeftDoor', 'Left_door');
-    toggleAnimationCallback(model, "rightDoorOpen", 'btnRightDoor', 'Right_door');
-    toggleAnimationCallback(model, "hoodOpen", 'btnHood', 'Hood');
-    toggleAnimationCallback(model, "wingOpen", 'btnWing', 'Spoiler');
+    toggleAnimationCallback(model, "leftDoorOpen", 'checkLeftDoor', 'Left_door');
+    toggleAnimationCallback(model, "rightDoorOpen", 'checkRightDoor', 'Right_door');
+    toggleAnimationCallback(model, "hoodOpen", 'checkHood', 'Hood');
+    toggleAnimationCallback(model, "wingOpen", 'checkSpoiler', 'Spoiler');
 }
 
 window.onload = async () => {
