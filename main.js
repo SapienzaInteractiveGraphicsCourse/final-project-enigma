@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { setupMaterials } from './color.js';
-import { setupCamera } from './camera.js';
+import { setupCamera, updateCameraMovement, toggleCameraMode } from './camera.js';
+import { createFloor } from './floor.js';
 import './ui.js';
 
 const dracoLoader = new DRACOLoader();
@@ -34,13 +35,9 @@ const directionalLight = new THREE.DirectionalLight(0xffffff, 5.5);
 directionalLight.position.set(5, 10, 7);
 scene.add(directionalLight);
 
-const controls = setupCamera(camera, renderer);
+setupCamera(camera, renderer);
 
-const floorGeometry = new THREE.PlaneGeometry(20, 20);
-const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.8 });
-const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-floor.rotation.x = -Math.PI / 2;
-floor.receiveShadow = true;
+const floor = createFloor();
 scene.add(floor);
 
 const loader = new GLTFLoader();
@@ -85,9 +82,14 @@ window.addEventListener('resize', () => {
     renderer.setSize(width, height);
 });
 
+document.getElementById('btnCameraMode').addEventListener('click', (e) => {
+    const newMode = toggleCameraMode();
+    e.target.textContent = newMode === 'orbit' ? 'Switch to First Person' : 'Switch to Orbit';
+});
+
 function animate() {
     requestAnimationFrame(animate);
-    controls.update();
+    updateCameraMovement(camera);
     renderer.render(scene, camera);
 }
 
