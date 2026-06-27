@@ -26,6 +26,7 @@ function setupButtonsCallback(model) {
     toggleAnimationCallback(model, "leftDoorOpen", 'btnLeftDoor', 'Left_door');
     toggleAnimationCallback(model, "rightDoorOpen", 'btnRightDoor', 'Right_door');
     toggleAnimationCallback(model, "hoodOpen", 'btnHood', 'Hood');
+    toggleAnimationCallback(model, "wingOpen", 'btnWing', 'Spoiler');
 }
 
 window.onload = async () => {

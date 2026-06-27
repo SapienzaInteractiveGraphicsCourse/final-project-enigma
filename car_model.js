@@ -4,6 +4,7 @@ export const CAR_MODEL = {
         leftDoorOpen: false,
         rightDoorOpen: false,
         hoodOpen: false,
+        wingOpen: false,
         steer: 0.0
     },
     animations: {
@@ -27,6 +28,13 @@ export const CAR_MODEL = {
                 angle: -30.0,
             },
             milliseconds: 1500,
+        },
+        "Spoiler": {
+            rotate: {
+                axis: { x: 1, y: 0, z: 0 },
+                angle: 25.0,
+            },
+            milliseconds: 1000,
         },
         "wheel_LF": {
             rotate: {
