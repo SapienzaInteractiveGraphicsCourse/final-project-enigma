@@ -4,7 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 export let currentCameraMode = 'orbit';
 let orbitControls;
 
-const keys = { w: false, a: false, s: false, d: false };
+const keys = { w: false, a: false, s: false, d: false, q: false, e: false };
 let isDragging = false;
 let previousMousePosition = { x: 0, y: 0 };
 const euler = new THREE.Euler(0, 0, 0, 'YXZ');
@@ -65,7 +65,7 @@ export function setupCamera(camera, renderer) {
 
     renderer.domElement.addEventListener('touchmove', (e) => {
         if (currentCameraMode !== 'firstPerson' || !isDragging) return;
-        
+
         const deltaMove = {
             x: e.touches[0].clientX - previousMousePosition.x,
             y: e.touches[0].clientY - previousMousePosition.y
@@ -114,14 +114,19 @@ export function updateCameraMovement(camera) {
     const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
     right.normalize();
 
+    const down = new THREE.Vector3(0, -1, 0).applyQuaternion(camera.quaternion);
+    down.normalize();
+
     if (keys.w) moveVector.add(forward);
     if (keys.s) moveVector.sub(forward);
     if (keys.a) moveVector.sub(right);
     if (keys.d) moveVector.add(right);
+    if (keys.q) moveVector.add(down);
+    if (keys.e) moveVector.sub(down);
 
     if (moveVector.lengthSq() > 0) {
         moveVector.normalize().multiplyScalar(speed);
-        
+
         camera.position.add(moveVector);
 
         camera.position.x = Math.max(-9.5, Math.min(9.5, camera.position.x));
