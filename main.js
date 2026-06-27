@@ -54,25 +54,39 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-function setupButtonsCallback(model) {
-    let leftDoorBtn = document.getElementById('btnLeftDoor');
-    leftDoorBtn.onclick = () => {
-        const animation = model.animations['Left_door'];
-        if (!animation || animation.isAnimating) {
+function toggleAnimationCallback(model, buttonName, animationName) {
+    const button = document.getElementById(buttonName);
+
+    button.onclick = () => {
+        const animation = model.animations[animationName];
+        if (!animation) {
+            return;
         }
 
-        leftDoorBtn.disabled = true;
-        animation.isAnimating = true;
-        const tween = !model.state.doorOpen ? animation.forward : animation.backward;
+        if (animation.activeTween) {
+            animation.activeTween.stop();
+            animation.activeTween = null;
+        }
 
-        tween.onComplete(() => {
-            animation.isAnimating = false;
-            leftDoorBtn.disabled = false;
-            model.state.doorOpen = !model.state.doorOpen;
-        })
+        model.state.doorOpen = !model.state.doorOpen;
 
+        const position = animation.part.position;
+        const target = !model.state.doorOpen ? animation.to : animation.from;
+
+        const totalDistance = animation.from.distanceTo(animation.to);
+        const remainingDistance = position.distanceTo(target);
+        const fraction = totalDistance > 0 ? remainingDistance / totalDistance : 1;
+        const duration = animation.milliseconds * fraction;
+
+        const tween = new TWEEN.Tween(position).to(target, duration);
+        animation.activeTween = tween;
         tween.start();
-    }
+    };
+}
+
+function setupButtonsCallback(model) {
+    toggleAnimationCallback(model, 'btnLeftDoor', 'Left_door');
+    toggleAnimationCallback(model, 'btnRightDoor', 'Right_door');
 }
 
 window.onload = () => {
@@ -83,6 +97,10 @@ window.onload = () => {
         },
         {
             "Left_door": {
+                to: { x: 2, y: 2, z: 2 },
+                milliseconds: 5000,
+            },
+            "Right_door": {
                 to: { x: 2, y: 2, z: 2 },
                 milliseconds: 5000,
             }

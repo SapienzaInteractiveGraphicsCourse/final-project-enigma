@@ -44,21 +44,14 @@ export function loadModel(path, state, animationsDescription, scene) {
                 const description = animationsDescription[partName];
                 const from = part.position.clone();
                 const to = new THREE.Vector3(description.to.x, description.to.y, description.to.z);
-
                 model.animations[partName] = {
+                    part,
                     name: partName,
-                    forward: new TWEEN.Tween(part.position).to(
-                        to,
-                        description.milliseconds
-                    ),
-                    backward: new TWEEN.Tween(part.position).to(
-                        from,
-                        description.milliseconds
-                    ),
-                    isAnimating: false,
+                    from,
+                    to,
+                    activeTween: null,
+                    milliseconds: description.milliseconds,
                 };
-
-                console.log(model.animations);
             })
         },
         (_xhr) => { },
