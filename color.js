@@ -1,24 +1,31 @@
 import * as THREE from 'three';
 
-let bodyMaterial = null;
+let MaterialSet = {};
 
 export function setupMaterials(auto) {
     auto.traverse((child) => {
-        if (child.isMesh) {
+        if (child.isMesh && child.material) {
 
-            if (child.name === 'Body_Paint_Jet_Black1_waike_t_0') {
-                if (!bodyMaterial) {
-                    bodyMaterial = child.material;
+            const materials = Array.isArray(child.material) ? child.material : [child.material];
+            materials.forEach((material) => {
+                const materialName = material.name;
+
+                if (materialName && !MaterialSet[materialName]) {
+                    MaterialSet[materialName] = material;
                 }
-            }
+            });
         }
     });
 
-    console.log("Materiali inizializzati e pronti!");
+    console.log("Materials ready.");
+    console.log("MaterialSet:", MaterialSet);
 }
 
-export function setBodyColor(coloreHex) {
-    if (bodyMaterial) {
-        bodyMaterial.color.set(coloreHex);
+export function setMaterialColor(materialName, coloreHex) {
+    if (MaterialSet[materialName]) {
+        MaterialSet[materialName].color.set(coloreHex);
+    }
+    else {
+        console.warn(`Material ${materialName} not found.`);
     }
 }
