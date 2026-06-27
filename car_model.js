@@ -12,21 +12,21 @@ export const CAR_MODEL = {
                 axis: { x: 0, y: 1, z: 0 },
                 angle: -45.0,
             },
-            milliseconds: 3000,
+            milliseconds: 1500,
         },
         "Right_door": {
             rotate: {
                 axis: { x: 0, y: 1, z: 0 },
                 angle: 45.0,
             },
-            milliseconds: 3000,
+            milliseconds: 1500,
         },
         "Hood": {
             rotate: {
                 axis: { x: 1, y: 0, z: 0 },
                 angle: -30.0,
             },
-            milliseconds: 3000,
+            milliseconds: 1500,
         },
         "wheel_LF": {
             rotate: {

@@ -16,9 +16,6 @@ export function setupMaterials(auto) {
             });
         }
     });
-
-    console.log("Materials ready.");
-    console.log("MaterialSet:", MaterialSet);
 }
 
 export function setMaterialColor(materialName, coloreHex) {

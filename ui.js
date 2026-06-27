@@ -4,6 +4,7 @@ const BodyColorPicker = document.getElementById('bodyColorPicker');
 const CaliperColorPicker = document.getElementById('caliperColorPicker');
 const RimColorPicker = document.getElementById('rimColorPicker');
 const SeatColorPicker = document.getElementById('seatColorPicker');
+const SteeringWheelColorPicker = document.getElementById('steeringWheelColorPicker');
 
 if(BodyColorPicker) {
     BodyColorPicker.addEventListener('input', (evento) => {
@@ -30,5 +31,12 @@ if(SeatColorPicker) {
     SeatColorPicker.addEventListener('input', (evento) => {
         const newColor = evento.target.value;
         setMaterialColor('fabric', newColor);
+    });
+}
+
+if(SteeringWheelColorPicker) {
+    SteeringWheelColorPicker.addEventListener('input', (evento) => {
+        const newColor = evento.target.value;
+        setMaterialColor('steer', newColor);
     });
 }
