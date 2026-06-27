@@ -279,3 +279,30 @@ canvas {
     grid-column: 2; 
     grid-row: 3; 
 }
+
+.compass-mode-btn-long {
+    position: absolute;
+    top: 195px;
+    right: 32px; /* Allineato meglio alla bussola */
+    width: 138px; /* Larghezza allungata */
+    height: 36px;
+    border: 1px solid #3e3e42;
+    border-radius: 6px; /* Bordi leggermente arrotondati, più moderno */
+    background-color: rgba(37, 37, 38, 0.9);
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    z-index: 100;
+}
+
+.compass-mode-btn-long:hover {
+    background-color: #0078d4;
+    transform: scale(1.05);
+}

@@ -9,14 +9,6 @@ let isDragging = false;
 let previousMousePosition = { x: 0, y: 0 };
 const euler = new THREE.Euler(0, 0, 0, 'YXZ');
 
-const views = {
-    Front: new THREE.Vector3(0, 1, 6),
-    Back: new THREE.Vector3(0, 1, -6),
-    Left: new THREE.Vector3(-6, 1, 0),
-    Right: new THREE.Vector3(6, 1, 0),
-    Top: new THREE.Vector3(0, 6, 0.1)
-};
-
 window.addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
     if (keys.hasOwnProperty(key)) keys[key] = true;
@@ -27,10 +19,14 @@ window.addEventListener('keyup', (event) => {
     if (keys.hasOwnProperty(key)) keys[key] = false;
 });
 
-document.getElementById('btnCameraMode').addEventListener('click', (e) => {
-    const newMode = toggleCameraMode();
-    e.target.textContent = newMode === 'orbit' ? 'Switch to First Person' : 'Switch to Orbit';
-});
+// --- LOGICA BUSSOLA E TRANSIZIONI ---
+const views = {
+    Front: new THREE.Vector3(0, 1, 6),
+    Back: new THREE.Vector3(0, 1, -6),
+    Left: new THREE.Vector3(-6, 1, 0),
+    Right: new THREE.Vector3(6, 1, 0),
+    Top: new THREE.Vector3(0, 6, 0.01) 
+};
 
 function animateCameraTransition(camera, targetPosition) {
     if (currentCameraMode !== 'orbit') return; 
@@ -78,6 +74,7 @@ function animateCameraTransition(camera, targetPosition) {
     }
     transition();
 }
+// -----------------------------
 
 export function setupCamera(camera, renderer) {
     orbitControls = new OrbitControls(camera, renderer.domElement);
@@ -145,11 +142,17 @@ export function setupCamera(camera, renderer) {
         isDragging = false;
     });
 
+    // Event Listeners per la Bussola
     document.getElementById('btnViewFront')?.addEventListener('click', () => animateCameraTransition(camera, views.Front));
     document.getElementById('btnViewBack')?.addEventListener('click', () => animateCameraTransition(camera, views.Back));
     document.getElementById('btnViewLeft')?.addEventListener('click', () => animateCameraTransition(camera, views.Left));
     document.getElementById('btnViewRight')?.addEventListener('click', () => animateCameraTransition(camera, views.Right));
     document.getElementById('btnViewTop')?.addEventListener('click', () => animateCameraTransition(camera, views.Top));
+
+    document.getElementById('btnCompassModeToggle')?.addEventListener('click', (e) => {
+        const newMode = toggleCameraMode();
+        e.target.textContent = newMode === 'orbit' ? 'Orbit Camera' : 'First Person';
+    });
 
     return orbitControls;
 }
@@ -200,4 +203,3 @@ export function updateCameraMovement(camera) {
         camera.position.z = Math.max(-9.5, Math.min(9.5, camera.position.z));
     }
 }
-
