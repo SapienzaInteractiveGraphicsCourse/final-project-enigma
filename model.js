@@ -11,7 +11,11 @@ dracoLoader.setDecoderConfig({ type: 'js' });
 const loader = new GLTFLoader();
 loader.setDRACOLoader(dracoLoader);
 
-export function loadModel(path, state, animationsDescription, scene) {
+export function loadModel(modelDescription, scene) {
+    const path = modelDescription.path;
+    const state = modelDescription.state;
+    const animationsDescription = modelDescription.animations;
+
     let model = {
         state: state,
         animations: {},

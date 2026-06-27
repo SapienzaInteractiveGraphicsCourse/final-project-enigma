@@ -89,25 +89,27 @@ function setupButtonsCallback(model) {
     toggleAnimationCallback(model, 'btnRightDoor', 'Right_door');
 }
 
-window.onload = () => {
-    let model = loadModel(
-        'car_1/car.glb',
-        {
-            doorOpen: false,
+const CAR_MODEL = {
+    path: 'car_1/car.glb',
+    state: {
+        doorOpen: false,
+    },
+    animations: {
+        "Left_door": {
+            to: { x: 2, y: 2, z: 2 },
+            milliseconds: 5000,
         },
-        {
-            "Left_door": {
-                to: { x: 2, y: 2, z: 2 },
-                milliseconds: 5000,
-            },
-            "Right_door": {
-                to: { x: 2, y: 2, z: 2 },
-                milliseconds: 5000,
-            }
-        },
-        scene
-    );
+        "Right_door": {
+            to: { x: 2, y: 2, z: 2 },
+            milliseconds: 5000,
+        }
+    }
+}
 
-    setupButtonsCallback(model);
+window.onload = () => {
+    let car_model = loadModel(CAR_MODEL, scene);
+
+    setupButtonsCallback(car_model);
+
     animate();
 };
