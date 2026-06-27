@@ -1,4 +1,3 @@
-import * as TWEEN from '@tweenjs/tween.js'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
@@ -46,13 +45,36 @@ export function loadModel(modelDescription, scene) {
                 }
 
                 const description = animationsDescription[partName];
-                const from = part.position.clone();
-                const to = new THREE.Vector3(description.to.x, description.to.y, description.to.z);
+
+                let fromPosition = part.position.clone();
+                let toPosition = part.position.clone();
+                if (description.to) {
+                    fromPosition = part.position.clone();
+                    toPosition = new THREE.Vector3(description.to.x, description.to.y, description.to.z);
+                }
+
+                let fromQuaternion = part.quaternion.clone();
+                let toQuaternion = part.quaternion.clone();
+                if (description.rotate) {
+                    const localAxis = new THREE.Vector3(
+                        description.rotate.axis.x,
+                        description.rotate.axis.y,
+                        description.rotate.axis.z
+                    ).normalize();
+
+                    const worldAxis = localAxis.clone().applyQuaternion(part.quaternion).normalize();
+
+                    const qDelta = new THREE.Quaternion().setFromAxisAngle(worldAxis, description.rotate.angle);
+                    toQuaternion = fromQuaternion.clone().multiply(qDelta);
+                }
+
                 model.animations[partName] = {
                     part,
                     name: partName,
-                    from,
-                    to,
+                    fromPosition,
+                    toPosition,
+                    fromQuaternion,
+                    toQuaternion,
                     activeTween: null,
                     milliseconds: description.milliseconds,
                 };

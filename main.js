@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import * as TWEEN from '@tweenjs/tween.js';
+import { CAR_MODEL } from './car_model.js';
 import { loadModel } from './model.js'
 import { setupCamera, updateCameraMovement, toggleCameraMode } from './camera.js';
 import { createFloor } from './floor.js';
@@ -70,16 +71,33 @@ function toggleAnimationCallback(model, buttonName, animationName) {
             animation.activeTween = null;
         }
 
-        const target = !model.state.doorOpen ? animation.to : animation.from;
+        const targetPosition = !model.state.doorOpen ? animation.toPosition : animation.fromPosition;
+        const targetQuaternion = !model.state.doorOpen ? animation.toQuaternion : animation.fromQuaternion;
+
         model.state.doorOpen = !model.state.doorOpen;
 
         const position = animation.part.position;
-        const totalDistance = animation.from.distanceTo(animation.to);
-        const remainingDistance = position.distanceTo(target);
-        const fraction = totalDistance > 0 ? remainingDistance / totalDistance : 1;
-        const duration = animation.milliseconds * fraction;
 
-        const tween = new TWEEN.Tween(position).to(target, duration);
+        const totalDistance = animation.fromPosition.distanceTo(animation.toPosition);
+        const remainingDistance = position.distanceTo(targetPosition);
+        const fraction = totalDistance > 0 ? remainingDistance / totalDistance : 1;
+        const duration = animation.milliseconds * Math.max(0, Math.min(1, fraction));
+
+        const rotationProgress = { t: 0 };
+        const fromQuaternion = animation.part.quaternion.clone();
+
+        const tween = new TWEEN.Tween(rotationProgress)
+            .to({ t: 1 }, duration)
+            .onStart(() => {
+                new TWEEN.Tween(position).to(targetPosition, duration).start();
+            })
+            .onUpdate(({ t }) => {
+                animation.part.quaternion.slerpQuaternions(fromQuaternion, targetQuaternion, t);
+            })
+            .onComplete(() => {
+                animation.activeTween = null;
+            })
+
         animation.activeTween = tween;
         tween.start();
     };
@@ -88,23 +106,6 @@ function toggleAnimationCallback(model, buttonName, animationName) {
 function setupButtonsCallback(model) {
     toggleAnimationCallback(model, 'btnLeftDoor', 'Left_door');
     toggleAnimationCallback(model, 'btnRightDoor', 'Right_door');
-}
-
-const CAR_MODEL = {
-    path: 'car_1/car.glb',
-    state: {
-        doorOpen: false,
-    },
-    animations: {
-        "Left_door": {
-            to: { x: 2, y: 2, z: 2 },
-            milliseconds: 5000,
-        },
-        "Right_door": {
-            to: { x: 2, y: 2, z: 2 },
-            milliseconds: 5000,
-        }
-    }
 }
 
 window.onload = () => {
