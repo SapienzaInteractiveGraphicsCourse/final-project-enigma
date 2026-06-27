@@ -25,25 +25,38 @@
                 <button id="btnCameraMode">Switch to First Person</button>
             </div>
 
-            <div class="control-group">
-                <label for="bodyColorPicker">Body Paint Color</label>
-                <input type="color" id="bodyColorPicker" value="#3ABC2AFF">
-            </div>
+            <!-- SEZIONE COLORI A SCOMPARSA (Usa il tag nativo 'details') -->
+            <!-- L'attributo 'open' lo fa partire già aperto. Se lo togli, partirà chiuso. -->
+            <details class="collapsible-section" open>
+                <summary>Car Colors</summary>
+                
+                <div class="section-content">
+                    <div class="color-row">
+                        <label for="bodyColorPicker">Body Paint</label>
+                        <input type="color" id="bodyColorPicker" value="#3ABC2A">
+                    </div>
 
-            <div class="control-group">
-                <label for="caliperColorPicker">Caliper Paint Color</label>
-                <input type="color" id="caliperColorPicker" value="#3ABC2AFF">
-            </div>
+                    <div class="color-row">
+                        <label for="rimColorPicker">Rim Paint</label>
+                        <input type="color" id="rimColorPicker" value="#7E7E7E">
+                    </div>
 
-            <div class="control-group">
+                    <div class="color-row">
+                        <label for="caliperColorPicker">Caliper Paint</label>
+                        <input type="color" id="caliperColorPicker" value="#E7303F">
+                    </div>
+
+                    <div class="color-row">
+                        <label for="seatColorPicker">Seat Fabric</label>
+                        <input type="color" id="seatColorPicker" value="#E70B00">
+                    </div>
+                </div>
+            </details>
+
+            <!-- SEZIONE ANIMAZIONI / AZIONI -->
+            <div class="control-group mt-auto">
                 <button id="btnLights">Lights On</button>
-            </div>
-
-            <div class="control-group">
                 <button id="btnLeftDoor">Left Door</button>
-            </div>
-
-            <div class="control-group">
                 <button id="btnRightDoor">Right Door</button>
             </div>
 
@@ -53,7 +66,8 @@
         </aside>
 
         <main id="canvas-container">
-            </main>
+            <!-- Il canvas di Three.js andrà qui -->
+        </main>
 
     </div>
 
