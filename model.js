@@ -64,7 +64,7 @@ export function loadModel(modelDescription, scene) {
 
                     const worldAxis = localAxis.clone().applyQuaternion(part.quaternion).normalize();
 
-                    const qDelta = new THREE.Quaternion().setFromAxisAngle(worldAxis, description.rotate.angle);
+                    const qDelta = new THREE.Quaternion().setFromAxisAngle(worldAxis, description.rotate.angle * Math.PI / 180.0);
                     toQuaternion = fromQuaternion.clone().multiply(qDelta);
                 }
 

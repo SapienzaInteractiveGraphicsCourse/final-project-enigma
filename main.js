@@ -107,6 +107,7 @@ function toggleAnimationCallback(model, stateKey, buttonName, animationName) {
 function setupButtonsCallback(model) {
     toggleAnimationCallback(model, "leftDoorOpen", 'btnLeftDoor', 'Left_door');
     toggleAnimationCallback(model, "rightDoorOpen", 'btnRightDoor', 'Right_door');
+    toggleAnimationCallback(model, "hoodOpen", 'btnHood', 'Hood');
 }
 
 window.onload = () => {
