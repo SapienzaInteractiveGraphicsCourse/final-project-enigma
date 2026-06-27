@@ -26,6 +26,8 @@ export async function loadModel(modelDescription, scene) {
             (gltf) => {
                 const gltf_model = gltf.scene;
 
+                model.root = gltf_model;
+
                 gltf_model.traverse((child) => {
                     if (child.isMesh) {
                         child.castShadow = true;
@@ -72,6 +74,8 @@ export async function loadModel(modelDescription, scene) {
                     model.animations[partName] = {
                         part,
                         name: partName,
+                        clickable: description.clickable,
+                        stateKey: description.stateKey,
                         restPosition: part.position.clone(),
                         restQuaternion: part.quaternion.clone(),
                         fromPosition,

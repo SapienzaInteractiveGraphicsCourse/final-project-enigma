@@ -3,7 +3,7 @@ import * as TWEEN from '@tweenjs/tween.js';
 import { loadModel } from './model.js';
 import { CAR_MODEL } from './car_model.js';
 import { updateCameraMovement } from './camera.js';
-import { toggleAnimationCallback } from './animations.js'
+import { toggleAnimationCallback, enableClickToAnimate } from './animations.js'
 import { createScene } from './scene.js';
 import { createSteerControl } from './steering.js'
 import './ui.js';
@@ -23,9 +23,9 @@ function animate(scene, camera, renderer, steerControl) {
 }
 
 function setupButtonsCallback(model) {
-    toggleAnimationCallback(model, "leftDoorOpen", 'btnLeftDoor', 'Left_door');
-    toggleAnimationCallback(model, "rightDoorOpen", 'btnRightDoor', 'Right_door');
-    toggleAnimationCallback(model, "hoodOpen", 'btnHood', 'Hood');
+    toggleAnimationCallback(model, 'btnLeftDoor', 'Left_door');
+    toggleAnimationCallback(model, 'btnRightDoor', 'Right_door');
+    toggleAnimationCallback(model, 'btnHood', 'Hood');
 }
 
 window.onload = async () => {
@@ -33,6 +33,7 @@ window.onload = async () => {
     const car_model = await loadModel(CAR_MODEL, scene);
     const steerControl = createSteerControl(car_model);
     setupButtonsCallback(car_model);
+    enableClickToAnimate(scene, camera, renderer, car_model);
 
     animate(scene, camera, renderer, steerControl);
 };
