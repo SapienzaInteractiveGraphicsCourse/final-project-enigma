@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { createFloor } from './floor.js'
 import { setupCamera } from './camera.js'
+import { setupEnvironmentLights } from './lights.js';
 
 export function createScene() {
     const container = document.getElementById('canvas-container');
@@ -19,14 +20,11 @@ export function createScene() {
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    scene.add(ambientLight);
-
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 5.5);
-    directionalLight.position.set(5, 10, 7);
-    scene.add(directionalLight);
+    setupEnvironmentLights(scene);
 
     setupCamera(camera, renderer);
 
