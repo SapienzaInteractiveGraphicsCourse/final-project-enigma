@@ -61,48 +61,90 @@ function toggleAnimation(model, animationName) {
     tween.start();
 }
 
-function clickedAnimation(model, hitObj) {
-    for (const [name, anim] of Object.entries(model.animations)) {
-        if (!anim.clickable || !anim?.part) {
-            continue;
-        }
+function pickAnimationFromHits(model, hits) {
+    let best = null;
 
-        let o = hitObj;
-        while (o) {
-            if (o === anim.part) {
-                return { name, part: anim.part };
+    for (const hit of hits) {
+        let hitObj = hit.object;
+
+        for (const [name, anim] of Object.entries(model.animations)) {
+            if (!anim.clickable || !anim?.part) continue;
+
+            let o = hitObj;
+            let stepsUp = 0;
+            while (o) {
+                if (o === anim.part) {
+                    if (
+                        !best ||
+                        stepsUp > best.stepsUp ||
+                        (stepsUp === best.stepsUp && hit.distance < best.hitDistance)
+                    ) {
+                        best = { name, part: anim.part, stepsUp, hitDistance: hit.distance };
+                    }
+                    break;
+                }
+                o = o.parent;
+                stepsUp++;
             }
-            o = o.parent;
         }
     }
-    return null;
+
+    return best ? { name: best.name, part: best.part } : null;
 }
 
-function applyHoverHighlight(renderer, mesh) {
-    if (!mesh || !mesh.isMesh || hoveredPart === mesh) {
+function getRayHits(renderer, camera, mouse, raycaster, raycastRoot, event) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+
+    const targets = raycastRoot.children ?? [raycastRoot];
+    return raycaster.intersectObjects(targets, true);
+}
+
+function applyHoverHighlight(renderer, root) {
+    if (!root) {
         return;
     }
 
-    if (hoveredPart) clearHoverHighlight(renderer);
-
-    hoveredPart = mesh;
-
-    let entry = hoverSwap.get(mesh.uuid);
-    if (!entry) {
-        const originalMaterials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-        const hoverMaterials = originalMaterials.map((mat) => {
-            const emissive_material = mat.clone();
-            if ('emissive' in emissive_material) {
-                emissive_material.emissive = new THREE.Color(0x00aaff);
-                emissive_material.emissiveIntensity = 5;
-            }
-            return emissive_material;
-        });
-        entry = { originalMaterials, hoverMaterials, wasArray: Array.isArray(mesh.material) };
-        hoverSwap.set(mesh.uuid, entry);
+    if (hoveredPart === root) {
+        return;
     }
 
-    mesh.material = entry.wasArray ? entry.hoverMaterials : entry.hoverMaterials[0];
+    if (hoveredPart) {
+        clearHoverHighlight(renderer);
+    }
+
+    hoveredPart = root;
+
+    const meshes = [];
+    root.traverse((node) => {
+        if (node.isMesh) {
+            meshes.push(node);
+        }
+    })
+
+    for (const mesh of meshes) {
+        let entry = hoverSwap.get(mesh.uuid);
+        if (!entry) {
+            const originalMaterials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+            const hoverMaterials = originalMaterials.map((mat) => {
+                const emissive_material = mat.clone();
+                if ('emissive' in emissive_material) {
+                    emissive_material.emissive = new THREE.Color(0x00aaff);
+                    emissive_material.emissiveIntensity = 5;
+                }
+                emissive_material.color = new THREE.Color(0x00aaff);
+                return emissive_material;
+            });
+            entry = { originalMaterials, hoverMaterials, wasArray: Array.isArray(mesh.material) };
+            hoverSwap.set(mesh.uuid, entry);
+        }
+
+        mesh.material = entry.wasArray ? entry.hoverMaterials : entry.hoverMaterials[0];
+    }
+
     renderer.domElement.style.cursor = 'pointer';
 }
 
@@ -111,29 +153,21 @@ function clearHoverHighlight(renderer) {
         return;
     }
 
-    const entry = hoverSwap.get(hoveredPart.uuid);
-    if (entry) {
-        hoveredPart.material = entry.wasArray
-            ? entry.originalMaterials
-            : entry.originalMaterials[0];
-    }
+    hoveredPart.traverse((node) => {
+        if (!node.isMesh) {
+            return;
+        }
+
+        const entry = hoverSwap.get(node.uuid);
+        if (!entry) {
+            return;
+        }
+
+        node.material = entry.wasArray ? entry.originalMaterials : entry.originalMaterials[0];
+    });
 
     hoveredPart = null;
     renderer.domElement.style.cursor = 'default';
-}
-
-function raycastForPartHit(renderer, camera, mouse, raycaster, raycastRoot, event) {
-    const rect = renderer.domElement.getBoundingClientRect();
-    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-    raycaster.setFromCamera(mouse, camera);
-    const hits = raycaster.intersectObjects(raycastRoot.children ?? [raycastRoot], true);
-    if (hits.length === 0) {
-        return null;
-    }
-
-    return hits[0].object;
 }
 
 export function enableClickToAnimate(scene, camera, renderer, model) {
@@ -151,19 +185,15 @@ export function enableClickToAnimate(scene, camera, renderer, model) {
             }
             lastHoverCheck = now;
 
-            const hitObject = raycastForPartHit(renderer, camera, mouse, raycaster, raycastRoot, e);
-            if (!hitObject || !hitObject.isMesh) {
-                clearHoverHighlight(renderer);
-                return;
-            }
+            const hits = getRayHits(renderer, camera, mouse, raycaster, raycastRoot, e);
+            const animation = hits.length ? pickAnimationFromHits(model, hits) : null;
 
-            const animation = clickedAnimation(model, hitObject);
             if (!animation) {
                 clearHoverHighlight(renderer);
                 return;
             }
 
-            applyHoverHighlight(renderer, hitObject);
+            applyHoverHighlight(renderer, animation.part);
         }
     });
 
@@ -172,12 +202,8 @@ export function enableClickToAnimate(scene, camera, renderer, model) {
             return;
         }
 
-        const hitObject = raycastForPartHit(renderer, camera, mouse, raycaster, raycastRoot, e);
-        if (!hitObject) {
-            return;
-        }
-
-        const animation = clickedAnimation(model, hitObject);
+        const hits = getRayHits(renderer, camera, mouse, raycaster, raycastRoot, e);
+        const animation = hits.length ? pickAnimationFromHits(model, hits) : null;
         if (animation) {
             toggleAnimation(model, animation.name);
         }
