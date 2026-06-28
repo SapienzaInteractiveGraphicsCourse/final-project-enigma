@@ -7,6 +7,7 @@ export const CAR_MODEL = {
         wingOpen: false,
         steer: 0.0,
         throttle: 0.0,
+        lowBeams: false,
     },
     animations: {
         "Left_door": {

@@ -8,6 +8,7 @@ import { createScene } from './scene.js';
 import { createSteerControl } from './steering.js'
 import { initCameraUI, syncMaterialControls } from './ui.js';
 import { Settings } from './settings.js';
+import { toggleCarLight } from './lights.js';
 
 const clock = new THREE.Clock();
 
@@ -30,6 +31,25 @@ function setupButtonsCallback(model) {
     })
 }
 
+function setupLightCallbacks(model) {
+    const lowBeamsSwitch = document.getElementById('checkLowBeams');
+
+    if (!lowBeamsSwitch) {
+        return;
+    }
+
+    const applyLowBeamsState = (isVisible) => {
+        toggleCarLight(model.lowBeams, isVisible);
+        model.state.lowBeams = isVisible;
+    };
+
+    lowBeamsSwitch.checked = model.state.lowBeams;
+    applyLowBeamsState(model.state.lowBeams);
+    lowBeamsSwitch.addEventListener('change', (event) => {
+        applyLowBeamsState(event.target.checked);
+    });
+}
+
 window.onload = async () => {
     Settings.init();
     const { scene, camera, renderer } = createScene();
@@ -38,6 +58,7 @@ window.onload = async () => {
     syncMaterialControls();
     const steerControl = createSteerControl(car_model);
     setupButtonsCallback(car_model);
+    setupLightCallbacks(car_model);
     enableClickToAnimate(scene, camera, renderer, car_model);
 
     animate(scene, camera, renderer, steerControl);

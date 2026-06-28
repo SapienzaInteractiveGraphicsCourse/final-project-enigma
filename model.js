@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { setupMaterials } from './color.js';
-import { setupRunningLight } from './lights.js';
+import { setupLowBeams } from './lights.js';
 
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
@@ -44,10 +44,9 @@ export async function loadModel(modelDescription, scene) {
 
                 scene.add(gltf_model);
                 setupMaterials(gltf_model);
-                model.runningLight = setupRunningLight(gltf_model, 'running_light_dx');
-                                // Aggiungi l'aiutante visivo per il debug
-                const lightHelper = new THREE.SpotLightHelper(model.runningLight);
-                scene.add(lightHelper); // Deve essere aggiunto alla SCENA principale, non all'anchor
+                model.lowBeams = setupLowBeams(gltf_model);
+                // const lightHelper = new THREE.SpotLightHelper(model.runningLight);
+                // scene.add(lightHelper);
 
                 Object.keys(animationsDescription).forEach((partName) => {
                     const part = gltf_model.getObjectByName(partName)
