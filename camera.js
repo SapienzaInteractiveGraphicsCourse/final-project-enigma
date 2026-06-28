@@ -19,8 +19,7 @@ window.addEventListener('keyup', (event) => {
     if (keys.hasOwnProperty(key)) keys[key] = false;
 });
 
-// --- LOGICA BUSSOLA E TRANSIZIONI ---
-const views = {
+export const views = {
     Front: new THREE.Vector3(0, 1, 6),
     Back: new THREE.Vector3(0, 1, -6),
     Left: new THREE.Vector3(-6, 1, 0),
@@ -28,7 +27,7 @@ const views = {
     Top: new THREE.Vector3(0, 6, 0.01) 
 };
 
-function animateCameraTransition(camera, targetPosition) {
+export function animateCameraTransition(camera, targetPosition) {
     if (currentCameraMode !== 'orbit') return; 
     
     let step = 0;
@@ -36,31 +35,26 @@ function animateCameraTransition(camera, targetPosition) {
     const startTarget = orbitControls.target.clone();
     const endTarget = new THREE.Vector3(0, 0, 0); 
     
-    // Convertiamo le coordinate in Sferiche (Raggio, Inclinazione, Angolo Orizzontale)
-    // Questo permette alla telecamera di "orbitare" morbidamente in modo circolare
     const startSpherical = new THREE.Spherical().setFromVector3(startPos);
     const endSpherical = new THREE.Spherical().setFromVector3(targetPosition);
 
-    // Evitiamo che la telecamera faccia giri più lunghi del necessario (es. girare di 270° invece che di 90°)
     let thetaDiff = endSpherical.theta - startSpherical.theta;
     while (thetaDiff > Math.PI) thetaDiff -= Math.PI * 2;
     while (thetaDiff < -Math.PI) thetaDiff += Math.PI * 2;
     endSpherical.theta = startSpherical.theta + thetaDiff;
 
     function transition() {
-        step += 0.025; // Velocità animazione
+        step += 0.025;
         if (step <= 1) {
-            // Easing "easeInOutCubic" per partenze e arrivi dolci e lenti
+
             const easeStep = step < 0.5 ? 4 * step * step * step : 1 - Math.pow(-2 * step + 2, 3) / 2;
-            
-            // Creiamo il punto sferico intermedio calcolando la media pesata degli angoli
+
             const currentSpherical = new THREE.Spherical(
                 THREE.MathUtils.lerp(startSpherical.radius, endSpherical.radius, easeStep),
                 THREE.MathUtils.lerp(startSpherical.phi, endSpherical.phi, easeStep),
                 THREE.MathUtils.lerp(startSpherical.theta, endSpherical.theta, easeStep)
             );
-            
-            // Convertiamo di nuovo in X,Y,Z e aggiorniamo la telecamera
+
             camera.position.setFromSpherical(currentSpherical);
             orbitControls.target.lerpVectors(startTarget, endTarget, easeStep);
             
@@ -74,7 +68,6 @@ function animateCameraTransition(camera, targetPosition) {
     }
     transition();
 }
-// -----------------------------
 
 export function setupCamera(camera, renderer) {
     orbitControls = new OrbitControls(camera, renderer.domElement);
@@ -142,19 +135,14 @@ export function setupCamera(camera, renderer) {
         isDragging = false;
     });
 
-    // Event Listeners per la Bussola
-    document.getElementById('btnViewFront')?.addEventListener('click', () => animateCameraTransition(camera, views.Front));
-    document.getElementById('btnViewBack')?.addEventListener('click', () => animateCameraTransition(camera, views.Back));
-    document.getElementById('btnViewLeft')?.addEventListener('click', () => animateCameraTransition(camera, views.Left));
-    document.getElementById('btnViewRight')?.addEventListener('click', () => animateCameraTransition(camera, views.Right));
-    document.getElementById('btnViewTop')?.addEventListener('click', () => animateCameraTransition(camera, views.Top));
-
-    document.getElementById('btnCompassModeToggle')?.addEventListener('click', (e) => {
-        const newMode = toggleCameraMode();
-        e.target.textContent = newMode === 'orbit' ? 'Orbit Camera' : 'First Person';
-    });
-
     return orbitControls;
+}
+
+export function goToCameraView(camera, viewName) {
+    const targetPosition = views[viewName];
+    if (!targetPosition) return;
+
+    animateCameraTransition(camera, targetPosition);
 }
 
 export function toggleCameraMode() {

@@ -1,42 +1,34 @@
 import { setMaterialColor } from './color.js';
+import { goToCameraView, toggleCameraMode } from './camera.js';
 
-const BodyColorPicker = document.getElementById('bodyColorPicker');
-const CaliperColorPicker = document.getElementById('caliperColorPicker');
-const RimColorPicker = document.getElementById('rimColorPicker');
-const SeatColorPicker = document.getElementById('seatColorPicker');
-const SteeringWheelColorPicker = document.getElementById('steeringWheelColorPicker');
+const colorPickerBindings = [
+    { elementId: 'bodyColorPicker', materialName: 'body_paint' },
+    { elementId: 'caliperColorPicker', materialName: 'caliper' },
+    { elementId: 'rimColorPicker', materialName: 'rim' },
+    { elementId: 'seatColorPicker', materialName: 'fabric' },
+    { elementId: 'steeringWheelColorPicker', materialName: 'steer' }
+];
 
-if(BodyColorPicker) {
-    BodyColorPicker.addEventListener('input', (evento) => {
+colorPickerBindings.forEach(({ elementId, materialName }) => {
+    const picker = document.getElementById(elementId);
+
+    if (!picker) return;
+
+    picker.addEventListener('input', (evento) => {
         const newColor = evento.target.value;
-        setMaterialColor('body_paint', newColor);
+        setMaterialColor(materialName, newColor);
     });
-}
+});
 
-if(CaliperColorPicker) {
-    CaliperColorPicker.addEventListener('input', (evento) => {
-        const newColor = evento.target.value;
-        setMaterialColor('caliper', newColor);
-    });
-}
+export function initCameraUI(camera) {
+    document.getElementById('btnViewFront')?.addEventListener('click', () => goToCameraView(camera, 'Front'));
+    document.getElementById('btnViewBack')?.addEventListener('click', () => goToCameraView(camera, 'Back'));
+    document.getElementById('btnViewLeft')?.addEventListener('click', () => goToCameraView(camera, 'Left'));
+    document.getElementById('btnViewRight')?.addEventListener('click', () => goToCameraView(camera, 'Right'));
+    document.getElementById('btnViewTop')?.addEventListener('click', () => goToCameraView(camera, 'Top'));
 
-if(RimColorPicker) {
-    RimColorPicker.addEventListener('input', (evento) => {
-        const newColor = evento.target.value;
-        setMaterialColor('rim', newColor);
-    });
-}
-
-if(SeatColorPicker) {
-    SeatColorPicker.addEventListener('input', (evento) => {
-        const newColor = evento.target.value;
-        setMaterialColor('fabric', newColor);
-    });
-}
-
-if(SteeringWheelColorPicker) {
-    SteeringWheelColorPicker.addEventListener('input', (evento) => {
-        const newColor = evento.target.value;
-        setMaterialColor('steer', newColor);
+    document.getElementById('btnCompassModeToggle')?.addEventListener('click', (e) => {
+        const newMode = toggleCameraMode();
+        e.target.textContent = newMode === 'orbit' ? 'Orbit Camera' : 'Free Camera';
     });
 }

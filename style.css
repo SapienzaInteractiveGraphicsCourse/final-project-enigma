@@ -283,11 +283,11 @@ canvas {
 .compass-mode-btn-long {
     position: absolute;
     top: 195px;
-    right: 32px; /* Allineato meglio alla bussola */
-    width: 138px; /* Larghezza allungata */
+    right: 32px;
+    width: 138px;
     height: 36px;
     border: 1px solid #3e3e42;
-    border-radius: 6px; /* Bordi leggermente arrotondati, più moderno */
+    border-radius: 6px;
     background-color: rgba(37, 37, 38, 0.9);
     color: #ffffff;
     cursor: pointer;
