@@ -56,10 +56,12 @@ export function createSteerControl(model) {
         const k = Math.min(1, steerResponse * dt);
         steerAngleRadians += (steerTargetRad - steerAngleRadians) * k;
 
-        const leftFront = model.animations["wheel_LF"].part;
-        const rightFront = model.animations["wheel_RF"].part;
-        const leftBack = model.animations["wheel_LR"].part;
-        const rightBack = model.animations["wheel_RR"].part;
+        const steerLeftFront = model.animations["wheel_LF"].part;
+        const steerRightFront = model.animations["wheel_RF"].part;
+        const spinLeftFront = model.animations["Moving_wheel_LF"].part;
+        const spinRightFront = model.animations["Moving_wheel_RF"].part;
+        const spinLeftBack = model.animations["Moving_wheel_LR"].part;
+        const spinRightBack = model.animations["Moving_wheel_RR"].part;
         const steeringWheel = model.animations["Steering_wheel"].part;
 
         const wheelSteerAxis = new THREE.Vector3(0, 1, 0);
@@ -75,16 +77,19 @@ export function createSteerControl(model) {
 
         const spinRot = new THREE.Quaternion().setFromAxisAngle(wheelRollAxis, wheelSpinAngleRadians);
 
-        const leftFrontRest = model.animations["wheel_LF"].restQuaternion;
-        const rightFrontRest = model.animations["wheel_RF"].restQuaternion;
-        const leftBackRest = model.animations["wheel_LR"].restQuaternion;
-        const rightBackRest = model.animations["wheel_RR"].restQuaternion;
+        const leftFrontRest = model.animations["Moving_wheel_LF"].restQuaternion;
+        const rightFrontRest = model.animations["Moving_wheel_RF"].restQuaternion;
+        const leftBackRest = model.animations["Moving_wheel_LR"].restQuaternion;
+        const rightBackRest = model.animations["Moving_wheel_RR"].restQuaternion;
         const steeringWheelRest = model.animations["Steering_wheel"].restQuaternion;
 
-        leftFront.quaternion.copy(leftFrontRest).multiply(steerRot).multiply(spinRot);
-        rightFront.quaternion.copy(rightFrontRest).multiply(steerRot).multiply(spinRot);
-        leftBack.quaternion.copy(leftBackRest).multiply(steerRot).multiply(spinRot);
-        rightBack.quaternion.copy(rightBackRest).multiply(steerRot).multiply(spinRot);
+        steerLeftFront.quaternion.copy(model.animations["wheel_LF"].restQuaternion).multiply(steerRot);
+        steerRightFront.quaternion.copy(model.animations["wheel_RF"].restQuaternion).multiply(steerRot);
+
+        spinLeftFront.quaternion.copy(model.animations["Moving_wheel_LF"].restQuaternion).multiply(spinRot);
+        spinRightFront.quaternion.copy(model.animations["Moving_wheel_RF"].restQuaternion).multiply(spinRot);
+        spinLeftBack.quaternion.copy(model.animations["Moving_wheel_LR"].restQuaternion).multiply(spinRot);
+        spinRightBack.quaternion.copy(model.animations["Moving_wheel_RR"].restQuaternion).multiply(spinRot);
         steeringWheel.quaternion.copy(steeringWheelRest).multiply(steeringWheelRot);
     }
 

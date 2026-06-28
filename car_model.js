@@ -65,10 +65,16 @@ export const CAR_MODEL = {
                 angle: 0.0
             }
         },
-        "wheel_LR": {
+        "Moving_wheel_LR": {
             clickable: false,
         },
-        "wheel_RR": {
+        "Moving_wheel_RR": {
+            clickable: false,
+        },
+        "Moving_wheel_LF": {
+            clickable: false,
+        },
+        "Moving_wheel_RF": {
             clickable: false,
         },
         "Steering_wheel": {

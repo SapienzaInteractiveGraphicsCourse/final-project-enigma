@@ -65,6 +65,55 @@ export function setupEnvironmentLights(scene) {
     scene.add(rightLight);
 }
 
+export function setupRunningLight(modelRoot, emptyName = 'running_light_dx') {
+    const anchor = modelRoot.getObjectByName(emptyName);
+
+    if (!anchor) {
+        console.error(`error: failed to reference ${emptyName} in the model`);
+        return null;
+    }
+
+    // Colore leggermente azzurrino/freddo (stile Xeno) e intensità bilanciata
+    const runningLight = new THREE.SpotLight(0xd4e3ff, 50.0, 30.0, Math.PI / 8, 0.5, 2.0);
+    runningLight.position.set(0, 0, 0);
+    runningLight.castShadow = true;
+    
+    // Rimuove gli artefatti d'ombra causati dal vetro del faro
+    runningLight.shadow.bias = -0.001; 
+    anchor.add(runningLight);
+
+    // Riduciamo drasticamente l'intensità della PointLight: deve solo far 
+    // brillare il faro, non illuminare l'asfalto sotto la macchina.
+    const glow = new THREE.PointLight(0xd4e3ff, 0.5, 0.5, 2.0);
+    glow.position.set(0, 0, 0);
+    anchor.add(glow);
+
+    const bulb = new THREE.Mesh(
+        new THREE.SphereGeometry(0.025, 12, 12),
+        new THREE.MeshStandardMaterial({
+            color: 0x111111,
+            emissive: 0xffffff,
+            emissiveIntensity: 10,
+            roughness: 0.3,
+            metalness: 0.0,
+        })
+    );
+    bulb.position.set(0, 0, 0);
+    anchor.add(bulb);
+
+    const target = new THREE.Object3D();
+    
+    // IL SEGRETO È QUI: 
+    // Z: -10 lo manda in avanti.
+    // Y: -1.5 lo inclina verso l'asfalto. (Se è troppo corto, metti Y a -0.5 o Z a -20)
+    target.position.set(0, -1.5, 10); 
+    
+    anchor.add(target);
+    runningLight.target = target;
+
+    return runningLight;
+}
+
 export function toggleCarLight(lightObject, isVisible) {
     if (lightObject) {
         lightObject.visible = isVisible;
