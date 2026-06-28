@@ -11,6 +11,7 @@ export const CAR_MODEL = {
         "Left_door": {
             clickable: true,
             stateKey: "leftDoorOpen",
+            uiId: "checkLeftDoor",
             rotate: {
                 axis: { x: 0, y: 1, z: 0 },
                 angle: -45.0,
@@ -20,6 +21,7 @@ export const CAR_MODEL = {
         "Right_door": {
             clickable: true,
             stateKey: "rightDoorOpen",
+            uiId: "checkRightDoor",
             rotate: {
                 axis: { x: 0, y: 1, z: 0 },
                 angle: 45.0,
@@ -29,6 +31,7 @@ export const CAR_MODEL = {
         "Hood": {
             clickable: true,
             stateKey: "hoodOpen",
+            uiId: "checkHood",
             rotate: {
                 axis: { x: 1, y: 0, z: 0 },
                 angle: -30.0,
@@ -38,6 +41,7 @@ export const CAR_MODEL = {
         "Spoiler": {
             clickable: true,
             stateKey: "wingOpen",
+            uiId: "checkSpoiler",
             rotate: {
                 axis: { x: 1, y: 0, z: 0 },
                 angle: 25.0,

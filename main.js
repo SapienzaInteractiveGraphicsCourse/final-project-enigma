@@ -24,10 +24,11 @@ function animate(scene, camera, renderer, steerControl) {
 }
 
 function setupButtonsCallback(model) {
-    toggleAnimationCallback(model, 'checkLeftDoor', 'Left_door');
-    toggleAnimationCallback(model, 'checkRightDoor', 'Right_door');
-    toggleAnimationCallback(model, 'checkHood', 'Hood');
-    toggleAnimationCallback(model, 'checkSpoiler', 'Spoiler');
+    Object.entries(model.animations).forEach(([name, animation]) => {
+        if (animation.uiId) {
+            toggleAnimationCallback(model, animation.uiId, name);
+        }
+    })
 }
 
 window.onload = async () => {

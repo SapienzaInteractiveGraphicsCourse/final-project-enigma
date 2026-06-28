@@ -59,6 +59,11 @@ function toggleAnimation(model, animationName) {
 
     animation.activeTween = tween;
     tween.start();
+
+
+    if (animation.uiId) {
+        document.getElementById(`${animation.uiId}`).checked = model.state[stateKey];
+    }
 }
 
 function pickAnimationFromHits(model, hits) {

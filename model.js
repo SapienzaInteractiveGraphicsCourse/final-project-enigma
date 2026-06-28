@@ -82,6 +82,7 @@ export async function loadModel(modelDescription, scene) {
                         name: partName,
                         clickable: description.clickable,
                         stateKey: description.stateKey,
+                        uiId: description.uiId,
                         restPosition: part.position.clone(),
                         restQuaternion: part.quaternion.clone(),
                         fromPosition,
