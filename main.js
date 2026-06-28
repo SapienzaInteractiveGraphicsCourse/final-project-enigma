@@ -7,6 +7,7 @@ import { toggleAnimationCallback, enableClickToAnimate } from './animations.js'
 import { createScene } from './scene.js';
 import { createSteerControl } from './steering.js'
 import { initCameraUI, syncMaterialControls } from './ui.js';
+import { Settings } from './settings.js';
 
 const clock = new THREE.Clock();
 
@@ -30,6 +31,7 @@ function setupButtonsCallback(model) {
 }
 
 window.onload = async () => {
+    Settings.init();
     const { scene, camera, renderer } = createScene();
     initCameraUI(camera);
     const car_model = await loadModel(CAR_MODEL, scene);
