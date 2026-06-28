@@ -141,6 +141,32 @@ body {
     justify-content: flex-end;
 }
 
+.color-control {
+    display: grid;
+    grid-template-columns: 86px 1fr;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.color-control span {
+    font-size: 0.9rem;
+    color: #cccccc;
+    user-select: none;
+}
+
+.color-control input[type="color"] {
+    justify-self: end;
+}
+
+.compact-material .material-top {
+    padding: 12px 14px 14px;
+}
+
+.compact-material summary {
+    background-color: #2f2f33;
+}
+
 .material-row label,
 .slider-row label {
     font-size: 0.9rem;
