@@ -1,23 +1,37 @@
-import { setMaterialColor } from './color.js';
+import { getMaterialProperty, setMaterialColor, setMaterialProperty } from './color.js';
 import { goToCameraView, toggleCameraMode } from './camera.js';
 
-const colorPickerBindings = [
-    { elementId: 'bodyColorPicker', materialName: 'body_paint' },
-    { elementId: 'caliperColorPicker', materialName: 'caliper' },
-    { elementId: 'rimColorPicker', materialName: 'rim' },
-    { elementId: 'seatColorPicker', materialName: 'fabric' },
-    { elementId: 'steeringWheelColorPicker', materialName: 'steer' }
+const materialBindings = [
+    { prefix: 'body', materialName: 'body_paint' },
+    { prefix: 'caliper', materialName: 'caliper' },
+    { prefix: 'rim', materialName: 'rim' },
+    { prefix: 'seat', materialName: 'fabric' },
+    { prefix: 'steeringWheel', materialName: 'steer' }
 ];
 
-colorPickerBindings.forEach(({ elementId, materialName }) => {
-    const picker = document.getElementById(elementId);
+materialBindings.forEach(({ prefix, materialName }) => {
+    const colorPicker = document.getElementById(`${prefix}ColorPicker`);
 
-    if (!picker) return;
+    if (colorPicker) {
+        colorPicker.addEventListener('input', (evento) => {
+            const newColor = evento.target.value;
+            setMaterialColor(materialName, newColor);
+        });
+    }
 
-    picker.addEventListener('input', (evento) => {
-        const newColor = evento.target.value;
-        setMaterialColor(materialName, newColor);
-    });
+    const metallicSlider = document.getElementById(`${prefix}Metallic`);
+    if (metallicSlider) {
+        metallicSlider.addEventListener('input', (evento) => {
+            setMaterialProperty(materialName, 'metalness', Number.parseFloat(evento.target.value));
+        });
+    }
+
+    const roughnessSlider = document.getElementById(`${prefix}Roughness`);
+    if (roughnessSlider) {
+        roughnessSlider.addEventListener('input', (evento) => {
+            setMaterialProperty(materialName, 'roughness', Number.parseFloat(evento.target.value));
+        });
+    }
 });
 
 export function initCameraUI(camera) {
@@ -30,5 +44,25 @@ export function initCameraUI(camera) {
     document.getElementById('btnCompassModeToggle')?.addEventListener('click', (e) => {
         const newMode = toggleCameraMode();
         e.target.textContent = newMode === 'orbit' ? 'Orbit Camera' : 'Free Camera';
+    });
+}
+
+export function syncMaterialControls() {
+    materialBindings.forEach(({ prefix, materialName }) => {
+        const metallicSlider = document.getElementById(`${prefix}Metallic`);
+        if (metallicSlider) {
+            const metallicValue = getMaterialProperty(materialName, 'metalness');
+            if (metallicValue !== null) {
+                metallicSlider.value = metallicValue;
+            }
+        }
+
+        const roughnessSlider = document.getElementById(`${prefix}Roughness`);
+        if (roughnessSlider) {
+            const roughnessValue = getMaterialProperty(materialName, 'roughness');
+            if (roughnessValue !== null) {
+                roughnessSlider.value = roughnessValue;
+            }
+        }
     });
 }

@@ -25,30 +25,90 @@
                 <summary>Color Customization</summary>
                 
                 <div class="section-content">
-                    <div class="color-row">
-                        <label for="bodyColorPicker">Body Paint</label>
-                        <input type="color" id="bodyColorPicker" value="#3ABC2A">
-                    </div>
+                    <details class="material-row">
+                        <summary>Body Paint</summary>
+                        <div class="material-top">
+                            <input type="color" id="bodyColorPicker" value="#3ABC2A">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-row">
+                                <label for="bodyMetallic">Metallic</label>
+                                <input type="range" id="bodyMetallic" min="0" max="1" step="0.01" value="0.25">
+                            </div>
+                            <div class="slider-row">
+                                <label for="bodyRoughness">Roughness</label>
+                                <input type="range" id="bodyRoughness" min="0" max="1" step="0.01" value="0.45">
+                            </div>
+                        </div>
+                    </details>
 
-                    <div class="color-row">
-                        <label for="rimColorPicker">Rim Paint</label>
-                        <input type="color" id="rimColorPicker" value="#7E7E7E">
-                    </div>
+                    <details class="material-row">
+                        <summary>Rim Paint</summary>
+                        <div class="material-top">
+                            <input type="color" id="rimColorPicker" value="#7E7E7E">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-row">
+                                <label for="rimMetallic">Metallic</label>
+                                <input type="range" id="rimMetallic" min="0" max="1" step="0.01" value="0.95">
+                            </div>
+                            <div class="slider-row">
+                                <label for="rimRoughness">Roughness</label>
+                                <input type="range" id="rimRoughness" min="0" max="1" step="0.01" value="0.25">
+                            </div>
+                        </div>
+                    </details>
 
-                    <div class="color-row">
-                        <label for="caliperColorPicker">Caliper Paint</label>
-                        <input type="color" id="caliperColorPicker" value="#E7303F">
-                    </div>
+                    <details class="material-row">
+                        <summary>Caliper Paint</summary>
+                        <div class="material-top">
+                            <input type="color" id="caliperColorPicker" value="#E7303F">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-row">
+                                <label for="caliperMetallic">Metallic</label>
+                                <input type="range" id="caliperMetallic" min="0" max="1" step="0.01" value="0.15">
+                            </div>
+                            <div class="slider-row">
+                                <label for="caliperRoughness">Roughness</label>
+                                <input type="range" id="caliperRoughness" min="0" max="1" step="0.01" value="0.35">
+                            </div>
+                        </div>
+                    </details>
 
-                    <div class="color-row">
-                        <label for="seatColorPicker">Seat Fabric</label>
-                        <input type="color" id="seatColorPicker" value="#E70B00">
-                    </div>
+                    <details class="material-row">
+                        <summary>Seat Fabric</summary>
+                        <div class="material-top">
+                            <input type="color" id="seatColorPicker" value="#E70B00">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-row">
+                                <label for="seatMetallic">Metallic</label>
+                                <input type="range" id="seatMetallic" min="0" max="1" step="0.01" value="0.0">
+                            </div>
+                            <div class="slider-row">
+                                <label for="seatRoughness">Roughness</label>
+                                <input type="range" id="seatRoughness" min="0" max="1" step="0.01" value="0.85">
+                            </div>
+                        </div>
+                    </details>
 
-                    <div class="color-row">
-                        <label for="steeringWheelColorPicker">Steering Wheel Fabric</label>
-                        <input type="color" id="steeringWheelColorPicker" value="#E70B00">
-                    </div>
+                    <details class="material-row">
+                        <summary>Steering Wheel Fabric</summary>
+                        <div class="material-top">
+                            <input type="color" id="steeringWheelColorPicker" value="#E70B00">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-row">
+                                <label for="steeringWheelMetallic">Metallic</label>
+                                <input type="range" id="steeringWheelMetallic" min="0" max="1" step="0.01" value="0.0">
+                            </div>
+                            <div class="slider-row">
+                                <label for="steeringWheelRoughness">Roughness</label>
+                                <input type="range" id="steeringWheelRoughness" min="0" max="1" step="0.01" value="0.9">
+                            </div>
+                        </div>
+                    </details>
                 </div>
             </details>
 

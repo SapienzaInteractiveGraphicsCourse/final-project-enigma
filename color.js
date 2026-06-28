@@ -26,3 +26,21 @@ export function setMaterialColor(materialName, coloreHex) {
         console.warn(`Material ${materialName} not found.`);
     }
 }
+
+export function setMaterialProperty(materialName, propertyName, value) {
+    if (MaterialSet[materialName] && propertyName in MaterialSet[materialName]) {
+        MaterialSet[materialName][propertyName] = value;
+        MaterialSet[materialName].needsUpdate = true;
+    }
+    else {
+        console.warn(`Material ${materialName} or property ${propertyName} not found.`);
+    }
+}
+
+export function getMaterialProperty(materialName, propertyName) {
+    if (MaterialSet[materialName] && propertyName in MaterialSet[materialName]) {
+        return MaterialSet[materialName][propertyName];
+    }
+
+    return null;
+}
