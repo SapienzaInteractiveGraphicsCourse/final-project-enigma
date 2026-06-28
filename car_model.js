@@ -9,6 +9,8 @@ export const CAR_MODEL = {
     },
     animations: {
         "Left_door": {
+            clickable: true,
+            stateKey: "leftDoorOpen",
             rotate: {
                 axis: { x: 0, y: 1, z: 0 },
                 angle: -45.0,
@@ -16,6 +18,8 @@ export const CAR_MODEL = {
             milliseconds: 1500,
         },
         "Right_door": {
+            clickable: true,
+            stateKey: "rightDoorOpen",
             rotate: {
                 axis: { x: 0, y: 1, z: 0 },
                 angle: 45.0,
@@ -23,6 +27,8 @@ export const CAR_MODEL = {
             milliseconds: 1500,
         },
         "Hood": {
+            clickable: true,
+            stateKey: "hoodOpen",
             rotate: {
                 axis: { x: 1, y: 0, z: 0 },
                 angle: -30.0,
@@ -30,6 +36,8 @@ export const CAR_MODEL = {
             milliseconds: 1500,
         },
         "Spoiler": {
+            clickable: true,
+            stateKey: "wingOpen",
             rotate: {
                 axis: { x: 1, y: 0, z: 0 },
                 angle: 25.0,
@@ -37,18 +45,24 @@ export const CAR_MODEL = {
             milliseconds: 1000,
         },
         "wheel_LF": {
+            clickable: false,
+            stateKey: "steer",
             rotate: {
                 axis: { x: 0, y: 1, z: 0 },
                 angle: 0.0
             }
         },
         "wheel_RF": {
+            clickable: false,
+            stateKey: "steer",
             rotate: {
                 axis: { x: 0, y: 1, z: 0 },
                 angle: 0.0
             }
         },
         "Steering_wheel": {
+            clickable: false,
+            stateKey: "steer",
             rotate: {
                 axis: { x: 0, y: 0, z: 1 },
                 angle: 0.0

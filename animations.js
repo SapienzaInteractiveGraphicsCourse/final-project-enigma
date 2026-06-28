@@ -1,50 +1,110 @@
+import * as THREE from 'three'
 import * as TWEEN from '@tweenjs/tween.js'
 
-export function toggleAnimationCallback(model, stateKey, buttonName, animationName) {
-    const button = document.getElementById(buttonName);
+function toggleAnimation(model, animationName) {
+    const animation = model.animations[animationName];
+    if (!animation) {
+        return;
+    }
 
-    button.onclick = () => {
-        const animation = model.animations[animationName];
-        if (!animation || !(stateKey in model.state)) {
+    const stateKey = animation.stateKey;
+    if (!(stateKey in model.state)) {
+        model.state[stateKey] = false;
+    }
+
+    if (animation.activeTween) {
+        animation.activeTween.stop();
+        animation.activeTween = null;
+    }
+
+    const state = model.state[stateKey];
+    const targetPosition = !state ? animation.toPosition : animation.fromPosition;
+    const targetQuaternion = !state ? animation.toQuaternion : animation.fromQuaternion;
+
+    model.state[stateKey] = !model.state[stateKey];
+
+    const posDist = animation.fromPosition.distanceTo(animation.toPosition);
+    let fraction = 1;
+
+    if (posDist > 0.0001) {
+        const remaining = animation.part.position.distanceTo(targetPosition);
+        fraction = remaining / posDist;
+    } else {
+        const rotAngle = animation.fromQuaternion.angleTo(animation.toQuaternion);
+        if (rotAngle > 0.0001) {
+            const remainingAngle = animation.part.quaternion.angleTo(targetQuaternion);
+            fraction = remainingAngle / rotAngle;
+        }
+    }
+
+    const duration = animation.milliseconds * Math.max(0, Math.min(1, fraction));
+
+    const progress = { t: 0 };
+    const startPosition = animation.part.position.clone();
+    const startQuaternion = animation.part.quaternion.clone();
+
+    const tween = new TWEEN.Tween(progress)
+        .to({ t: 1 }, duration)
+        .onUpdate(({ t }) => {
+            animation.part.position.lerpVectors(startPosition, targetPosition, t);
+            animation.part.quaternion.slerpQuaternions(startQuaternion, targetQuaternion, t);
+        })
+        .onComplete(() => {
+            animation.activeTween = null;
+        });
+
+    animation.activeTween = tween;
+    tween.start();
+}
+
+function clickedAnimationName(model, hitObj) {
+    for (const [name, anim] of Object.entries(model.animations)) {
+        if (!anim.clickable || !anim?.part) {
+            continue;
+        }
+
+        let o = hitObj;
+        while (o) {
+            if (o === anim.part) {
+                return name;
+            }
+            o = o.parent;
+        }
+    }
+    return null;
+}
+
+export function enableClickToAnimate(scene, camera, renderer, model) {
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    const raycastRoot = model.root ?? scene;
+    renderer.domElement.addEventListener('click', (e) => {
+        if (e.button !== 0) {
             return;
         }
 
-        if (animation.activeTween) {
-            animation.activeTween.stop();
-            animation.activeTween = null;
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+        const hits = raycaster.intersectObjects(raycastRoot.children ?? [raycastRoot], true);
+        if (hits.length === 0) {
+            return;
         }
 
-        const state = model.state[stateKey];
-        const targetPosition = !state ? animation.toPosition : animation.fromPosition;
-        const targetQuaternion = !state ? animation.toQuaternion : animation.fromQuaternion;
+        const hitObject = hits[0].object;
+        const animationName = clickedAnimationName(model, hitObject);
+        if (animationName) {
+            toggleAnimation(model, animationName);
+        }
+    })
+}
 
-        model.state[stateKey] = !model.state[stateKey];
-
-        const position = animation.part.position;
-
-        const totalDistance = animation.fromPosition.distanceTo(animation.toPosition);
-        const remainingDistance = position.distanceTo(targetPosition);
-        const fraction = totalDistance > 0 ? remainingDistance / totalDistance : 1;
-        const duration = animation.milliseconds * Math.max(0, Math.min(1, fraction));
-
-        const rotationProgress = { t: 0 };
-        const fromQuaternion = animation.part.quaternion.clone();
-
-        const tween = new TWEEN.Tween(rotationProgress)
-            .to({ t: 1 }, duration)
-            .onStart(() => {
-                new TWEEN.Tween(position).to(targetPosition, duration).start();
-            })
-            .onUpdate(({ t }) => {
-                animation.part.quaternion.slerpQuaternions(fromQuaternion, targetQuaternion, t);
-            })
-            .onComplete(() => {
-                animation.activeTween = null;
-            })
-
-        animation.activeTween = tween;
-        tween.start();
-    };
+export function toggleAnimationCallback(model, buttonName, animationName) {
+    const button = document.getElementById(buttonName);
+    button.onclick = () => { toggleAnimation(model, animationName); };
 }
 
 export function continuousAnimationController({

@@ -3,7 +3,7 @@ import * as TWEEN from '@tweenjs/tween.js';
 import { loadModel } from './model.js';
 import { CAR_MODEL } from './car_model.js';
 import { updateCameraMovement } from './camera.js';
-import { toggleAnimationCallback } from './animations.js'
+import { toggleAnimationCallback, enableClickToAnimate } from './animations.js'
 import { createScene } from './scene.js';
 import { createSteerControl } from './steering.js'
 import { initCameraUI, syncMaterialControls } from './ui.js';
@@ -23,10 +23,10 @@ function animate(scene, camera, renderer, steerControl) {
 }
 
 function setupButtonsCallback(model) {
-    toggleAnimationCallback(model, "leftDoorOpen", 'checkLeftDoor', 'Left_door');
-    toggleAnimationCallback(model, "rightDoorOpen", 'checkRightDoor', 'Right_door');
-    toggleAnimationCallback(model, "hoodOpen", 'checkHood', 'Hood');
-    toggleAnimationCallback(model, "wingOpen", 'checkSpoiler', 'Spoiler');
+    toggleAnimationCallback(model, 'checkLeftDoor', 'Left_door');
+    toggleAnimationCallback(model, 'checkRightDoor', 'Right_door');
+    toggleAnimationCallback(model, 'checkHood', 'Hood');
+    toggleAnimationCallback(model, 'checkSpoiler', 'Spoiler');
 }
 
 window.onload = async () => {
@@ -36,6 +36,7 @@ window.onload = async () => {
     syncMaterialControls();
     const steerControl = createSteerControl(car_model);
     setupButtonsCallback(car_model);
+    enableClickToAnimate(scene, camera, renderer, car_model);
 
     animate(scene, camera, renderer, steerControl);
 };
