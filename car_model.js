@@ -48,5 +48,11 @@ export const CAR_MODEL = {
                 angle: 0.0
             }
         },
+        "Steering_wheel": {
+            rotate: {
+                axis: { x: 0, y: 0, z: 1 },
+                angle: 0.0
+            }
+        },
     }
 }

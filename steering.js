@@ -9,17 +9,25 @@ export function createSteerControl(model) {
         stateKey: "steer",
         speed: 4,
         applyValue: (model, steer) => {
-            const maxSteerDegrees = 30;
-            const steerRadians = steer * maxSteerDegrees * Math.PI / 180;
+            const maxWheelSteerDegrees = 30;
+            const steeringWheelRatio = 12;
+
+            const wheelSteerRadians = THREE.MathUtils.degToRad(steer * maxWheelSteerDegrees);
+            const steeringWheelRadians = -wheelSteerRadians * steeringWheelRatio;
 
             const left = model.animations["wheel_LF"].part;
             const right = model.animations["wheel_RF"].part;
+            const steeringWheel = model.animations["Steering_wheel"].part;
 
-            const axis = new THREE.Vector3(0, 1, 0);
-            const q = new THREE.Quaternion().setFromAxisAngle(axis, steerRadians);
+            const wheelAxis = new THREE.Vector3(0, 1, 0);
+            const steeringWheelAxis = new THREE.Vector3(0, 0, 1);
 
-            left.quaternion.copy(model.animations["wheel_LF"].restQuaternion).multiply(q);
-            right.quaternion.copy(model.animations["wheel_RF"].restQuaternion).multiply(q);
+            const wheelRotation = new THREE.Quaternion().setFromAxisAngle(wheelAxis, wheelSteerRadians);
+            const steeringWheelRotation = new THREE.Quaternion().setFromAxisAngle(steeringWheelAxis, steeringWheelRadians);
+
+            left.quaternion.copy(model.animations["wheel_LF"].restQuaternion).multiply(wheelRotation);
+            right.quaternion.copy(model.animations["wheel_RF"].restQuaternion).multiply(wheelRotation);
+            steeringWheel.quaternion.copy(model.animations["Steering_wheel"].restQuaternion).multiply(steeringWheelRotation);
         }
     });
 
