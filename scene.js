@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { createFloor } from './floor.js'
 import { setupCamera } from './camera.js'
+import { setupEnvironmentLights } from './lights.js';
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
 export function createScene() {
     const container = document.getElementById('canvas-container');
@@ -19,14 +21,26 @@ export function createScene() {
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    scene.add(ambientLight);
+    new RGBELoader()
+        .setPath('src/textures/') // Assicurati che il percorso sia corretto
+        .load('sunset_forest_2k.hdr', function (texture) {
+            // FONDAMENTALE: Diciamo a Three.js di mappare l'immagine a 360° per i riflessi
+            texture.mapping = THREE.EquirectangularReflectionMapping;
+            
+            // Imposta lo sfondo visibile
+            scene.background = texture;  
+            
+            // Imposta la fonte di luce e di riflesso per la macchina
+            scene.environment = texture; 
+        });
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 5.5);
-    directionalLight.position.set(5, 10, 7);
-    scene.add(directionalLight);
+    scene.fog = new THREE.FogExp2(0x8eb3d9, 0.015);
+
+    setupEnvironmentLights(scene);
 
     setupCamera(camera, renderer);
 

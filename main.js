@@ -6,7 +6,7 @@ import { updateCameraMovement } from './camera.js';
 import { toggleAnimationCallback, enableClickToAnimate } from './animations.js'
 import { createScene } from './scene.js';
 import { createSteerControl } from './steering.js'
-import './ui.js';
+import { initCameraUI, syncMaterialControls } from './ui.js';
 
 const clock = new THREE.Clock();
 
@@ -23,14 +23,17 @@ function animate(scene, camera, renderer, steerControl) {
 }
 
 function setupButtonsCallback(model) {
-    toggleAnimationCallback(model, 'btnLeftDoor', 'Left_door');
-    toggleAnimationCallback(model, 'btnRightDoor', 'Right_door');
-    toggleAnimationCallback(model, 'btnHood', 'Hood');
+    toggleAnimationCallback(model, 'checkLeftDoor', 'Left_door');
+    toggleAnimationCallback(model, 'checkRightDoor', 'Right_door');
+    toggleAnimationCallback(model, 'checkHood', 'Hood');
+    toggleAnimationCallback(model, 'checkSpoiler', 'Spoiler');
 }
 
 window.onload = async () => {
     const { scene, camera, renderer } = createScene();
+    initCameraUI(camera);
     const car_model = await loadModel(CAR_MODEL, scene);
+    syncMaterialControls();
     const steerControl = createSteerControl(car_model);
     setupButtonsCallback(car_model);
     enableClickToAnimate(scene, camera, renderer, car_model);

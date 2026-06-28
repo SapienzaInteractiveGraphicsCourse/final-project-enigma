@@ -9,17 +9,17 @@ export function createFloor() {
 
     colorMap.wrapS = THREE.RepeatWrapping;
     colorMap.wrapT = THREE.RepeatWrapping;
-    colorMap.repeat.set(2, 2);
+    colorMap.repeat.set(20, 20);
 
     normalMap.wrapS = THREE.RepeatWrapping;
     normalMap.wrapT = THREE.RepeatWrapping;
-    normalMap.repeat.set(2, 2);
+    normalMap.repeat.set(20, 20);
 
     roughnessMap.wrapS = THREE.RepeatWrapping;
     roughnessMap.wrapT = THREE.RepeatWrapping;
-    roughnessMap.repeat.set(2, 2);
+    roughnessMap.repeat.set(20, 20);
 
-    const floorGeometry = new THREE.PlaneGeometry(20, 20);
+    const floorGeometry = new THREE.PlaneGeometry(200, 200);
     
     const floorMaterial = new THREE.MeshStandardMaterial({
         map: colorMap,

@@ -19,10 +19,55 @@ window.addEventListener('keyup', (event) => {
     if (keys.hasOwnProperty(key)) keys[key] = false;
 });
 
-document.getElementById('btnCameraMode').addEventListener('click', (e) => {
-    const newMode = toggleCameraMode();
-    e.target.textContent = newMode === 'orbit' ? 'Switch to First Person' : 'Switch to Orbit';
-});
+export const views = {
+    Front: new THREE.Vector3(0, 1, 6),
+    Back: new THREE.Vector3(0, 1, -6),
+    Left: new THREE.Vector3(-6, 1, 0),
+    Right: new THREE.Vector3(6, 1, 0),
+    Top: new THREE.Vector3(0, 6, 0.01) 
+};
+
+export function animateCameraTransition(camera, targetPosition) {
+    if (currentCameraMode !== 'orbit') return; 
+    
+    let step = 0;
+    const startPos = camera.position.clone();
+    const startTarget = orbitControls.target.clone();
+    const endTarget = new THREE.Vector3(0, 0, 0); 
+    
+    const startSpherical = new THREE.Spherical().setFromVector3(startPos);
+    const endSpherical = new THREE.Spherical().setFromVector3(targetPosition);
+
+    let thetaDiff = endSpherical.theta - startSpherical.theta;
+    while (thetaDiff > Math.PI) thetaDiff -= Math.PI * 2;
+    while (thetaDiff < -Math.PI) thetaDiff += Math.PI * 2;
+    endSpherical.theta = startSpherical.theta + thetaDiff;
+
+    function transition() {
+        step += 0.025;
+        if (step <= 1) {
+
+            const easeStep = step < 0.5 ? 4 * step * step * step : 1 - Math.pow(-2 * step + 2, 3) / 2;
+
+            const currentSpherical = new THREE.Spherical(
+                THREE.MathUtils.lerp(startSpherical.radius, endSpherical.radius, easeStep),
+                THREE.MathUtils.lerp(startSpherical.phi, endSpherical.phi, easeStep),
+                THREE.MathUtils.lerp(startSpherical.theta, endSpherical.theta, easeStep)
+            );
+
+            camera.position.setFromSpherical(currentSpherical);
+            orbitControls.target.lerpVectors(startTarget, endTarget, easeStep);
+            
+            orbitControls.update();
+            requestAnimationFrame(transition);
+        } else {
+            camera.position.copy(targetPosition);
+            orbitControls.target.copy(endTarget);
+            orbitControls.update();
+        }
+    }
+    transition();
+}
 
 export function setupCamera(camera, renderer) {
     orbitControls = new OrbitControls(camera, renderer.domElement);
@@ -93,6 +138,13 @@ export function setupCamera(camera, renderer) {
     return orbitControls;
 }
 
+export function goToCameraView(camera, viewName) {
+    const targetPosition = views[viewName];
+    if (!targetPosition) return;
+
+    animateCameraTransition(camera, targetPosition);
+}
+
 export function toggleCameraMode() {
     if (currentCameraMode === 'orbit') {
         currentCameraMode = 'firstPerson';
@@ -139,4 +191,3 @@ export function updateCameraMovement(camera) {
         camera.position.z = Math.max(-9.5, Math.min(9.5, camera.position.z));
     }
 }
-

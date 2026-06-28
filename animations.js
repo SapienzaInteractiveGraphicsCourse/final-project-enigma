@@ -79,7 +79,7 @@ export function enableClickToAnimate(scene, camera, renderer, model) {
     const mouse = new THREE.Vector2();
 
     const raycastRoot = model.root ?? scene;
-    renderer.domElement.addEventListener('mouseup', (e) => {
+    renderer.domElement.addEventListener('click', (e) => {
         if (e.button !== 0) {
             return;
         }

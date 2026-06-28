@@ -1,4 +1,3 @@
-/* Reset di base per evitare margini indesiderati */
 * {
     margin: 0;
     padding: 0;
@@ -7,19 +6,17 @@
 }
 
 body {
-    overflow: hidden; /* Fondamentale per i progetti WebGL a schermo intero */
+    overflow: hidden;
     background-color: #1a1a1a;
     color: #ffffff;
 }
 
-/* Layout principale con Flexbox */
 .app-container {
     display: flex;
     width: 100vw;
     height: 100vh;
 }
 
-/* Stile della Barra Laterale */
 .sidebar {
     width: 320px;
     background-color: #252526; 
@@ -30,6 +27,24 @@ body {
     gap: 20px;
     box-shadow: 4px 0 15px rgba(0, 0, 0, 0.4);
     z-index: 10;
+    overflow-y: auto;
+}
+
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: #252526;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: #3e3e42;
+    border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: #55555a;
 }
 
 .sidebar h2 {
@@ -38,26 +53,26 @@ body {
     border-bottom: 2px solid #0078d4;
     padding-bottom: 12px;
     margin-bottom: 4px;
+    flex-shrink: 0;
 }
 
 .control-group {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    flex-shrink: 0;
 }
 
 .mt-auto {
     margin-top: 10px;
 }
 
-/* -------------------------------------
-   STILE SEZIONI A SCOMPARSA
--------------------------------------- */
 .collapsible-section {
     background-color: #2d2d30;
     border-radius: 8px;
     border: 1px solid #3e3e42;
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .collapsible-section summary {
@@ -81,18 +96,101 @@ body {
     gap: 14px;
 }
 
-/* -------------------------------------
-   STILE COLOR PICKER (Cerchietti)
--------------------------------------- */
-.color-row {
-    display: flex;
-    justify-content: space-between; /* Spinge il testo a sx e il colore a dx */
-    align-items: center;
+.material-row {
+    border: 1px solid #3e3e42;
+    border-radius: 8px;
+    background-color: #262629;
+    overflow: hidden;
 }
 
-.color-row label {
+.material-row summary {
+    list-style: none;
+    padding: 12px 14px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #ffffff;
+    cursor: pointer;
+    user-select: none;
+    background-color: #313135;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.material-row summary::-webkit-details-marker {
+    display: none;
+}
+
+.material-row summary::after {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid #cccccc;
+    border-bottom: 2px solid #cccccc;
+    transform: rotate(-45deg);
+    transition: transform 0.2s ease;
+}
+
+.material-row[open] summary::after {
+    transform: rotate(45deg);
+}
+
+.material-top {
+    padding: 12px 14px 0;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.color-control {
+    display: grid;
+    grid-template-columns: 86px 1fr;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.color-control span {
     font-size: 0.9rem;
     color: #cccccc;
+    user-select: none;
+}
+
+.color-control input[type="color"] {
+    justify-self: end;
+}
+
+.compact-material .material-top {
+    padding: 12px 14px 14px;
+}
+
+.compact-material summary {
+    background-color: #2f2f33;
+}
+
+.material-row label,
+.slider-row label {
+    font-size: 0.9rem;
+    color: #cccccc;
+    cursor: pointer;
+}
+
+.slider-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 14px 14px;
+}
+
+.slider-row {
+    display: grid;
+    grid-template-columns: 86px 1fr;
+    align-items: center;
+    gap: 10px;
+}
+
+input[type="range"] {
+    width: 100%;
+    accent-color: #0078d4;
     cursor: pointer;
 }
 
@@ -101,25 +199,22 @@ input[type="color"] {
     height: 32px;
     padding: 0;
     border: none;
-    border-radius: 50%; /* Rende il contenitore tondo */
+    border-radius: 50%;
     cursor: pointer;
     background-color: transparent;
     outline: none;
 }
 
-/* Rimuove i bordi interni strani di Chrome/Edge sui color picker */
 input[type="color"]::-webkit-color-swatch-wrapper {
     padding: 0;
 }
+
 input[type="color"]::-webkit-color-swatch {
     border: 2px solid #4a4a4d;
-    border-radius: 50%; /* Rende il colore vero e proprio tondo */
+    border-radius: 50%;
     box-shadow: 0 2px 5px rgba(0,0,0,0.3);
 }
 
-/* -------------------------------------
-   STILE PULSANTI GENERALI
--------------------------------------- */
 button {
     padding: 12px;
     background-color: #0078d4; 
@@ -137,10 +232,59 @@ button:hover {
 }
 
 button:active {
-    transform: scale(0.98); /* Piccolo feedback quando clicchi */
+    transform: scale(0.98);
 }
 
-/* Contenitore del 3D */
+/* -------------------------------------
+   TOGGLE SWITCH
+-------------------------------------- */
+.toggle-switch {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.toggle-switch span {
+    font-size: 0.9rem;
+    color: #cccccc;
+    user-select: none;
+}
+
+.toggle-switch input[type="checkbox"] {
+    display: none;
+}
+
+.toggle-switch .slider {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background-color: #4a4a4d;
+    border-radius: 24px;
+    transition: background-color 0.3s ease;
+}
+
+.toggle-switch .slider::before {
+    content: "";
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.toggle-switch input[type="checkbox"]:checked + .slider {
+    background-color: #0078d4;
+}
+
+.toggle-switch input[type="checkbox"]:checked + .slider::before {
+    transform: translateX(20px);
+}
+
 #canvas-container {
     flex-grow: 1;
     position: relative;
@@ -151,4 +295,100 @@ canvas {
     display: block; 
     width: 100% !important;
     height: 100% !important;
+}
+
+/* -------------------------------------
+   COMPASS
+-------------------------------------- */
+.camera-compass {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    display: grid;
+    grid-template-columns: 40px 40px 40px;
+    grid-template-rows: 40px 40px 40px;
+    gap: 4px;
+    z-index: 100;
+    background-color: rgba(37, 37, 38, 0.7);
+    padding: 10px;
+    border-radius: 50%;
+    border: 1px solid #3e3e42;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.compass-btn {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 50%;
+    background-color: #333337;
+    color: #cccccc;
+    font-size: 0.75rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.compass-btn:hover {
+    background-color: #0078d4;
+    color: white;
+    transform: scale(1.1);
+}
+
+#btnViewBack { 
+    grid-column: 2; 
+    grid-row: 1; 
+}
+
+#btnViewLeft { 
+    grid-column: 1; 
+    grid-row: 2; 
+}
+
+#btnViewTop { 
+    grid-column: 2; 
+    grid-row: 2; 
+    background-color: #4a4a4d; 
+}
+
+#btnViewRight { 
+    grid-column: 3; 
+    grid-row: 2; 
+}
+
+#btnViewFront { 
+    grid-column: 2; 
+    grid-row: 3; 
+}
+
+.compass-mode-btn-long {
+    position: absolute;
+    top: 195px;
+    right: 32px;
+    width: 138px;
+    height: 36px;
+    border: 1px solid #3e3e42;
+    border-radius: 6px;
+    background-color: rgba(37, 37, 38, 0.9);
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    z-index: 100;
+}
+
+.compass-mode-btn-long:hover {
+    background-color: #0078d4;
+    transform: scale(1.05);
 }

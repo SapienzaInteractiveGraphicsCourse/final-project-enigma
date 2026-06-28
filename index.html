@@ -20,53 +20,173 @@
         
         <aside class="sidebar">
             <h2>Dashboard</h2>
-            
-            <div class="control-group">
-                <button id="btnCameraMode">Switch to First Person</button>
-            </div>
 
-            <!-- SEZIONE COLORI A SCOMPARSA (Usa il tag nativo 'details') -->
-            <!-- L'attributo 'open' lo fa partire già aperto. Se lo togli, partirà chiuso. -->
             <details class="collapsible-section" open>
-                <summary>Car Colors</summary>
+                <summary>Color Customization</summary>
                 
                 <div class="section-content">
-                    <div class="color-row">
-                        <label for="bodyColorPicker">Body Paint</label>
-                        <input type="color" id="bodyColorPicker" value="#3ABC2A">
-                    </div>
+                    <details class="material-row">
+                        <summary>Body Paint</summary>
+                        <div class="material-top">
+                            <div class="color-control">
+                                <span>Color</span>
+                                <input type="color" id="bodyColorPicker" value="#3ABC2A">
+                            </div>
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-row">
+                                <label for="bodyMetallic">Metallic</label>
+                                <input type="range" id="bodyMetallic" min="0" max="1" step="0.01" value="0.25">
+                            </div>
+                            <div class="slider-row">
+                                <label for="bodyRoughness">Roughness</label>
+                                <input type="range" id="bodyRoughness" min="0" max="1" step="0.01" value="0.45">
+                            </div>
+                        </div>
+                    </details>
 
-                    <div class="color-row">
-                        <label for="rimColorPicker">Rim Paint</label>
-                        <input type="color" id="rimColorPicker" value="#7E7E7E">
-                    </div>
+                    <details class="material-row">
+                        <summary>Rim Paint</summary>
+                        <div class="material-top">
+                            <div class="color-control">
+                                <span>Color</span>
+                                <input type="color" id="rimColorPicker" value="#7E7E7E">
+                            </div>
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-row">
+                                <label for="rimMetallic">Metallic</label>
+                                <input type="range" id="rimMetallic" min="0" max="1" step="0.01" value="0.95">
+                            </div>
+                            <div class="slider-row">
+                                <label for="rimRoughness">Roughness</label>
+                                <input type="range" id="rimRoughness" min="0" max="1" step="0.01" value="0.25">
+                            </div>
+                        </div>
+                    </details>
 
-                    <div class="color-row">
-                        <label for="caliperColorPicker">Caliper Paint</label>
-                        <input type="color" id="caliperColorPicker" value="#E7303F">
-                    </div>
+                    <details class="material-row">
+                        <summary>Caliper Paint</summary>
+                        <div class="material-top">
+                            <div class="color-control">
+                                <span>Color</span>
+                                <input type="color" id="caliperColorPicker" value="#E7303F">
+                            </div>
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-row">
+                                <label for="caliperMetallic">Metallic</label>
+                                <input type="range" id="caliperMetallic" min="0" max="1" step="0.01" value="0.15">
+                            </div>
+                            <div class="slider-row">
+                                <label for="caliperRoughness">Roughness</label>
+                                <input type="range" id="caliperRoughness" min="0" max="1" step="0.01" value="0.35">
+                            </div>
+                        </div>
+                    </details>
 
-                    <div class="color-row">
-                        <label for="seatColorPicker">Seat Fabric</label>
-                        <input type="color" id="seatColorPicker" value="#E70B00">
-                    </div>
+                    <details class="material-row compact-material">
+                        <summary>Seat Fabric</summary>
+                        <div class="material-top">
+                            <div class="color-control">
+                                <span>Color</span>
+                                <input type="color" id="seatColorPicker" value="#E70B00">
+                            </div>
+                        </div>
+                    </details>
+
+                    <details class="material-row compact-material">
+                        <summary>Steering Wheel Fabric</summary>
+                        <div class="material-top">
+                            <div class="color-control">
+                                <span>Color</span>
+                                <input type="color" id="steeringWheelColorPicker" value="#E70B00">
+                            </div>
+                        </div>
+                    </details>
                 </div>
             </details>
 
-            <!-- SEZIONE ANIMAZIONI / AZIONI -->
-            <div class="control-group mt-auto">
-                <button id="btnLights">Lights On</button>
-                <button id="btnLeftDoor">Left Door</button>
-                <button id="btnRightDoor">Right Door</button>
-            </div>
+            <details class="collapsible-section" open>
+                <summary>Animations</summary>
 
-            <div class="control-group">
-                <button id="btnHood">Hood</button>
-            </div>
+                <div class="section-content">
+                    <label class="toggle-switch">
+                        <span>Hood</span>
+                        <input type="checkbox" id="checkHood">
+                        <div class="slider"></div>
+                    </label>
+
+                    <label class="toggle-switch">
+                        <span>Rear Wing</span>
+                        <input type="checkbox" id="checkSpoiler">
+                        <div class="slider"></div>
+                    </label>
+
+                    <label class="toggle-switch">
+                        <span>Right Door</span>
+                        <input type="checkbox" id="checkRightDoor">
+                        <div class="slider"></div>
+                    </label>
+
+                    <label class="toggle-switch">
+                        <span>Left Door</span>
+                        <input type="checkbox" id="checkLeftDoor">
+                        <div class="slider"></div>
+                    </label>
+
+                    
+                </div>
+            </details>
+
+            <details class="collapsible-section" open>
+                <summary>Lights</summary>
+
+                <div class="section-content">
+                    <label class="toggle-switch">
+                        <span>Low beams</span>
+                        <input type="checkbox" id="checkLowBeams">
+                        <div class="slider"></div>
+                    </label>
+
+                    <label class="toggle-switch">
+                        <span>High Beams</span>
+                        <input type="checkbox" id="checkHighBeams">
+                        <div class="slider"></div>
+                    </label>
+
+                    <label class="toggle-switch">
+                        <span>Right Indicator</span>
+                        <input type="checkbox" id="checkRightIndicator">
+                        <div class="slider"></div>
+                    </label>
+
+                    <label class="toggle-switch">
+                        <span>Left Indicator</span>
+                        <input type="checkbox" id="checkLeftIndicator">
+                        <div class="slider"></div>
+                    </label>
+
+                    
+                </div>
+            </details>
+
         </aside>
 
         <main id="canvas-container">
-            <!-- Il canvas di Three.js andrà qui -->
+            
+            <div class="camera-compass">
+                <button id="btnViewBack" class="compass-btn" title="Retro">Back</button>
+                <button id="btnViewLeft" class="compass-btn" title="Sinistra">Left</button>
+                <button id="btnViewTop" class="compass-btn" title="Alto">Top</button>
+                <button id="btnViewRight" class="compass-btn" title="Destra">Right</button>
+                <button id="btnViewFront" class="compass-btn" title="Fronte">Front</button>
+            </div>
+
+            <button id="btnCompassModeToggle" class="compass-mode-btn-long">
+                Orbit Camera
+            </button>
+
         </main>
 
     </div>
