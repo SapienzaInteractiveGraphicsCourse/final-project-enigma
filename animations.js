@@ -4,7 +4,6 @@ import { Settings } from './settings.js';
 
 const hoverSwap = new Map();
 let hoveredPart = null;
-const uiBindings = new Map();
 
 function toggleAnimation(model, animationName) {
     const animation = model.animations[animationName];
@@ -27,11 +26,6 @@ function toggleAnimation(model, animationName) {
     const targetQuaternion = !state ? animation.toQuaternion : animation.fromQuaternion;
 
     model.state[stateKey] = !model.state[stateKey];
-
-    const boundCheckbox = uiBindings.get(animationName);
-    if (boundCheckbox) {
-        boundCheckbox.checked = model.state[stateKey];
-    }
 
     const posDist = animation.fromPosition.distanceTo(animation.toPosition);
     let fraction = 1;
@@ -218,17 +212,7 @@ export function enableClickToAnimate(scene, camera, renderer, model) {
 
 export function toggleAnimationCallback(model, buttonName, animationName) {
     const button = document.getElementById(buttonName);
-    if (!button) return;
-
-    uiBindings.set(animationName, button);
-
-    button.addEventListener('change', (e) => {
-        const animation = model.animations[animationName];
-        
-        if (model.state[animation.stateKey] !== e.target.checked) {
-            toggleAnimation(model, animationName);
-        }
-    });
+    button.onclick = () => { toggleAnimation(model, animationName); };
 }
 
 export function continuousAnimationController({
