@@ -5,7 +5,8 @@ export const CAR_MODEL = {
         rightDoorOpen: false,
         hoodOpen: false,
         wingOpen: false,
-        steer: 0.0
+        steer: 0.0,
+        throttle: 0.0,
     },
     animations: {
         "Left_door": {
@@ -63,6 +64,12 @@ export const CAR_MODEL = {
                 axis: { x: 0, y: 1, z: 0 },
                 angle: 0.0
             }
+        },
+        "wheel_LR": {
+            clickable: false,
+        },
+        "wheel_RR": {
+            clickable: false,
         },
         "Steering_wheel": {
             clickable: false,

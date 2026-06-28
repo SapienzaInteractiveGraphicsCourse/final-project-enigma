@@ -243,7 +243,7 @@ export function continuousAnimationController({
 
             const value = Math.max(min, Math.min(max, next));
             model.state[stateKey] = value;
-            applyValue(model, value);
+            applyValue(model, value, dt);
         }
     };
 }

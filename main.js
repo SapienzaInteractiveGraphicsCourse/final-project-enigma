@@ -16,7 +16,6 @@ function animate(scene, camera, renderer, steerControl) {
     requestAnimationFrame(() => animate(scene, camera, renderer, steerControl));
 
     updateCameraMovement(camera);
-    steerControl.updateInput();
     steerControl.update(dt);
     TWEEN.update();
 
