@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { createFloor } from './floor.js'
 import { setupCamera } from './camera.js'
 import { setupEnvironmentLights } from './lights.js';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
 export function createScene() {
     const container = document.getElementById('canvas-container');
@@ -25,8 +25,20 @@ export function createScene() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
-    const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+    new RGBELoader()
+        .setPath('src/textures/') // Assicurati che il percorso sia corretto
+        .load('sunset_forest_2k.hdr', function (texture) {
+            // FONDAMENTALE: Diciamo a Three.js di mappare l'immagine a 360° per i riflessi
+            texture.mapping = THREE.EquirectangularReflectionMapping;
+            
+            // Imposta lo sfondo visibile
+            scene.background = texture;  
+            
+            // Imposta la fonte di luce e di riflesso per la macchina
+            scene.environment = texture; 
+        });
+
+    scene.fog = new THREE.FogExp2(0x8eb3d9, 0.015);
 
     setupEnvironmentLights(scene);
 

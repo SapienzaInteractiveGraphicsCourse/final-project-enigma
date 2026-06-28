@@ -31,6 +31,12 @@ export async function loadModel(modelDescription, scene) {
                         child.castShadow = true;
                         child.receiveShadow = true;
                     }
+                    if (child.material) {
+                        child.material.envMapIntensity = 1.0; // Intensità del riflesso ambientale
+                        // Scommenta le due righe sotto se vuoi forzare l'effetto "carrozzeria lucida"
+                        // child.material.metalness = 0.8;
+                        // child.material.roughness = 0.1;
+                    }
                 });
 
                 gltf_model.scale.set(1, 1, 1);
