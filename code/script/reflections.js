@@ -1,37 +1,24 @@
 import * as THREE from 'three';
 
-export function impostaRiflessiLocali(car, scene, renderer) {
-    // 1. STAMPA DI DIAGNOSTICA
-    console.log("Dati ricevuti da impostaRiflessiLocali:", car);
-
+export function CubeMapReflections(car, scene, renderer) {
     let carRoot = null;
-
-    // Se l'oggetto esiste, proviamo a estrarre la scena
     if (car) {
         carRoot = car.scene ? car.scene : car;
     }
 
-    // 2. AUTO-RECUPERO: Se carRoot è indefinito o non ha una posizione, lo cerchiamo nella scena
     if (!carRoot || !carRoot.position) {
-        console.warn("La variabile car_model è indefinita o non valida. Tento il recupero direttamente dalla scena...");
-        
-        // Cerchiamo tra i figli diretti della scena un gruppo che non sia il garage/ambiente
+
         scene.children.forEach((child) => {
             if (child.isGroup && !child.name.toLowerCase().includes('env') && !child.name.toLowerCase().includes('garage')) {
-                carRoot = child; // Abbiamo trovato un gruppo principale che verosimilmente è l'auto
+                carRoot = child;
             }
         });
     }
 
-    // 3. BLOCCO DI SICUREZZA FINALE
     if (!carRoot || !carRoot.position) {
-        console.error("ERRORE: Impossibile trovare l'auto nella scena. Controlla che la funzione loadModel() effettui correttamente il 'return' del modello caricato.");
         return;
     }
 
-    console.log("Auto identificata per i riflessi:", carRoot.name || "Modello Auto", carRoot);
-
-    // 4. CREAZIONE CUBECAMERA E SCATTO
     const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(512, { 
         format: THREE.RGBAFormat, 
         generateMipmaps: true,
@@ -60,7 +47,5 @@ export function impostaRiflessiLocali(car, scene, renderer) {
                 }
             }
         });
-        
-        console.log("Riflessi locali applicati con successo!");
     });
 }

@@ -158,7 +158,7 @@ function setupTurnSignal(modelRoot, emptyName, rotationY = 0, positionZ = -0.05,
 
     const signalGroup = new THREE.Group();
     signalGroup.rotation.y = rotationY;
-    signalGroup.position.z = positionZ; // ← ora è un parametro
+    signalGroup.position.z = positionZ;
     signalGroup.visible = false;
     anchor.add(signalGroup);
 
@@ -222,12 +222,10 @@ const activeBlinks = new Map();
 export function startBlink(signals, id = 'turn_signal') {
     if (activeBlinks.has(id)) return; 
 
-    // 1. Azione IMMEDIATA al click: accendiamo la luce e suoniamo
     let blinkState = true;
     signals.forEach(s => { s.visible = blinkState; });
-    playTurnSignalSound(); // Essendo legato al click, il browser non lo bloccherà più!
+    playTurnSignalSound();
 
-    // 2. Facciamo partire il loop per i lampeggi successivi
     const interval = setInterval(() => {
         blinkState = !blinkState;
         signals.forEach(s => { s.visible = blinkState; });
@@ -242,10 +240,7 @@ export function stopBlink(signals, id = 'turn_signal') {
         clearInterval(activeBlinks.get(id));
         activeBlinks.delete(id);
     }
-    
-    // Assicuriamoci che le luci siano spente
+
     signals.forEach(s => { s.visible = false; }); 
-    
-    // FORZA LO STOP DEL SUONO IMMEDIAMENTE
     stopTurnSignalSound();
 }

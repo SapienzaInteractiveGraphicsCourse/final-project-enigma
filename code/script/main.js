@@ -10,7 +10,7 @@ import { createSteerControl } from './steering.js'
 import { initCameraUI, syncMaterialControls } from './ui.js';
 import { Settings } from './settings.js';
 import { toggleCarLight, startBlink, stopBlink } from './lights.js';
-import { impostaRiflessiLocali } from './reflections.js';
+import { CubeMapReflections } from './reflections.js';
 
 const clock = new THREE.Clock();
 
@@ -90,7 +90,7 @@ function setupTurnSignalCallbacks(model) {
 
     rightSwitch.addEventListener('change', (event) => {
         if (event.target.checked) {
-            leftSwitch.checked = false;        // disattiva l'altro
+            leftSwitch.checked = false;
             stopBlink(model.turnSignals.left);
             startBlink(model.turnSignals.right);
         } else {
@@ -100,7 +100,7 @@ function setupTurnSignalCallbacks(model) {
 
     leftSwitch.addEventListener('change', (event) => {
         if (event.target.checked) {
-            rightSwitch.checked = false;       // disattiva l'altro
+            rightSwitch.checked = false;
             stopBlink(model.turnSignals.right);
             startBlink(model.turnSignals.left);
         } else {
@@ -120,7 +120,7 @@ window.onload = async () => {
     setupButtonsCallback(car_model);
     setupLightCallbacks(car_model);
     setupTurnSignalCallbacks(car_model);
-    impostaRiflessiLocali(car_model, scene, renderer);
+    CubeMapReflections(car_model, scene, renderer);
     enableClickToAnimate(scene, camera, renderer, car_model);
 
     await prewarmScene(scene, camera, renderer, car_model);
