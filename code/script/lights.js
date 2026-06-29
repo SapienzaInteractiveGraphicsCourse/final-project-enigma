@@ -118,7 +118,7 @@ function setupHighBeam(modelRoot, emptyName) {
     const beamGroup = new THREE.Group();
     anchor.add(beamGroup);
 
-    const highbeam = new THREE.SpotLight(0xffffff, 180.0, 220.0, Math.PI / 16, 0.2, 1.4);
+    const highbeam = new THREE.SpotLight(0xd4e3ff, 180.0, 220.0, Math.PI / 16, 0.2, 1.4);
     highbeam.position.set(0, 0, 0);
     highbeam.castShadow = true;
 
