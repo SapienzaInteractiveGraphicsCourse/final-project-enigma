@@ -88,5 +88,11 @@ export const CAR_MODEL = {
                 angle: 0.0
             }
         },
+        "Throttle": {
+            clickable: false,
+        },
+        "Brake": {
+            clickable: false,
+        }
     }
 }

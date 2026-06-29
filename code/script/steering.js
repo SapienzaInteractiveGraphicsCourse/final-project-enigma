@@ -9,7 +9,6 @@ export function createSteerControl(model) {
     const steerTargetMaxRadians = THREE.MathUtils.degToRad(30);
     const steerResponse = 12;
 
-    // throttle parameters
     const maxThrottle = 1;
     const accel = 10.0;
     const maxRadPerSec = 14;
@@ -47,26 +46,33 @@ export function createSteerControl(model) {
         }
     });
 
-    // update steering + apply quaternions (new)
     function updateSteerPose(dt) {
         const steerInput = THREE.MathUtils.clamp(model.state.steer, -1, 1);
         const steerTargetRad = steerInput * steerTargetMaxRadians;
 
-        // inertia toward target (holds smoothly while key is down)
         const k = Math.min(1, steerResponse * dt);
         steerAngleRadians += (steerTargetRad - steerAngleRadians) * k;
 
-        const steerLeftFront = model.animations["wheel_LF"].part;
-        const steerRightFront = model.animations["wheel_RF"].part;
-        const spinLeftFront = model.animations["Moving_wheel_LF"].part;
-        const spinRightFront = model.animations["Moving_wheel_RF"].part;
-        const spinLeftBack = model.animations["Moving_wheel_LR"].part;
-        const spinRightBack = model.animations["Moving_wheel_RR"].part;
-        const steeringWheel = model.animations["Steering_wheel"].part;
+        const steerLeftFront = model.animations["wheel_LF"]?.part;
+        const steerRightFront = model.animations["wheel_RF"]?.part;
+        const spinLeftFront = model.animations["Moving_wheel_LF"]?.part;
+        const spinRightFront = model.animations["Moving_wheel_RF"]?.part;
+        const spinLeftBack = model.animations["Moving_wheel_LR"]?.part;
+        const spinRightBack = model.animations["Moving_wheel_RR"]?.part;
+        const steeringWheel = model.animations["Steering_wheel"]?.part;
+        
+        const throttleAnim = model.animations["Throttle"];
+        const brakeAnim = model.animations["Brake"];
+        
+        const throttlePedal = throttleAnim ? throttleAnim.part : null;
+        const brakePedal = brakeAnim ? brakeAnim.part : null;
 
         const wheelSteerAxis = new THREE.Vector3(0, 1, 0);
         const steeringWheelAxis = new THREE.Vector3(0, 0, 1);
-        const wheelRollAxis = new THREE.Vector3(1, 0, 0); // adjust if needed
+        const wheelRollAxis = new THREE.Vector3(1, 0, 0); 
+        
+        const pedalAxis = new THREE.Vector3(1, 0, 0); 
+        const pedalMaxAngle = THREE.MathUtils.degToRad(20);
 
         const steerRot = new THREE.Quaternion().setFromAxisAngle(wheelSteerAxis, steerAngleRadians);
         const steeringWheelRatio = 12;
@@ -77,26 +83,35 @@ export function createSteerControl(model) {
 
         const spinRot = new THREE.Quaternion().setFromAxisAngle(wheelRollAxis, wheelSpinAngleRadians);
 
-        const leftFrontRest = model.animations["Moving_wheel_LF"].restQuaternion;
-        const rightFrontRest = model.animations["Moving_wheel_RF"].restQuaternion;
-        const leftBackRest = model.animations["Moving_wheel_LR"].restQuaternion;
-        const rightBackRest = model.animations["Moving_wheel_RR"].restQuaternion;
-        const steeringWheelRest = model.animations["Steering_wheel"].restQuaternion;
+        const currentThrottle = model.state.throttle || 0;
+        const throttlePress = Math.max(0, currentThrottle);
+        const brakePress = Math.max(0, -currentThrottle);
 
-        steerLeftFront.quaternion.copy(model.animations["wheel_LF"].restQuaternion).multiply(steerRot);
-        steerRightFront.quaternion.copy(model.animations["wheel_RF"].restQuaternion).multiply(steerRot);
+        const throttleRot = new THREE.Quaternion().setFromAxisAngle(pedalAxis, throttlePress * pedalMaxAngle);
+        const brakeRot = new THREE.Quaternion().setFromAxisAngle(pedalAxis, -brakePress * pedalMaxAngle);
 
-        spinLeftFront.quaternion.copy(model.animations["Moving_wheel_LF"].restQuaternion).multiply(spinRot);
-        spinRightFront.quaternion.copy(model.animations["Moving_wheel_RF"].restQuaternion).multiply(spinRot);
-        spinLeftBack.quaternion.copy(model.animations["Moving_wheel_LR"].restQuaternion).multiply(spinRot);
-        spinRightBack.quaternion.copy(model.animations["Moving_wheel_RR"].restQuaternion).multiply(spinRot);
-        steeringWheel.quaternion.copy(steeringWheelRest).multiply(steeringWheelRot);
+        if (steerLeftFront) steerLeftFront.quaternion.copy(model.animations["wheel_LF"].restQuaternion).multiply(steerRot);
+        if (steerRightFront) steerRightFront.quaternion.copy(model.animations["wheel_RF"].restQuaternion).multiply(steerRot);
+
+        if (spinLeftFront) spinLeftFront.quaternion.copy(model.animations["Moving_wheel_LF"].restQuaternion).multiply(spinRot);
+        if (spinRightFront) spinRightFront.quaternion.copy(model.animations["Moving_wheel_RF"].restQuaternion).multiply(spinRot);
+        if (spinLeftBack) spinLeftBack.quaternion.copy(model.animations["Moving_wheel_LR"].restQuaternion).multiply(spinRot);
+        if (spinRightBack) spinRightBack.quaternion.copy(model.animations["Moving_wheel_RR"].restQuaternion).multiply(spinRot);
+        if (steeringWheel) steeringWheel.quaternion.copy(model.animations["Steering_wheel"].restQuaternion).multiply(steeringWheelRot);
+        
+        if (throttlePedal && throttleAnim.restQuaternion) {
+            throttlePedal.quaternion.copy(throttleAnim.restQuaternion).multiply(throttleRot);
+        }
+        
+        if (brakePedal && brakeAnim.restQuaternion) {
+            brakePedal.quaternion.copy(brakeAnim.restQuaternion).multiply(brakeRot);
+        }
     }
 
     return {
         setInput: (steerV, throttleV = model.state.throttle) => {
             model.state.steer = steerV;
-            model.state.throttle = throttleV;
+            throttleController.setInput(throttleV);
         },
         update: (dt) => {
             let nextThrottle = 0;
@@ -117,8 +132,9 @@ export function createSteerControl(model) {
                 nextSteer = -1;
             }
 
-            model.state.throttle = nextThrottle;
+            throttleController.setInput(nextThrottle);
             model.state.steer = nextSteer;
+            
             throttleController.update(dt);
             updateSteerPose(dt);
         }
