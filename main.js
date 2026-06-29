@@ -12,6 +12,30 @@ import { toggleCarLight, startBlink, stopBlink } from './lights.js';
 
 const clock = new THREE.Clock();
 
+function setLoadingOverlayHidden() {
+    document.getElementById('loadingOverlay')?.classList.add('is-hidden');
+}
+
+async function prewarmScene(scene, camera, renderer, composer, model) {
+    const lowBeams = model.lowBeams ?? [];
+    const highBeams = model.highBeams ?? [];
+    const allWarmLights = [...lowBeams, ...highBeams];
+    const previousVisibility = allWarmLights.map((light) => light.visible);
+
+    allWarmLights.forEach((light) => {
+        light.visible = true;
+    });
+
+    renderer.compile(scene, camera);
+    composer.render();
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    composer.render();
+
+    allWarmLights.forEach((light, index) => {
+        light.visible = previousVisibility[index];
+    });
+}
+
 function animate(scene, camera, renderer, composer, steerControl) {
     const dt = clock.getDelta();
     requestAnimationFrame(() => animate(scene, camera, renderer, composer, steerControl));
@@ -85,8 +109,9 @@ function setupTurnSignalCallbacks(model) {
 
 window.onload = async () => {
     Settings.init();
-    const { scene, camera, renderer, composer } = createScene();
+    const { scene, camera, renderer, composer, environmentReady } = createScene();
     initCameraUI(camera);
+    await environmentReady;
     const car_model = await loadModel(CAR_MODEL, scene);
     syncMaterialControls();
     const steerControl = createSteerControl(car_model);
@@ -94,6 +119,9 @@ window.onload = async () => {
     setupLightCallbacks(car_model);
     setupTurnSignalCallbacks(car_model);
     enableClickToAnimate(scene, camera, renderer, car_model);
+
+    await prewarmScene(scene, camera, renderer, composer, car_model);
+    setLoadingOverlayHidden();
 
     animate(scene, camera, renderer, composer, steerControl);
 };

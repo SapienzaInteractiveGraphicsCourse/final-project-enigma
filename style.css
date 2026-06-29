@@ -11,6 +11,78 @@ body {
     color: #ffffff;
 }
 
+.loading-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: grid;
+    place-items: center;
+    background:
+        radial-gradient(circle at top, rgba(0, 120, 212, 0.24), transparent 38%),
+        linear-gradient(135deg, rgba(10, 10, 12, 0.98), rgba(24, 24, 28, 0.98));
+    backdrop-filter: blur(10px);
+    transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+
+.loading-overlay.is-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.loading-card {
+    width: min(460px, calc(100vw - 48px));
+    padding: 28px 30px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(18, 18, 22, 0.86);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+.loading-kicker {
+    font-size: 0.8rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #8fbfff;
+    margin-bottom: 12px;
+}
+
+.loading-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+
+.loading-bar {
+    width: 100%;
+    height: 8px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.08);
+    margin-bottom: 14px;
+}
+
+.loading-bar span {
+    display: block;
+    width: 42%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #0078d4, #7cc0ff, #0078d4);
+    animation: loading-shift 1.2s ease-in-out infinite;
+}
+
+.loading-note {
+    color: #c8c8cc;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+@keyframes loading-shift {
+    0% { transform: translateX(-120%); }
+    50% { transform: translateX(90%); }
+    100% { transform: translateX(260%); }
+}
+
 .app-container {
     display: flex;
     width: 100vw;

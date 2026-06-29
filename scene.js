@@ -55,12 +55,14 @@ export function createScene() {
     composer.addPass(renderScene);
     composer.addPass(bloomPass);
 
-    new RGBELoader()
+    const environmentReady = new RGBELoader()
         .setPath('src/textures/')
-        .load('sunset_forest_2k.hdr', function (texture) {
+        .loadAsync('sunset_forest_2k.hdr')
+        .then((texture) => {
             texture.mapping = THREE.EquirectangularReflectionMapping;
-            scene.background = texture;  
-            scene.environment = texture; 
+            scene.background = texture;
+            scene.environment = texture;
+            return texture;
         });
 
     scene.fog = new THREE.FogExp2(0x8eb3d9, 0.015);
@@ -82,6 +84,6 @@ export function createScene() {
         composer.setSize(width, height);
     });
 
-    return { scene, camera, renderer, composer };
+    return { scene, camera, renderer, composer, environmentReady };
 }
 
