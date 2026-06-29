@@ -147,28 +147,6 @@ function setupHighBeam(modelRoot, emptyName) {
     return beamGroup;
 }
 
-export function setupLowBeams(modelRoot, emptyNames = ['Low_beam_R', 'Low_beam_L']) {
-    return emptyNames.map((emptyName) => setupLowBeam(modelRoot, emptyName)).filter(Boolean);
-}
-
-export function setupHighBeams(modelRoot, emptyNames = ['High_beam_R', 'High_beam_L']) {
-    return emptyNames.map((emptyName) => setupHighBeam(modelRoot, emptyName)).filter(Boolean);
-}
-
-export function toggleCarLight(lightObject, isVisible) {
-    if (lightObject) {
-        if (Array.isArray(lightObject)) {
-            lightObject.forEach((light) => {
-                light.visible = isVisible;
-            });
-        } else {
-            lightObject.visible = isVisible;
-        }
-    }
-}
-
-// ---- TURN SIGNALS ----
-
 function setupTurnSignal(modelRoot, emptyName, rotationY = 0) {
     const anchor = modelRoot.getObjectByName(emptyName);
 
@@ -203,11 +181,30 @@ function setupTurnSignal(modelRoot, emptyName, rotationY = 0) {
     return signalGroup;
 }
 
+
+export function setupLowBeams(modelRoot, emptyNames = ['Low_beam_R', 'Low_beam_L']) {
+    return emptyNames.map((emptyName) => setupLowBeam(modelRoot, emptyName)).filter(Boolean);
+}
+
+export function setupHighBeams(modelRoot, emptyNames = ['High_beam_R', 'High_beam_L']) {
+    return emptyNames.map((emptyName) => setupHighBeam(modelRoot, emptyName)).filter(Boolean);
+}
+
 export function setupTurnSignals(modelRoot, emptyNames = ['Turn_R_F', 'Turn_L_F'], rotations = [Math.PI / 4, -Math.PI / 4]) {
     return emptyNames.map((name, i) => setupTurnSignal(modelRoot, name, rotations[i])).filter(Boolean);
 }
 
-// ---- BLINK LOGIC ----
+export function toggleCarLight(lightObject, isVisible) {
+    if (lightObject) {
+        if (Array.isArray(lightObject)) {
+            lightObject.forEach((light) => {
+                light.visible = isVisible;
+            });
+        } else {
+            lightObject.visible = isVisible;
+        }
+    }
+}
 
 let blinkInterval = null;
 let blinkState = false;
