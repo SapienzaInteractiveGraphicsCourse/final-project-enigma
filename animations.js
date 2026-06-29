@@ -181,6 +181,14 @@ export function enableClickToAnimate(scene, camera, renderer, model) {
     const raycastRoot = model.root ?? scene;
 
     let lastHoverCheck = 0;
+    
+    let pointerDownPos = { x: 0, y: 0 };
+
+    renderer.domElement.addEventListener('pointerdown', (e) => {
+        pointerDownPos.x = e.clientX;
+        pointerDownPos.y = e.clientY;
+    });
+
     renderer.domElement.addEventListener('pointermove', (e) => {
         const { clickablesHoverColor } = Settings.get();
         if (clickablesHoverColor) {
@@ -207,12 +215,20 @@ export function enableClickToAnimate(scene, camera, renderer, model) {
             return;
         }
 
+        const dx = e.clientX - pointerDownPos.x;
+        const dy = e.clientY - pointerDownPos.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance > 5) {
+            return;
+        }
+
         const hits = getRayHits(renderer, camera, mouse, raycaster, raycastRoot, e);
         const animation = hits.length ? pickAnimationFromHits(model, hits) : null;
         if (animation) {
             toggleAnimation(model, animation.name);
         }
-    })
+    });
 }
 
 export function toggleAnimationCallback(model, buttonName, animationName) {
