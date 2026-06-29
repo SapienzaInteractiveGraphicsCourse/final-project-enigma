@@ -201,7 +201,17 @@ export function setupTurnSignals(modelRoot, emptyNames, rotationsY = [], positio
     )).filter(Boolean);
 }
 
-// ---- BLINK LOGIC ----
+export function toggleCarLight(lightObject, isVisible) {
+    if (lightObject) {
+        if (Array.isArray(lightObject)) {
+            lightObject.forEach((light) => {
+                light.visible = isVisible;
+            });
+        } else {
+            lightObject.visible = isVisible;
+        }
+    }
+}
 
 let blinkInterval = null;
 let blinkState = false;

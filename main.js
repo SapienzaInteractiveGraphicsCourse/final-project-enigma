@@ -16,7 +16,7 @@ function setLoadingOverlayHidden() {
     document.getElementById('loadingOverlay')?.classList.add('is-hidden');
 }
 
-async function prewarmScene(scene, camera, renderer, composer, model) {
+async function prewarmScene(scene, camera, renderer, model) {
     const lowBeams = model.lowBeams ?? [];
     const highBeams = model.highBeams ?? [];
     const allWarmLights = [...lowBeams, ...highBeams];
@@ -27,24 +27,24 @@ async function prewarmScene(scene, camera, renderer, composer, model) {
     });
 
     renderer.compile(scene, camera);
-    composer.render();
+        renderer.render(scene, camera);
     await new Promise((resolve) => requestAnimationFrame(resolve));
-    composer.render();
+        renderer.render(scene, camera);
 
     allWarmLights.forEach((light, index) => {
         light.visible = previousVisibility[index];
     });
 }
 
-function animate(scene, camera, renderer, composer, steerControl) {
+function animate(scene, camera, renderer, steerControl) {
     const dt = clock.getDelta();
-    requestAnimationFrame(() => animate(scene, camera, renderer, composer, steerControl));
+    requestAnimationFrame(() => animate(scene, camera, renderer, steerControl));
 
     updateCameraMovement(camera);
     steerControl.update(dt);
     TWEEN.update();
 
-    composer.render();
+    renderer.render(scene, camera);
 }
 
 function setupButtonsCallback(model) {
@@ -109,7 +109,7 @@ function setupTurnSignalCallbacks(model) {
 
 window.onload = async () => {
     Settings.init();
-    const { scene, camera, renderer, composer, environmentReady } = createScene();
+    const { scene, camera, renderer, environmentReady } = createScene();
     initCameraUI(camera);
     await environmentReady;
     const car_model = await loadModel(CAR_MODEL, scene);
@@ -120,8 +120,8 @@ window.onload = async () => {
     setupTurnSignalCallbacks(car_model);
     enableClickToAnimate(scene, camera, renderer, car_model);
 
-    await prewarmScene(scene, camera, renderer, composer, car_model);
+    await prewarmScene(scene, camera, renderer, car_model);
     setLoadingOverlayHidden();
 
-    animate(scene, camera, renderer, composer, steerControl);
+    animate(scene, camera, renderer, steerControl);
 };

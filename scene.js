@@ -3,9 +3,6 @@ import { createFloor } from './floor.js'
 import { setupCamera } from './camera.js'
 import { setupEnvironmentLights } from './lights.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 
 export function createScene() {
@@ -30,30 +27,6 @@ export function createScene() {
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
-
-    const renderScene = new RenderPass(scene, camera);
-
-    const pixelRatio = window.devicePixelRatio || 1;
-
-    const bloomPass = new UnrealBloomPass(
-        new THREE.Vector2(container.clientWidth * pixelRatio, container.clientHeight * pixelRatio),
-        0.4,  // Forza
-        0.8,  // Raggio
-        1.0   // Soglia
-    );
-
-    const renderTarget = new THREE.WebGLRenderTarget(
-        container.clientWidth * pixelRatio,
-        container.clientHeight * pixelRatio,
-        {
-            type: THREE.HalfFloatType,
-            samples: 8
-        }
-    );
-    
-    const composer = new EffectComposer(renderer, renderTarget);
-    composer.addPass(renderScene);
-    composer.addPass(bloomPass);
 
     const environmentReady = new RGBELoader()
         .setPath('src/textures/')
@@ -81,9 +54,8 @@ export function createScene() {
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
         renderer.setSize(width, height);
-        composer.setSize(width, height);
     });
 
-    return { scene, camera, renderer, composer, environmentReady };
+    return { scene, camera, renderer, environmentReady };
 }
 

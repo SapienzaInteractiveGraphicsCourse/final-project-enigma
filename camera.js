@@ -8,6 +8,10 @@ const keys = { w: false, a: false, s: false, d: false, q: false, e: false };
 let isDragging = false;
 let previousMousePosition = { x: 0, y: 0 };
 const euler = new THREE.Euler(0, 0, 0, 'YXZ');
+const forwardVector = new THREE.Vector3();
+const rightVector = new THREE.Vector3();
+const downVector = new THREE.Vector3();
+const moveVector = new THREE.Vector3();
 
 window.addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
@@ -163,23 +167,18 @@ export function updateCameraMovement(camera) {
     }
 
     const speed = 0.1;
-    const moveVector = new THREE.Vector3();
+    moveVector.set(0, 0, 0);
 
-    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-    forward.normalize();
+    forwardVector.set(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
+    rightVector.set(1, 0, 0).applyQuaternion(camera.quaternion).normalize();
+    downVector.set(0, -1, 0).applyQuaternion(camera.quaternion).normalize();
 
-    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
-    right.normalize();
-
-    const down = new THREE.Vector3(0, -1, 0).applyQuaternion(camera.quaternion);
-    down.normalize();
-
-    if (keys.w) moveVector.add(forward);
-    if (keys.s) moveVector.sub(forward);
-    if (keys.a) moveVector.sub(right);
-    if (keys.d) moveVector.add(right);
-    if (keys.q) moveVector.add(down);
-    if (keys.e) moveVector.sub(down);
+    if (keys.w) moveVector.add(forwardVector);
+    if (keys.s) moveVector.sub(forwardVector);
+    if (keys.a) moveVector.sub(rightVector);
+    if (keys.d) moveVector.add(rightVector);
+    if (keys.q) moveVector.add(downVector);
+    if (keys.e) moveVector.sub(downVector);
 
     if (moveVector.lengthSq() > 0) {
         moveVector.normalize().multiplyScalar(speed);
