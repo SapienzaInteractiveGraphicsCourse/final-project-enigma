@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import * as TWEEN from '@tweenjs/tween.js';
 import { loadModel } from './model.js';
 import { CAR_MODEL } from './car_model.js';
+import { loadEnvironment } from './environment.js';
 import { updateCameraMovement } from './camera.js';
 import { toggleAnimationCallback, enableClickToAnimate } from './animations.js'
 import { createScene } from './scene.js';
@@ -9,6 +10,7 @@ import { createSteerControl } from './steering.js'
 import { initCameraUI, syncMaterialControls } from './ui.js';
 import { Settings } from './settings.js';
 import { toggleCarLight, startBlink, stopBlink } from './lights.js';
+import { impostaRiflessiLocali } from './reflections.js';
 
 const clock = new THREE.Clock();
 
@@ -109,15 +111,16 @@ function setupTurnSignalCallbacks(model) {
 
 window.onload = async () => {
     Settings.init();
-    const { scene, camera, renderer, environmentReady } = createScene();
+    const { scene, camera, renderer } = createScene();
     initCameraUI(camera);
-    await environmentReady;
+    await loadEnvironment(scene);
     const car_model = await loadModel(CAR_MODEL, scene);
     syncMaterialControls();
     const steerControl = createSteerControl(car_model);
     setupButtonsCallback(car_model);
     setupLightCallbacks(car_model);
     setupTurnSignalCallbacks(car_model);
+    impostaRiflessiLocali(car_model, scene, renderer);
     enableClickToAnimate(scene, camera, renderer, car_model);
 
     await prewarmScene(scene, camera, renderer, car_model);

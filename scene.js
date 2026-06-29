@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { createFloor } from './floor.js'
 import { setupCamera } from './camera.js'
 import { setupEnvironmentLights } from './lights.js';
-import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 
 export function createScene() {
@@ -28,16 +27,6 @@ export function createScene() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
-    const environmentReady = new RGBELoader()
-        .setPath('src/textures/')
-        .loadAsync('sunset_forest_2k.hdr')
-        .then((texture) => {
-            texture.mapping = THREE.EquirectangularReflectionMapping;
-            scene.background = texture;
-            scene.environment = texture;
-            return texture;
-        });
-
     scene.fog = new THREE.FogExp2(0x8eb3d9, 0.015);
 
     setupEnvironmentLights(scene);
@@ -56,6 +45,6 @@ export function createScene() {
         renderer.setSize(width, height);
     });
 
-    return { scene, camera, renderer, environmentReady };
+    return { scene, camera, renderer };
 }
 

@@ -36,7 +36,7 @@ export async function loadModel(modelDescription, scene) {
                         child.receiveShadow = true;
                     }
                     if (child.material) {
-                        child.material.envMapIntensity = 1.0;
+                        child.material.envMapIntensity = 0.0;
                     }
                 });
 
@@ -47,7 +47,7 @@ export async function loadModel(modelDescription, scene) {
                 setupMaterials(gltf_model);
                 model.lowBeams = setupLowBeams(gltf_model);
                 model.highBeams = setupHighBeams(gltf_model);
-               model.turnSignals = {
+                model.turnSignals = {
                         right: setupTurnSignals(
                             gltf_model,
                             ['Turn_R_F', 'Turn_R_B'],

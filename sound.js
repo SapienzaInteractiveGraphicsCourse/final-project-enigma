@@ -1,5 +1,5 @@
 const blinkSound = new Audio('./src/audio/blinker.wav');
-blinkSound.volume = 0.5; 
+blinkSound.volume = 1.0; 
 
 export function playTurnSignalSound() {
     blinkSound.currentTime = 0; 
