@@ -169,7 +169,7 @@ export function toggleCarLight(lightObject, isVisible) {
 
 // ---- TURN SIGNALS ----
 
-function setupTurnSignal(modelRoot, emptyName, rotationY = 0) {
+function setupTurnSignal(modelRoot, emptyName, rotationY = 0, positionZ = -0.05, width = 0.35, height = 0.04) {
     const anchor = modelRoot.getObjectByName(emptyName);
 
     if (!anchor) {
@@ -178,18 +178,18 @@ function setupTurnSignal(modelRoot, emptyName, rotationY = 0) {
     }
 
     const signalGroup = new THREE.Group();
-    signalGroup.rotation.y = rotationY; 
-    signalGroup.position.z = -0.05;
+    signalGroup.rotation.y = rotationY;
+    signalGroup.position.z = positionZ; // ← ora è un parametro
     signalGroup.visible = false;
     anchor.add(signalGroup);
 
-    const light = new THREE.RectAreaLight(0xff8800, 80.0, 0.3, 0.04);
+    const light = new THREE.RectAreaLight(0xff8800, 80.0, width, height);
     light.position.set(0, 0, 0);
     light.lookAt(0, 0, 1);
     signalGroup.add(light);
 
     const bulb = new THREE.Mesh(
-        new THREE.BoxGeometry(0.3, 0.04, 0.01),
+        new THREE.BoxGeometry(width, height, 0.01),
         new THREE.MeshStandardMaterial({
             color: 0xff6600,
             emissive: 0xff8800,
@@ -203,10 +203,16 @@ function setupTurnSignal(modelRoot, emptyName, rotationY = 0) {
     return signalGroup;
 }
 
-export function setupTurnSignals(modelRoot, emptyNames = ['Turn_R_F', 'Turn_L_F'], rotations = [Math.PI / 4, -Math.PI / 4]) {
-    return emptyNames.map((name, i) => setupTurnSignal(modelRoot, name, rotations[i])).filter(Boolean);
+export function setupTurnSignals(modelRoot, emptyNames, rotationsY = [], positionsZ = [], widths = [], heights = []) {
+    return emptyNames.map((name, i) => setupTurnSignal(
+        modelRoot,
+        name,
+        rotationsY[i] ?? 0,
+        positionsZ[i] ?? -0.05,
+        widths[i] ?? 0.35,
+        heights[i] ?? 0.04
+    )).filter(Boolean);
 }
-
 // ---- BLINK LOGIC ----
 
 let blinkInterval = null;

@@ -47,9 +47,24 @@ export async function loadModel(modelDescription, scene) {
                 setupMaterials(gltf_model);
                 model.lowBeams = setupLowBeams(gltf_model);
                 model.highBeams = setupHighBeams(gltf_model);
-                model.turnSignals = {                          
-                                right: setupTurnSignals(gltf_model, ['Turn_R_F'], [-Math.PI / 5]),
-                                left:  setupTurnSignals(gltf_model, ['Turn_L_F'], [Math.PI / 5]), };
+               model.turnSignals = {
+                        right: setupTurnSignals(
+                            gltf_model,
+                            ['Turn_R_F', 'Turn_R_B'],
+                            [-Math.PI / 5, Math.PI / 5],  // rotationY
+                            [-0.05, 0.025],                // positionZ
+                            [0.35, 0.4],                   // width
+                            [0.04, 0.02]                   // height
+                        ),
+                        left: setupTurnSignals(
+                            gltf_model,
+                            ['Turn_L_F', 'Turn_L_B'],
+                            [Math.PI / 5, -Math.PI / 5],  // rotationY
+                            [-0.05, 0.025],               // positionZ
+                            [0.35, 0.4],                  // width
+                            [0.04, 0.02]                  // height
+                        ),
+                    };
                 // const lightHelper = new THREE.SpotLightHelper(model.runningLight);
                 // scene.add(lightHelper);
 
