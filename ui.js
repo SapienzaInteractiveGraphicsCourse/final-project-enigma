@@ -2,7 +2,7 @@ import { getMaterialProperty, setMaterialColor, setMaterialProperty } from './co
 import { goToCameraView, toggleCameraMode } from './camera.js';
 
 const materialBindings = [
-    { prefix: 'body', materialName: 'body_paint' },
+    { prefix: 'body', materialName: 'body_paint.001' },
     { prefix: 'caliper', materialName: 'caliper' },
     { prefix: 'rim', materialName: 'rim' },
     { prefix: 'seat', materialName: 'fabric' },
@@ -49,6 +49,17 @@ export function initCameraUI(camera) {
 
 export function syncMaterialControls() {
     materialBindings.forEach(({ prefix, materialName }) => {
+        
+        // ← aggiungi questo blocco per il colore
+        const colorPicker = document.getElementById(`${prefix}ColorPicker`);
+        if (colorPicker) {
+            const color = getMaterialProperty(materialName, 'color');
+            if (color) {
+                // converte il colore THREE.js in hex per il color picker
+                colorPicker.value = '#' + color.getHexString();
+            }
+        }
+
         const metallicSlider = document.getElementById(`${prefix}Metallic`);
         if (metallicSlider) {
             const metallicValue = getMaterialProperty(materialName, 'metalness');
@@ -65,4 +76,6 @@ export function syncMaterialControls() {
             }
         }
     });
-}
+    }
+
+        
