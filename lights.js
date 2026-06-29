@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { playTurnSignalSound, stopTurnSignalSound } from './sound.js';
 
 export function setupEnvironmentLights(scene) {
     // const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
@@ -216,18 +217,35 @@ export function toggleCarLight(lightObject, isVisible) {
 let blinkInterval = null;
 let blinkState = false;
 
-export function startBlink(signals) {
-    if (blinkInterval) return;
-    blinkInterval = setInterval(() => {
+const activeBlinks = new Map(); 
+
+export function startBlink(signals, id = 'turn_signal') {
+    if (activeBlinks.has(id)) return; 
+
+    // 1. Azione IMMEDIATA al click: accendiamo la luce e suoniamo
+    let blinkState = true;
+    signals.forEach(s => { s.visible = blinkState; });
+    playTurnSignalSound(); // Essendo legato al click, il browser non lo bloccherà più!
+
+    // 2. Facciamo partire il loop per i lampeggi successivi
+    const interval = setInterval(() => {
         blinkState = !blinkState;
         signals.forEach(s => { s.visible = blinkState; });
+        playTurnSignalSound(); 
     }, 500);
+
+    activeBlinks.set(id, interval);
 }
 
-export function stopBlink(signals) {
-    if (blinkInterval) {
-        clearInterval(blinkInterval);
-        blinkInterval = null;
+export function stopBlink(signals, id = 'turn_signal') {
+    if (activeBlinks.has(id)) {
+        clearInterval(activeBlinks.get(id));
+        activeBlinks.delete(id);
     }
-    signals.forEach(s => { s.visible = false; });
+    
+    // Assicuriamoci che le luci siano spente
+    signals.forEach(s => { s.visible = false; }); 
+    
+    // FORZA LO STOP DEL SUONO IMMEDIAMENTE
+    stopTurnSignalSound();
 }
