@@ -147,28 +147,6 @@ function setupHighBeam(modelRoot, emptyName) {
     return beamGroup;
 }
 
-export function setupLowBeams(modelRoot, emptyNames = ['Low_beam_R', 'Low_beam_L']) {
-    return emptyNames.map((emptyName) => setupLowBeam(modelRoot, emptyName)).filter(Boolean);
-}
-
-export function setupHighBeams(modelRoot, emptyNames = ['High_beam_R', 'High_beam_L']) {
-    return emptyNames.map((emptyName) => setupHighBeam(modelRoot, emptyName)).filter(Boolean);
-}
-
-export function toggleCarLight(lightObject, isVisible) {
-    if (lightObject) {
-        if (Array.isArray(lightObject)) {
-            lightObject.forEach((light) => {
-                light.visible = isVisible;
-            });
-        } else {
-            lightObject.visible = isVisible;
-        }
-    }
-}
-
-// ---- TURN SIGNALS ----
-
 function setupTurnSignal(modelRoot, emptyName, rotationY = 0, positionZ = -0.05, width = 0.35, height = 0.04) {
     const anchor = modelRoot.getObjectByName(emptyName);
 
@@ -203,6 +181,15 @@ function setupTurnSignal(modelRoot, emptyName, rotationY = 0, positionZ = -0.05,
     return signalGroup;
 }
 
+
+export function setupLowBeams(modelRoot, emptyNames = ['Low_beam_R', 'Low_beam_L']) {
+    return emptyNames.map((emptyName) => setupLowBeam(modelRoot, emptyName)).filter(Boolean);
+}
+
+export function setupHighBeams(modelRoot, emptyNames = ['High_beam_R', 'High_beam_L']) {
+    return emptyNames.map((emptyName) => setupHighBeam(modelRoot, emptyName)).filter(Boolean);
+}
+
 export function setupTurnSignals(modelRoot, emptyNames, rotationsY = [], positionsZ = [], widths = [], heights = []) {
     return emptyNames.map((name, i) => setupTurnSignal(
         modelRoot,
@@ -213,6 +200,7 @@ export function setupTurnSignals(modelRoot, emptyNames, rotationsY = [], positio
         heights[i] ?? 0.04
     )).filter(Boolean);
 }
+
 // ---- BLINK LOGIC ----
 
 let blinkInterval = null;
