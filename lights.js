@@ -166,3 +166,64 @@ export function toggleCarLight(lightObject, isVisible) {
         }
     }
 }
+
+// ---- TURN SIGNALS ----
+
+function setupTurnSignal(modelRoot, emptyName, rotationY = 0) {
+    const anchor = modelRoot.getObjectByName(emptyName);
+
+    if (!anchor) {
+        console.error(`error: failed to reference ${emptyName} in the model`);
+        return null;
+    }
+
+    const signalGroup = new THREE.Group();
+    signalGroup.rotation.y = rotationY; 
+    signalGroup.position.z = -0.05;
+    signalGroup.visible = false;
+    anchor.add(signalGroup);
+
+    const light = new THREE.RectAreaLight(0xff8800, 80.0, 0.3, 0.04);
+    light.position.set(0, 0, 0);
+    light.lookAt(0, 0, 1);
+    signalGroup.add(light);
+
+    const bulb = new THREE.Mesh(
+        new THREE.BoxGeometry(0.3, 0.04, 0.01),
+        new THREE.MeshStandardMaterial({
+            color: 0xff6600,
+            emissive: 0xff8800,
+            emissiveIntensity: 15,
+            roughness: 0.3,
+            metalness: 0.0,
+        })
+    );
+    signalGroup.add(bulb);
+
+    return signalGroup;
+}
+
+export function setupTurnSignals(modelRoot, emptyNames = ['Turn_R_F', 'Turn_L_F'], rotations = [Math.PI / 4, -Math.PI / 4]) {
+    return emptyNames.map((name, i) => setupTurnSignal(modelRoot, name, rotations[i])).filter(Boolean);
+}
+
+// ---- BLINK LOGIC ----
+
+let blinkInterval = null;
+let blinkState = false;
+
+export function startBlink(signals) {
+    if (blinkInterval) return;
+    blinkInterval = setInterval(() => {
+        blinkState = !blinkState;
+        signals.forEach(s => { s.visible = blinkState; });
+    }, 500);
+}
+
+export function stopBlink(signals) {
+    if (blinkInterval) {
+        clearInterval(blinkInterval);
+        blinkInterval = null;
+    }
+    signals.forEach(s => { s.visible = false; });
+}

@@ -2,7 +2,8 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { setupMaterials } from './color.js';
-import { setupLowBeams, setupHighBeams } from './lights.js';
+import { setupLowBeams, setupHighBeams, setupTurnSignals } from './lights.js'; 
+
 
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
@@ -46,6 +47,9 @@ export async function loadModel(modelDescription, scene) {
                 setupMaterials(gltf_model);
                 model.lowBeams = setupLowBeams(gltf_model);
                 model.highBeams = setupHighBeams(gltf_model);
+                model.turnSignals = {                          
+                                right: setupTurnSignals(gltf_model, ['Turn_R_F'], [-Math.PI / 5]),
+                                left:  setupTurnSignals(gltf_model, ['Turn_L_F'], [Math.PI / 5]), };
                 // const lightHelper = new THREE.SpotLightHelper(model.runningLight);
                 // scene.add(lightHelper);
 

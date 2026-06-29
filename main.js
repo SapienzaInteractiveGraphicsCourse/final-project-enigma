@@ -8,7 +8,7 @@ import { createScene } from './scene.js';
 import { createSteerControl } from './steering.js'
 import { initCameraUI, syncMaterialControls } from './ui.js';
 import { Settings } from './settings.js';
-import { toggleCarLight } from './lights.js';
+import { toggleCarLight, startBlink, stopBlink } from './lights.js';
 
 const clock = new THREE.Clock();
 
@@ -58,6 +58,31 @@ function setupLightCallbacks(model) {
     });
 }
 
+function setupTurnSignalCallbacks(model) {
+    const rightSwitch = document.getElementById('checkRightIndicator');
+    const leftSwitch  = document.getElementById('checkLeftIndicator');
+
+    rightSwitch.addEventListener('change', (event) => {
+        if (event.target.checked) {
+            leftSwitch.checked = false;        // disattiva l'altro
+            stopBlink(model.turnSignals.left);
+            startBlink(model.turnSignals.right);
+        } else {
+            stopBlink(model.turnSignals.right);
+        }
+    });
+
+    leftSwitch.addEventListener('change', (event) => {
+        if (event.target.checked) {
+            rightSwitch.checked = false;       // disattiva l'altro
+            stopBlink(model.turnSignals.right);
+            startBlink(model.turnSignals.left);
+        } else {
+            stopBlink(model.turnSignals.left);
+        }
+    });
+}
+
 window.onload = async () => {
     Settings.init();
     const { scene, camera, renderer, composer } = createScene();
@@ -67,6 +92,7 @@ window.onload = async () => {
     const steerControl = createSteerControl(car_model);
     setupButtonsCallback(car_model);
     setupLightCallbacks(car_model);
+    setupTurnSignalCallbacks(car_model);
     enableClickToAnimate(scene, camera, renderer, car_model);
 
     animate(scene, camera, renderer, composer, steerControl);
