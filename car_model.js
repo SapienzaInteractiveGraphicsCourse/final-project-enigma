@@ -8,6 +8,8 @@ export const CAR_MODEL = {
         steer: 0.0,
         throttle: 0.0,
         lowBeams: false,
+        highBeams: false,
+        runningLights: false,
     },
     animations: {
         "Left_door": {

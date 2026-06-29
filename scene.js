@@ -3,6 +3,9 @@ import { createFloor } from './floor.js'
 import { setupCamera } from './camera.js'
 import { setupEnvironmentLights } from './lights.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
 export function createScene() {
     const container = document.getElementById('canvas-container');
@@ -25,16 +28,35 @@ export function createScene() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
+    const renderScene = new RenderPass(scene, camera);
+
+    const pixelRatio = window.devicePixelRatio || 1;
+
+    const bloomPass = new UnrealBloomPass(
+        new THREE.Vector2(container.clientWidth * pixelRatio, container.clientHeight * pixelRatio),
+        0.4,  // Forza
+        0.8,  // Raggio
+        1.0   // Soglia
+    );
+
+    const renderTarget = new THREE.WebGLRenderTarget(
+        container.clientWidth * pixelRatio,
+        container.clientHeight * pixelRatio,
+        {
+            type: THREE.HalfFloatType,
+            samples: 8
+        }
+    );
+    
+    const composer = new EffectComposer(renderer, renderTarget);
+    composer.addPass(renderScene);
+    composer.addPass(bloomPass);
+
     new RGBELoader()
-        .setPath('src/textures/') // Assicurati che il percorso sia corretto
+        .setPath('src/textures/')
         .load('sunset_forest_2k.hdr', function (texture) {
-            // FONDAMENTALE: Diciamo a Three.js di mappare l'immagine a 360° per i riflessi
             texture.mapping = THREE.EquirectangularReflectionMapping;
-            
-            // Imposta lo sfondo visibile
             scene.background = texture;  
-            
-            // Imposta la fonte di luce e di riflesso per la macchina
             scene.environment = texture; 
         });
 
@@ -54,8 +76,9 @@ export function createScene() {
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
         renderer.setSize(width, height);
+        composer.setSize(width, height);
     });
 
-    return { scene, camera, renderer };
+    return { scene, camera, renderer, composer };
 }
 

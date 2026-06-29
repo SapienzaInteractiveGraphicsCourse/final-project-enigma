@@ -12,15 +12,15 @@ import { toggleCarLight } from './lights.js';
 
 const clock = new THREE.Clock();
 
-function animate(scene, camera, renderer, steerControl) {
+function animate(scene, camera, renderer, composer, steerControl) {
     const dt = clock.getDelta();
-    requestAnimationFrame(() => animate(scene, camera, renderer, steerControl));
+    requestAnimationFrame(() => animate(scene, camera, renderer, composer, steerControl));
 
     updateCameraMovement(camera);
     steerControl.update(dt);
     TWEEN.update();
 
-    renderer.render(scene, camera);
+    composer.render();
 }
 
 function setupButtonsCallback(model) {
@@ -33,26 +33,34 @@ function setupButtonsCallback(model) {
 
 function setupLightCallbacks(model) {
     const lowBeamsSwitch = document.getElementById('checkLowBeams');
-
-    if (!lowBeamsSwitch) {
-        return;
-    }
+    const highBeamsSwitch = document.getElementById('checkHighBeams');
 
     const applyLowBeamsState = (isVisible) => {
         toggleCarLight(model.lowBeams, isVisible);
         model.state.lowBeams = isVisible;
     };
 
+    const applyHighBeamsState = (isVisible) => {
+        toggleCarLight(model.highBeams, isVisible);
+        model.state.highBeams = isVisible;
+    }
+
     lowBeamsSwitch.checked = model.state.lowBeams;
     applyLowBeamsState(model.state.lowBeams);
     lowBeamsSwitch.addEventListener('change', (event) => {
         applyLowBeamsState(event.target.checked);
     });
+
+    highBeamsSwitch.checked = model.state.highBeams;
+    applyHighBeamsState(model.state.highBeams);
+    highBeamsSwitch.addEventListener('change', (event) => {
+        applyHighBeamsState(event.target.checked);
+    });
 }
 
 window.onload = async () => {
     Settings.init();
-    const { scene, camera, renderer } = createScene();
+    const { scene, camera, renderer, composer } = createScene();
     initCameraUI(camera);
     const car_model = await loadModel(CAR_MODEL, scene);
     syncMaterialControls();
@@ -61,5 +69,5 @@ window.onload = async () => {
     setupLightCallbacks(car_model);
     enableClickToAnimate(scene, camera, renderer, car_model);
 
-    animate(scene, camera, renderer, steerControl);
+    animate(scene, camera, renderer, composer, steerControl);
 };
