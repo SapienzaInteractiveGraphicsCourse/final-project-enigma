@@ -3,9 +3,9 @@ import * as THREE from 'three';
 export function createFloor() {
     const textureLoader = new THREE.TextureLoader();
 
-    const colorMap = textureLoader.load('src/textures/asphalt_color.jpg');
-    const normalMap = textureLoader.load('src/textures/asphalt_normal.jpg');
-    const roughnessMap = textureLoader.load('src/textures/asphalt_roughness.jpg');
+    const colorMap = textureLoader.load('src/textures/hangar_concrete_floor_diff_4k.jpg');
+    const normalMap = textureLoader.load('src/textures/hangar_concrete_floor_nor_gl_4k.jpg');
+    const roughnessMap = textureLoader.load('src/textures/hangar_concrete_floor_rough_4k.jpg');
 
     colorMap.wrapS = THREE.RepeatWrapping;
     colorMap.wrapT = THREE.RepeatWrapping;
@@ -24,7 +24,10 @@ export function createFloor() {
     const floorMaterial = new THREE.MeshStandardMaterial({
         map: colorMap,
         normalMap: normalMap,
-        roughnessMap: roughnessMap
+        roughnessMap: roughnessMap,
+        color: 0x5a5a5a,
+        metalness: 0.0,
+        roughness: 1.0
     });
 
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
