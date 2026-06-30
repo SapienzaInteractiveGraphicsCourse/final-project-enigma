@@ -48,4 +48,5 @@ export function CubeMapReflections(car, scene, renderer) {
             }
         });
     });
+    return cubeCamera; 
 }

@@ -37,13 +37,21 @@ async function prewarmScene(scene, camera, renderer, model) {
     });
 }
 
-function animate(scene, camera, renderer, steerControl) {
+let reflectionFrameCounter = 0;
+function animate(scene, camera, renderer, steerControl, car_model, cubeCamera) {
     const dt = clock.getDelta();
-    requestAnimationFrame(() => animate(scene, camera, renderer, steerControl));
+    requestAnimationFrame(() => animate(scene, camera, renderer, steerControl, car_model, cubeCamera));
 
     updateCameraMovement(camera);
     steerControl.update(dt);
     TWEEN.update();
+
+    reflectionFrameCounter++;
+    if (reflectionFrameCounter % 10 === 0) {
+        car_model.root.visible = false;
+        cubeCamera.update(renderer, scene);
+        car_model.root.visible = true;
+    }
 
     renderer.render(scene, camera);
 }
@@ -53,19 +61,23 @@ window.onload = async () => {
     const { scene, camera, renderer } = createScene();
 
     initCameraUI(camera);
-    await loadEnvironment(scene);
-    const car_model = await loadModel(CAR_MODEL, scene);
+
+    const [_, car_model] = await Promise.all([
+    loadEnvironment(scene),
+    loadModel(CAR_MODEL, scene)
+            ]);
+
     syncMaterialControls();
     const steerControl = createSteerControl(car_model);
     setupButtonsCallback(car_model);
     setupLightCallbacks(car_model);
     setupTurnSignalCallbacks(car_model);
     setupDoorLightCallbacks(car_model);
-    CubeMapReflections(car_model, scene, renderer);
+    const cubeCamera = CubeMapReflections(car_model, scene, renderer);
     enableClickToAnimate(scene, camera, renderer, car_model);
 
     await prewarmScene(scene, camera, renderer, car_model);
     setLoadingOverlayHidden();
 
-    animate(scene, camera, renderer, steerControl);
+    animate(scene, camera, renderer, steerControl, car_model, cubeCamera);
 };
