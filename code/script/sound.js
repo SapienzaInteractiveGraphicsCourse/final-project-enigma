@@ -1,5 +1,7 @@
 const blinkSound = new Audio('../../src/audio/blinker.wav');
-blinkSound.volume = 1.0; 
+blinkSound.preload = 'auto'; // ← forza il caricamento anticipato
+blinkSound.volume = 1.0;
+blinkSound.load(); 
 
 export function playTurnSignalSound() {
     if (blinkSound.paused) {
@@ -13,3 +15,6 @@ export function stopTurnSignalSound() {
     blinkSound.currentTime = 0;
 }
 
+export function primeTurnSignalSound() {
+    blinkSound.load();
+}
