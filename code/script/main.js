@@ -7,9 +7,8 @@ import { updateCameraMovement } from './camera.js';
 import { toggleAnimationCallback, enableClickToAnimate } from './animations.js'
 import { createScene } from './scene.js';
 import { createSteerControl } from './steering.js'
-import { initCameraUI, syncMaterialControls } from './ui.js';
+import { initCameraUI, syncMaterialControls, setupLightCallbacks, setupButtonsCallback, setupTurnSignalCallbacks } from './ui.js';
 import { Settings } from './settings.js';
-import { toggleCarLight, startBlink, stopBlink } from './lights.js';
 import { CubeMapReflections } from './reflections.js';
 
 const clock = new THREE.Clock();
@@ -47,66 +46,6 @@ function animate(scene, camera, renderer, steerControl) {
     TWEEN.update();
 
     renderer.render(scene, camera);
-}
-
-function setupButtonsCallback(model) {
-    Object.entries(model.animations).forEach(([name, animation]) => {
-        if (animation.uiId) {
-            toggleAnimationCallback(model, animation.uiId, name);
-        }
-    })
-}
-
-function setupLightCallbacks(model) {
-    const lowBeamsSwitch = document.getElementById('checkLowBeams');
-    const highBeamsSwitch = document.getElementById('checkHighBeams');
-
-    const applyLowBeamsState = (isVisible) => {
-        toggleCarLight(model.lowBeams, isVisible);
-        model.state.lowBeams = isVisible;
-    };
-
-    const applyHighBeamsState = (isVisible) => {
-        toggleCarLight(model.highBeams, isVisible);
-        model.state.highBeams = isVisible;
-    }
-
-    lowBeamsSwitch.checked = model.state.lowBeams;
-    applyLowBeamsState(model.state.lowBeams);
-    lowBeamsSwitch.addEventListener('change', (event) => {
-        applyLowBeamsState(event.target.checked);
-    });
-
-    highBeamsSwitch.checked = model.state.highBeams;
-    applyHighBeamsState(model.state.highBeams);
-    highBeamsSwitch.addEventListener('change', (event) => {
-        applyHighBeamsState(event.target.checked);
-    });
-}
-
-function setupTurnSignalCallbacks(model) {
-    const rightSwitch = document.getElementById('checkRightIndicator');
-    const leftSwitch  = document.getElementById('checkLeftIndicator');
-
-    rightSwitch.addEventListener('change', (event) => {
-        if (event.target.checked) {
-            leftSwitch.checked = false;
-            stopBlink(model.turnSignals.left);
-            startBlink(model.turnSignals.right);
-        } else {
-            stopBlink(model.turnSignals.right);
-        }
-    });
-
-    leftSwitch.addEventListener('change', (event) => {
-        if (event.target.checked) {
-            rightSwitch.checked = false;
-            stopBlink(model.turnSignals.right);
-            startBlink(model.turnSignals.left);
-        } else {
-            stopBlink(model.turnSignals.left);
-        }
-    });
 }
 
 window.onload = async () => {

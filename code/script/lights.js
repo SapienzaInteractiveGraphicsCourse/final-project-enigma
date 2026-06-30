@@ -5,35 +5,33 @@ export function setupEnvironmentLights(scene) {
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambientLight);
 
-    // const frontLight = new THREE.DirectionalLight(0xffffff, 3.5);
-    // frontLight.position.set(0, 6, 10);
-    // frontLight.castShadow = true;
-    // frontLight.shadow.mapSize.width = 2048;
-    // frontLight.shadow.mapSize.height = 2048;
-    // frontLight.shadow.camera.near = 0.5;
-    // frontLight.shadow.camera.far = 25;
-    // frontLight.shadow.camera.left = -10;
-    // frontLight.shadow.camera.right = 10;
-    // frontLight.shadow.camera.top = 10;
-    // frontLight.shadow.camera.bottom = -10;
-    // frontLight.shadow.bias = -0.001; 
-    // frontLight.shadow.normalBias = 0.05; 
-    // scene.add(frontLight);
+    const createOptimizedLight = (intensity, posX, posY, posZ) => {
+        const light = new THREE.DirectionalLight(0xffffff, intensity);
+        light.position.set(posX, posY, posZ);
+        
+        light.castShadow = true;
+        
+        light.shadow.mapSize.width = 512; 
+        light.shadow.mapSize.height = 512; 
+        
+        light.shadow.camera.near = 0.5;
+        light.shadow.camera.far = 20;   
+        light.shadow.camera.left = -5;  
+        light.shadow.camera.right = 5;  
+        light.shadow.camera.top = 5;    
+        light.shadow.camera.bottom = -5;
+        
+        light.shadow.bias = -0.001; 
+        light.shadow.normalBias = 0.05; 
+        
+        return light;
+    };
 
-    // const backLight = new THREE.DirectionalLight(0xffffff, 3.5);
-    // backLight.position.set(0, 6, -10);
-    // backLight.castShadow = false;
-    // scene.add(backLight);
+    const frontLight = createOptimizedLight(3.5, 0, 6, 10);
+    scene.add(frontLight);
 
-    // const leftLight = new THREE.DirectionalLight(0xffffff, 2.5);
-    // leftLight.position.set(-10, 6, 0);
-    // leftLight.castShadow = false;
-    // scene.add(leftLight);
-
-    // const rightLight = new THREE.DirectionalLight(0xffffff, 2.5);
-    // rightLight.position.set(10, 6, 0);
-    // rightLight.castShadow = false;
-    // scene.add(rightLight);
+    const leftLight = createOptimizedLight(2.5, -10, 6, 0);
+    scene.add(leftLight);
 }
 
 function setupLowBeam(modelRoot, emptyName) {
@@ -173,7 +171,7 @@ export function toggleCarLight(lightObject, isVisible) {
 
 function setTurnSignalIntensity(signalObj, isOn) {
     if (signalObj.mesh && signalObj.mesh.material) {
-        signalObj.mesh.material.emissiveIntensity = isOn ? 15 : 0;
+        signalObj.mesh.material.emissiveIntensity = isOn ? 6 : 0;
     }
     if (signalObj.light) {
         signalObj.light.visible = isOn;

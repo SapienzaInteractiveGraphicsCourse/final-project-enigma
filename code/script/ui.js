@@ -1,5 +1,7 @@
 import { getMaterialProperty, setMaterialColor, setMaterialProperty } from './color.js';
 import { goToCameraView, toggleCameraMode } from './camera.js';
+import { toggleCarLight, startBlink, stopBlink } from './lights.js';
+import { toggleAnimationCallback } from './animations.js';
 
 const materialBindings = [
     { prefix: 'body', materialName: 'body_paint' },
@@ -65,4 +67,99 @@ export function syncMaterialControls() {
             }
         }
     });
+}
+
+export function setupButtonsCallback(model) {
+    Object.entries(model.animations).forEach(([name, animation]) => {
+        if (animation.uiId) {
+            toggleAnimationCallback(model, animation.uiId, name);
+        }
+    })
+}
+
+export function setupLightCallbacks(model) {
+    const lowBeamsSwitch = document.getElementById('checkLowBeams');
+    const highBeamsSwitch = document.getElementById('checkHighBeams');
+
+    const applyLowBeamsState = (isVisible) => {
+        toggleCarLight(model.lowBeams, isVisible);
+        model.state.lowBeams = isVisible;
+    };
+
+    const applyHighBeamsState = (isVisible) => {
+        toggleCarLight(model.highBeams, isVisible);
+        model.state.highBeams = isVisible;
+    }
+
+    lowBeamsSwitch.checked = model.state.lowBeams;
+    applyLowBeamsState(model.state.lowBeams);
+    lowBeamsSwitch.addEventListener('change', (event) => {
+        applyLowBeamsState(event.target.checked);
+    });
+
+    highBeamsSwitch.checked = model.state.highBeams;
+    applyHighBeamsState(model.state.highBeams);
+    highBeamsSwitch.addEventListener('change', (event) => {
+        applyHighBeamsState(event.target.checked);
+    });
+}
+
+export function setupTurnSignalCallbacks(model) {
+    const rightSwitch = document.getElementById('checkRightIndicator');
+    const leftSwitch  = document.getElementById('checkLeftIndicator');
+    const hazardSwitch = document.getElementById('checkHazard'); // Modifica con il tuo ID reale
+
+    // Combiniamo tutti gli indicatori per usarli simultaneamente
+    const allSignals = [...model.turnSignals.left, ...model.turnSignals.right];
+
+    rightSwitch.addEventListener('change', (event) => {
+        if (event.target.checked) {
+            // Spegni la sinistra e gli hazard
+            leftSwitch.checked = false;
+            if (hazardSwitch) hazardSwitch.checked = false;
+            
+            stopBlink(model.turnSignals.left, 'left');
+            stopBlink(allSignals, 'hazard');
+            
+            // Avvia la destra
+            startBlink(model.turnSignals.right, 'right');
+        } else {
+            stopBlink(model.turnSignals.right, 'right');
+        }
+    });
+
+    leftSwitch.addEventListener('change', (event) => {
+        if (event.target.checked) {
+            // Spegni la destra e gli hazard
+            rightSwitch.checked = false;
+            if (hazardSwitch) hazardSwitch.checked = false;
+            
+            stopBlink(model.turnSignals.right, 'right');
+            stopBlink(allSignals, 'hazard');
+            
+            // Avvia la sinistra
+            startBlink(model.turnSignals.left, 'left');
+        } else {
+            stopBlink(model.turnSignals.left, 'left');
+        }
+    });
+
+    if (hazardSwitch) {
+        hazardSwitch.addEventListener('change', (event) => {
+            if (event.target.checked) {
+                // Spegni sia la destra che la sinistra
+                leftSwitch.checked = false;
+                rightSwitch.checked = false;
+                
+                stopBlink(model.turnSignals.left, 'left');
+                stopBlink(model.turnSignals.right, 'right');
+                
+                // Avvia le luci di emergenza (tutte insieme)
+                startBlink(allSignals, 'hazard');
+            } else {
+                // Ferma le luci di emergenza
+                stopBlink(allSignals, 'hazard');
+            }
+        });
+    }
 }

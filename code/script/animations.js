@@ -5,7 +5,7 @@ import { Settings } from './settings.js';
 const hoverSwap = new Map();
 let hoveredPart = null;
 
-function toggleAnimation(model, animationName) {
+export function toggleAnimation(model, animationName) {
     const animation = model.animations[animationName];
     if (!animation) {
         return;
