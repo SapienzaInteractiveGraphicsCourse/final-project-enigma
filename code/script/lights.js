@@ -113,10 +113,25 @@ function setupTurnSignal(modelRoot, meshName, targetPos = [0, 0, 1]) {
     }
 
     if (mesh.material) {
-        mesh.material = mesh.material.clone();
-        mesh.material.color.setHex(0xffaa00);
-        mesh.material.emissive.setHex(0xfc4103);
-        mesh.material.emissiveIntensity = 0;
+        const oldMat = mesh.material;
+
+        mesh.material = new THREE.MeshPhysicalMaterial({
+            color: oldMat.color,
+            map: oldMat.map,
+            normalMap: oldMat.normalMap,
+            roughnessMap: oldMat.roughnessMap,
+            metalnessMap: oldMat.metalnessMap,
+
+            emissiveMap: oldMat.map,
+            
+            emissive: 0xeb7a34,
+            emissiveIntensity: 0,
+
+            roughness: 0.2,
+            metalness: 0.1,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.0
+        });
     }
 
     const light = new THREE.SpotLight(0xffaa00, 0, 3, Math.PI / 2, 1.0, 2);
@@ -171,7 +186,7 @@ export function toggleCarLight(lightObject, isVisible) {
 
 function setTurnSignalIntensity(signalObj, isOn) {
     if (signalObj.mesh && signalObj.mesh.material) {
-        signalObj.mesh.material.emissiveIntensity = isOn ? 6 : 0;
+        signalObj.mesh.material.emissiveIntensity = isOn ? 4.0 : 0;
     }
     if (signalObj.light) {
         signalObj.light.visible = isOn;
