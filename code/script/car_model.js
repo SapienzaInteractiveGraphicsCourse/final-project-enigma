@@ -10,6 +10,7 @@ export const CAR_MODEL = {
         lowBeams: false,
         highBeams: false,
         runningLights: false,
+        ambientLight: false,
     },
     animations: {
         "Left_door": {

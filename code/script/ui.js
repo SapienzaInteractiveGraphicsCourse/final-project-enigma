@@ -80,6 +80,7 @@ export function setupButtonsCallback(model) {
 export function setupLightCallbacks(model) {
     const lowBeamsSwitch = document.getElementById('checkLowBeams');
     const highBeamsSwitch = document.getElementById('checkHighBeams');
+    const ambientLightSwitch = document.getElementById('checkAmbientLight');
 
     const applyLowBeamsState = (isVisible) => {
         toggleCarLight(model.lowBeams, isVisible);
@@ -89,6 +90,11 @@ export function setupLightCallbacks(model) {
     const applyHighBeamsState = (isVisible) => {
         toggleCarLight(model.highBeams, isVisible);
         model.state.highBeams = isVisible;
+    }
+
+    const applyAmbientLightState = (isVisible) => {
+        toggleCarLight(model.ambientLights, isVisible);
+        model.state.ambientLight = isVisible;
     }
 
     lowBeamsSwitch.checked = model.state.lowBeams;
@@ -102,26 +108,29 @@ export function setupLightCallbacks(model) {
     highBeamsSwitch.addEventListener('change', (event) => {
         applyHighBeamsState(event.target.checked);
     });
+
+    ambientLightSwitch.checked = model.state.ambientLight;
+    applyAmbientLightState(model.state.ambientLight);
+    ambientLightSwitch.addEventListener('change', (event) => {
+        applyAmbientLightState(event.target.checked);
+    });
 }
 
 export function setupTurnSignalCallbacks(model) {
     const rightSwitch = document.getElementById('checkRightIndicator');
     const leftSwitch  = document.getElementById('checkLeftIndicator');
-    const hazardSwitch = document.getElementById('checkHazard'); // Modifica con il tuo ID reale
+    const hazardSwitch = document.getElementById('checkHazard');
 
-    // Combiniamo tutti gli indicatori per usarli simultaneamente
     const allSignals = [...model.turnSignals.left, ...model.turnSignals.right];
 
     rightSwitch.addEventListener('change', (event) => {
         if (event.target.checked) {
-            // Spegni la sinistra e gli hazard
             leftSwitch.checked = false;
             if (hazardSwitch) hazardSwitch.checked = false;
             
             stopBlink(model.turnSignals.left, 'left');
             stopBlink(allSignals, 'hazard');
-            
-            // Avvia la destra
+
             startBlink(model.turnSignals.right, 'right');
         } else {
             stopBlink(model.turnSignals.right, 'right');
@@ -130,14 +139,11 @@ export function setupTurnSignalCallbacks(model) {
 
     leftSwitch.addEventListener('change', (event) => {
         if (event.target.checked) {
-            // Spegni la destra e gli hazard
             rightSwitch.checked = false;
             if (hazardSwitch) hazardSwitch.checked = false;
-            
             stopBlink(model.turnSignals.right, 'right');
             stopBlink(allSignals, 'hazard');
-            
-            // Avvia la sinistra
+
             startBlink(model.turnSignals.left, 'left');
         } else {
             stopBlink(model.turnSignals.left, 'left');
@@ -147,19 +153,32 @@ export function setupTurnSignalCallbacks(model) {
     if (hazardSwitch) {
         hazardSwitch.addEventListener('change', (event) => {
             if (event.target.checked) {
-                // Spegni sia la destra che la sinistra
                 leftSwitch.checked = false;
                 rightSwitch.checked = false;
-                
                 stopBlink(model.turnSignals.left, 'left');
                 stopBlink(model.turnSignals.right, 'right');
-                
-                // Avvia le luci di emergenza (tutte insieme)
                 startBlink(allSignals, 'hazard');
             } else {
-                // Ferma le luci di emergenza
                 stopBlink(allSignals, 'hazard');
             }
         });
     }
+}
+
+export function setupDoorLightCallbacks(model) {
+    const leftDoorSwitch = document.getElementById('checkLeftDoor');
+    const rightDoorSwitch = document.getElementById('checkRightDoor');
+    let lightTimer = null;
+
+    const handleDoorChange = () => {
+
+        const isAnyDoorOpen = leftDoorSwitch.checked || rightDoorSwitch.checked;
+        if (lightTimer) clearTimeout(lightTimer);
+        lightTimer = setTimeout(() => {
+            toggleCarLight(model.ambientLights, isAnyDoorOpen);
+        }, 200);
+    };
+
+    if (leftDoorSwitch) leftDoorSwitch.addEventListener('change', handleDoorChange);
+    if (rightDoorSwitch) rightDoorSwitch.addEventListener('change', handleDoorChange);
 }

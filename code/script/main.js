@@ -7,7 +7,7 @@ import { updateCameraMovement } from './camera.js';
 import { toggleAnimationCallback, enableClickToAnimate } from './animations.js'
 import { createScene } from './scene.js';
 import { createSteerControl } from './steering.js'
-import { initCameraUI, syncMaterialControls, setupLightCallbacks, setupButtonsCallback, setupTurnSignalCallbacks } from './ui.js';
+import { initCameraUI, syncMaterialControls, setupLightCallbacks, setupButtonsCallback, setupTurnSignalCallbacks, setupDoorLightCallbacks } from './ui.js';
 import { Settings } from './settings.js';
 import { CubeMapReflections } from './reflections.js';
 
@@ -60,6 +60,7 @@ window.onload = async () => {
     setupButtonsCallback(car_model);
     setupLightCallbacks(car_model);
     setupTurnSignalCallbacks(car_model);
+    setupDoorLightCallbacks(car_model);
     CubeMapReflections(car_model, scene, renderer);
     enableClickToAnimate(scene, camera, renderer, car_model);
 

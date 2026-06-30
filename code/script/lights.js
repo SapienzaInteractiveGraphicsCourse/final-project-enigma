@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import * as TWEEN from '@tweenjs/tween.js';
 import { playTurnSignalSound, stopTurnSignalSound } from './sound.js';
 
 export function setupEnvironmentLights(scene) {
@@ -27,10 +28,10 @@ export function setupEnvironmentLights(scene) {
         return light;
     };
 
-    const frontLight = createOptimizedLight(3.5, 0, 6, 10);
+    const frontLight = createOptimizedLight(5.5, 0, 6, 10);
     scene.add(frontLight);
 
-    const leftLight = createOptimizedLight(2.5, -10, 6, 0);
+    const leftLight = createOptimizedLight(4.5, -10, 6, 0);
     scene.add(leftLight);
 }
 
@@ -158,6 +159,35 @@ function setupTurnSignal(modelRoot, meshName, targetPos = [0, 0, 1]) {
     return { mesh, light };
 }
 
+function setupAmbientLight(modelRoot, meshName) {
+    const mesh = modelRoot.getObjectByName(meshName);
+
+    if (mesh.material) {
+
+        mesh.material = new THREE.MeshPhysicalMaterial({
+            emissive: 0xf9f9f9,
+            emissiveIntensity: 0,
+            roughness: 0.2,
+            metalness: 0.1,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.0
+        });
+    }
+
+    const light = new THREE.SpotLight(0xffffff, 1, 3, Math.PI / 2, 1.0, 2);
+    light.position.set(0, 0, 0);
+    light.castShadow = false;
+
+    const targetObj = new THREE.Object3D();
+    targetObj.position.set(0, 0, 1);
+    light.target = targetObj;
+
+    light.visible = false;
+    mesh.add(light);
+
+    return { mesh, light };
+}
+
 export function setupLowBeams(modelRoot, emptyNames = ['Low_beam_R', 'Low_beam_L']) {
     return emptyNames.map((emptyName) => setupLowBeam(modelRoot, emptyName)).filter(Boolean);
 }
@@ -174,13 +204,57 @@ export function setupTurnSignals(modelRoot, meshNames, targetPositions = []) {
     )).filter(Boolean);
 }
 
+export function setupAmbientLights(modelRoot, meshName = ['ambient_light_model']) {
+    return meshName.map((name) => setupAmbientLight(modelRoot, name)).filter(Boolean);
+}
+
 export function toggleCarLight(lightObject, isVisible) {
-    if (lightObject) {
-        if (Array.isArray(lightObject)) {
-            lightObject.forEach((light) => light.visible = isVisible);
+    if (!lightObject) return;
+
+    const applyToggle = (item) => {
+        if (item instanceof THREE.Object3D) {
+            item.visible = isVisible;
+            
+        } else if (item.mesh || item.light) {
+            if (item.activeTween) {
+                item.activeTween.stop();
+            }
+
+            const targetLight = isVisible ? 3.0 : 0.0; 
+            const targetEmissive = isVisible ? 3.0 : 0.0;
+            if (isVisible && item.light) {
+                item.light.visible = true;
+            }
+
+            const currentVals = {
+                lInt: item.light ? item.light.intensity : 0,
+                eInt: item.mesh && item.mesh.material ? item.mesh.material.emissiveIntensity : 0
+            };
+
+            item.activeTween = new TWEEN.Tween(currentVals)
+                .to({ lInt: targetLight, eInt: targetEmissive }, 600)
+                .easing(TWEEN.Easing.Quadratic.InOut)
+                .onUpdate(() => {
+                    if (item.light) item.light.intensity = currentVals.lInt;
+                    if (item.mesh && item.mesh.material) item.mesh.material.emissiveIntensity = currentVals.eInt;
+                })
+                .onComplete(() => {
+                    if (!isVisible && item.light) {
+                        item.light.visible = false;
+                    }
+                    item.activeTween = null;
+                })
+                .start();
+                
         } else {
-            lightObject.visible = isVisible;
+            item.visible = isVisible;
         }
+    };
+
+    if (Array.isArray(lightObject)) {
+        lightObject.forEach(applyToggle);
+    } else {
+        applyToggle(lightObject);
     }
 }
 

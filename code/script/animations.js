@@ -61,8 +61,12 @@ export function toggleAnimation(model, animationName) {
     tween.start();
 
 
-    if (animation.uiId) {
-        document.getElementById(`${animation.uiId}`).checked = model.state[stateKey];
+   if (animation.uiId) {
+        const uiElement = document.getElementById(animation.uiId);
+        if (uiElement) {
+            uiElement.checked = model.state[stateKey];
+            uiElement.dispatchEvent(new Event('change'));
+        }
     }
 }
 
