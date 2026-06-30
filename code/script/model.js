@@ -4,7 +4,6 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { setupMaterials } from './color.js';
 import { setupLowBeams, setupHighBeams, setupTurnSignals } from './lights.js'; 
 
-
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
 dracoLoader.setDecoderConfig({ type: 'js' });
@@ -27,7 +26,6 @@ export async function loadModel(modelDescription, scene) {
             path,
             (gltf) => {
                 const gltf_model = gltf.scene;
-
                 model.root = gltf_model;
 
                 gltf_model.traverse((child) => {
@@ -47,26 +45,25 @@ export async function loadModel(modelDescription, scene) {
                 setupMaterials(gltf_model);
                 model.lowBeams = setupLowBeams(gltf_model);
                 model.highBeams = setupHighBeams(gltf_model);
+
                 model.turnSignals = {
-                        right: setupTurnSignals(
-                            gltf_model,
-                            ['Turn_R_F', 'Turn_R_B'],
-                            [-Math.PI / 5, Math.PI / 5],  // rotationY
-                            [-0.05, 0.025],                // positionZ
-                            [0.35, 0.4],                   // width
-                            [0.04, 0.02]                   // height
-                        ),
-                        left: setupTurnSignals(
-                            gltf_model,
-                            ['Turn_L_F', 'Turn_L_B'],
-                            [Math.PI / 5, -Math.PI / 5],  // rotationY
-                            [-0.05, 0.025],               // positionZ
-                            [0.35, 0.4],                  // width
-                            [0.04, 0.02]                  // height
-                        ),
-                    };
-                // const lightHelper = new THREE.SpotLightHelper(model.runningLight);
-                // scene.add(lightHelper);
+                    right: setupTurnSignals(
+                        gltf_model, 
+                        ['Turn_Lights_RF', 'Turn_Lights_RB'],
+                        [
+                            [-2, 1, 0],
+                            [-2, 1, -2]
+                        ]
+                    ),
+                    left: setupTurnSignals(
+                        gltf_model, 
+                        ['Turn_Lights_LF', 'Turn_Lights_LB'],
+                        [
+                            [2, 1, 0],
+                            [2, 1, -2]
+                        ]
+                    ),
+                };
 
                 Object.keys(animationsDescription).forEach((partName) => {
                     const part = gltf_model.getObjectByName(partName)
@@ -93,7 +90,6 @@ export async function loadModel(modelDescription, scene) {
                         ).normalize();
 
                         const worldAxis = localAxis.clone().applyQuaternion(part.quaternion).normalize();
-
                         const qDelta = new THREE.Quaternion().setFromAxisAngle(worldAxis, description.rotate.angle * Math.PI / 180.0);
                         toQuaternion = fromQuaternion.clone().multiply(qDelta);
                     }
@@ -118,9 +114,7 @@ export async function loadModel(modelDescription, scene) {
                 resolve(model);
             },
             (_xhr) => { },
-            (error) => {
-                reject(error);
-            }
+            (error) => reject(error)
         )
     });
 }

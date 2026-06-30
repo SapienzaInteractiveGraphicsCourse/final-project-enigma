@@ -29,9 +29,9 @@ async function prewarmScene(scene, camera, renderer, model) {
     });
 
     renderer.compile(scene, camera);
-        renderer.render(scene, camera);
+    renderer.render(scene, camera);
     await new Promise((resolve) => requestAnimationFrame(resolve));
-        renderer.render(scene, camera);
+    renderer.render(scene, camera);
 
     allWarmLights.forEach((light, index) => {
         light.visible = previousVisibility[index];
@@ -112,6 +112,7 @@ function setupTurnSignalCallbacks(model) {
 window.onload = async () => {
     Settings.init();
     const { scene, camera, renderer } = createScene();
+
     initCameraUI(camera);
     await loadEnvironment(scene);
     const car_model = await loadModel(CAR_MODEL, scene);
