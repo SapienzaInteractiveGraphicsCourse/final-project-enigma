@@ -1,15 +1,8 @@
 import * as THREE from 'three'
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { gltfLoader } from './loaders.js';
 import { setupMaterials } from './color.js';
 import { setupLowBeams, setupHighBeams, setupTurnSignals, setupAmbientLights } from './lights.js'; 
 
-const dracoLoader = new DRACOLoader();
-dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
-dracoLoader.setDecoderConfig({ type: 'js' });
-
-const loader = new GLTFLoader();
-loader.setDRACOLoader(dracoLoader);
 
 export async function loadModel(modelDescription, scene) {
     const path = modelDescription.path;
@@ -22,21 +15,22 @@ export async function loadModel(modelDescription, scene) {
     };
 
     return new Promise((resolve, reject) => {
-        loader.load(
+        gltfLoader.load(
             path,
             (gltf) => {
                 const gltf_model = gltf.scene;
                 model.root = gltf_model;
 
-                gltf_model.traverse((child) => {
-                    if (child.isMesh) {
-                        child.castShadow = true;
-                        child.receiveShadow = true;
-                    }
-                    if (child.material) {
-                        child.material.envMapIntensity = 0.0;
-                    }
-                });
+               const SHADOW_CASTERS = ['body', 'hood', 'door', 'wheel', 'glass', 'bumper'];
+
+               gltf_model.traverse((child) => {
+                 if (child.isMesh) {
+                            const nameLower = child.name.toLowerCase();
+                            const shouldCastShadow = SHADOW_CASTERS.some(keyword => nameLower.includes(keyword));
+                            child.castShadow = shouldCastShadow;
+                            child.receiveShadow = true;
+                        }
+                    });
 
                 gltf_model.scale.set(1, 1, 1);
                 gltf_model.position.set(0, 0, 0);
