@@ -83,17 +83,20 @@ export async function loadModel(modelDescription, scene) {
 
                     let fromQuaternion = part.quaternion.clone();
                     let toQuaternion = part.quaternion.clone();
-                    if (description.rotate) {
+                    const rotationsList = description.rotations ? description.rotations : (description.rotate ? [description.rotate] : []);
+
+                    rotationsList.forEach(rot => {
                         const localAxis = new THREE.Vector3(
-                            description.rotate.axis.x,
-                            description.rotate.axis.y,
-                            description.rotate.axis.z
+                            rot.axis.x,
+                            rot.axis.y,
+                            rot.axis.z
                         ).normalize();
 
-                        const worldAxis = localAxis.clone().applyQuaternion(part.quaternion).normalize();
-                        const qDelta = new THREE.Quaternion().setFromAxisAngle(worldAxis, description.rotate.angle * Math.PI / 180.0);
-                        toQuaternion = fromQuaternion.clone().multiply(qDelta);
-                    }
+                        const worldAxis = localAxis.clone().applyQuaternion(toQuaternion).normalize();
+                        const qDelta = new THREE.Quaternion().setFromAxisAngle(worldAxis, rot.angle * Math.PI / 180.0);
+
+                        toQuaternion.multiply(qDelta);
+                    });
 
                     model.animations[partName] = {
                         part,
