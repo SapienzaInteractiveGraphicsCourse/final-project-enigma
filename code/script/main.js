@@ -21,22 +21,62 @@ function setLoadingOverlayHidden() {
 async function prewarmScene(scene, camera, renderer, model) {
     const lowBeams = model.lowBeams ?? [];
     const highBeams = model.highBeams ?? [];
-    const allWarmLights = [...lowBeams, ...highBeams];
-    const previousVisibility = allWarmLights.map((light) => light.visible);
-    
+    const ambientLights = model.ambientLights ?? [];
+    const turnLeft = model.turnSignals?.left ?? [];
+    const turnRight = model.turnSignals?.right ?? [];
 
-    allWarmLights.forEach((light) => {
-        light.visible = true;
-    });
+    const forceLightsState = (isOn) => {
+        [...lowBeams, ...highBeams].forEach(group => {
+            if (!group) return;
+                        
+            group.traverse(child => {
+                if (child.isLight) {
+                    const maxInt = child.distance > 100 ? 180.0 : 50.0; 
+                    child.intensity = isOn ? maxInt : 0.0;
+                }
+                if (child.isMesh && child.material && child.material.emissive) {
+                    child.material.emissiveIntensity = isOn ? 20.0 : 0.0;
+                }
+            });
+        });
+
+        [...ambientLights, ...turnLeft, ...turnRight].forEach(item => {
+            if (!item) return;
+            
+            if (item.light) {
+                item.light.visible = true;
+                item.light.intensity = isOn ? 5.0 : 0.0; 
+            }
+            if (item.mesh && item.mesh.material) {
+                item.mesh.material.emissiveIntensity = isOn ? 4.0 : 0.0;
+            }
+        });
+    };
+
+    forceLightsState(true);
 
     renderer.compile(scene, camera);
+    for (let i = 0; i < 3; i++) {
+        renderer.render(scene, camera);
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+    }
+
+    forceLightsState(false);
+
+    model.root.traverse((child) => {
+        if (child.isMesh && child.geometry) {
+            if (!child.geometry.boundingBox) child.geometry.computeBoundingBox();
+            if (!child.geometry.boundingSphere) child.geometry.computeBoundingSphere();
+        }
+    });
+
+    const dummyRaycaster = new THREE.Raycaster();
+    dummyRaycaster.set(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0));
+    dummyRaycaster.intersectObject(model.root, true);
+    
     renderer.render(scene, camera);
     await new Promise((resolve) => requestAnimationFrame(resolve));
-    renderer.render(scene, camera);
 
-    allWarmLights.forEach((light, index) => {
-        light.visible = previousVisibility[index];
-    });
     ensureAudioContextResumed(); 
 }
 

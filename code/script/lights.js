@@ -55,7 +55,7 @@ function setupLowBeam(modelRoot, emptyName) {
         new THREE.MeshStandardMaterial({
             color: 0x111111,
             emissive: 0xffffff,
-            emissiveIntensity: 20,
+            emissiveIntensity: 0,
             roughness: 0.3,
             metalness: 0.0,
         })
@@ -90,7 +90,7 @@ function setupHighBeam(modelRoot, emptyName) {
         new THREE.MeshStandardMaterial({
             color: 0x111111,
             emissive: 0xffffff,
-            emissiveIntensity: 20,
+            emissiveIntensity: 0,
             roughness: 0.3,
             metalness: 0.0,
         })
@@ -153,7 +153,8 @@ function setupTurnSignal(modelRoot, meshName, targetPos = [0, 0, 1]) {
     mesh.add(targetObj);
     light.target = targetObj;
 
-    light.visible = false;
+    light.visible = true;
+    light.intensity = 0;
     mesh.add(light);
 
     return { mesh, light };
@@ -182,7 +183,8 @@ function setupAmbientLight(modelRoot, meshName) {
     targetObj.position.set(0, 0, 1);
     light.target = targetObj;
 
-    light.visible = false;
+    light.visible = true;
+    light.intensity = 0;
     mesh.add(light);
 
     return { mesh, light };
@@ -212,42 +214,55 @@ export function toggleCarLight(lightObject, isVisible) {
     if (!lightObject) return;
 
     const applyToggle = (item) => {
-        if (item instanceof THREE.Object3D) {
-            item.visible = isVisible;
-            
-        } else if (item.mesh || item.light) {
-            if (item.activeTween) {
-                item.activeTween.stop();
-            }
+        if (item.activeTween) {
+            item.activeTween.stop();
+        }
 
-            const targetLight = isVisible ? 3.0 : 0.0; 
-            const targetEmissive = isVisible ? 3.0 : 0.0;
-            if (isVisible && item.light) {
-                item.light.visible = true;
-            }
+        const duration = isVisible ? 100 : 400;
+
+        if (item instanceof THREE.Object3D && !item.light) {
+            item.visible = true;
+            
+            item.traverse(child => {
+                if (child.isLight) {
+                    child.visible = true;
+                    const maxInt = child.distance > 100 ? 180.0 : 50.0; 
+                    
+                    new TWEEN.Tween({ int: child.intensity })
+                        .to({ int: isVisible ? maxInt : 0.0 }, duration)
+                        .easing(TWEEN.Easing.Quadratic.Out)
+                        .onUpdate((obj) => child.intensity = obj.int)
+                        .start();
+                }
+                if (child.isMesh && child.material && child.material.emissive) {
+                    new TWEEN.Tween({ eInt: child.material.emissiveIntensity })
+                        .to({ eInt: isVisible ? 20.0 : 0.0 }, duration)
+                        .easing(TWEEN.Easing.Quadratic.Out)
+                        .onUpdate((obj) => child.material.emissiveIntensity = obj.eInt)
+                        .start();
+                }
+            });
+
+        } else if (item.mesh || item.light) {
+            if (item.light) item.light.visible = true;
 
             const currentVals = {
                 lInt: item.light ? item.light.intensity : 0,
                 eInt: item.mesh && item.mesh.material ? item.mesh.material.emissiveIntensity : 0
             };
 
+            const targetLight = isVisible ? 3.0 : 0.0; 
+            const targetEmissive = isVisible ? 3.0 : 0.0;
+
             item.activeTween = new TWEEN.Tween(currentVals)
-                .to({ lInt: targetLight, eInt: targetEmissive }, 600)
-                .easing(TWEEN.Easing.Quadratic.InOut)
+                .to({ lInt: targetLight, eInt: targetEmissive }, duration)
+                .easing(TWEEN.Easing.Quadratic.Out)
                 .onUpdate(() => {
                     if (item.light) item.light.intensity = currentVals.lInt;
                     if (item.mesh && item.mesh.material) item.mesh.material.emissiveIntensity = currentVals.eInt;
                 })
-                .onComplete(() => {
-                    if (!isVisible && item.light) {
-                        item.light.visible = false;
-                    }
-                    item.activeTween = null;
-                })
+                .onComplete(() => item.activeTween = null)
                 .start();
-                
-        } else {
-            item.visible = isVisible;
         }
     };
 
@@ -263,7 +278,7 @@ function setTurnSignalIntensity(signalObj, isOn) {
         signalObj.mesh.material.emissiveIntensity = isOn ? 4.0 : 0;
     }
     if (signalObj.light) {
-        signalObj.light.visible = isOn;
+        signalObj.light.visible = true;
         signalObj.light.intensity = isOn ? 5.0 : 0; 
     }
 }

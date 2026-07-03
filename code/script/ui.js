@@ -168,14 +168,23 @@ export function setupTurnSignalCallbacks(model) {
 export function setupDoorLightCallbacks(model) {
     const leftDoorSwitch = document.getElementById('checkLeftDoor');
     const rightDoorSwitch = document.getElementById('checkRightDoor');
+    const ambientSwitch = document.getElementById('checkAmbientLight'); 
+    
     let lightTimer = null;
 
     const handleDoorChange = () => {
-
         const isAnyDoorOpen = leftDoorSwitch.checked || rightDoorSwitch.checked;
+        
         if (lightTimer) clearTimeout(lightTimer);
+        
         lightTimer = setTimeout(() => {
             toggleCarLight(model.ambientLights, isAnyDoorOpen);
+            
+            model.state.ambientLight = isAnyDoorOpen; 
+
+            if (ambientSwitch) {
+                ambientSwitch.checked = isAnyDoorOpen; 
+            }
         }, 200);
     };
 
