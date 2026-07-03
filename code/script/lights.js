@@ -30,6 +30,50 @@ export function setupEnvironmentLights(scene) {
     scene.add(leftLight);
 }
 
+function setupRunningLight(modelRoot, meshName) {
+    const mesh = modelRoot.getObjectByName(meshName);
+    if (!mesh) {
+        console.error(`error: failed to reference ${meshName} in the model`);
+        return null;
+    }
+
+    if (mesh.material) {
+        const oldMat = mesh.material;
+        mesh.material = new THREE.MeshPhysicalMaterial({
+            color: oldMat.color,
+            map: oldMat.map,
+            normalMap: oldMat.normalMap,
+            roughnessMap: oldMat.roughnessMap,
+            metalnessMap: oldMat.metalnessMap,
+            emissiveMap: oldMat.map,
+            emissive: 0xd4e3ff,
+            emissiveIntensity: 0,
+            roughness: 0.2,
+            metalness: 0.1,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.0
+        });
+    }
+
+    const light = new THREE.SpotLight(0xd4e3ff, 50.0, 35.0, Math.PI / 7, 0.6, 2.2);
+    const worldPos = new THREE.Vector3();
+    mesh.getWorldPosition(worldPos);
+    light.position.copy(worldPos);
+    light.castShadow = false;
+
+    const targetObj = new THREE.Object3D();
+    targetObj.position.copy(worldPos).add(new THREE.Vector3(0, -0.5, 28));
+
+    modelRoot.add(light);
+    modelRoot.add(targetObj);
+    light.target = targetObj;
+
+    light.visible = true;
+    light.intensity = 0;
+
+    return { mesh, light };
+}
+
 function setupLowBeam(modelRoot, emptyName) {
     const anchor = modelRoot.getObjectByName(emptyName);
     if (!anchor) {
@@ -191,41 +235,6 @@ function setupAmbientLight(modelRoot, meshName) {
 
     const targetObj = new THREE.Object3D();
     targetObj.position.set(0, 0, 1);
-    light.target = targetObj;
-
-    light.visible = true;
-    light.intensity = 0;
-    mesh.add(light);
-
-    return { mesh, light };
-}
-
-function setupRunningLight(modelRoot, meshName) {
-    const mesh = modelRoot.getObjectByName(meshName);
-
-    if (!mesh) {
-        console.error(`error: failed to reference ${meshName} in the model`);
-        return null;
-    }
-
-    if (mesh.material) {
-
-        mesh.material = new THREE.MeshPhysicalMaterial({
-            emissive: 0xf9f9f9,
-            emissiveIntensity: 0,
-            roughness: 0.2,
-            metalness: 0.1,
-            clearcoat: 1.0,
-            clearcoatRoughness: 0.0
-        });
-    }
-
-    const light = new THREE.SpotLight(0xffffff, 1, 3, Math.PI / 2, 1.0, 2);
-    light.position.set(0, 0, 0);
-    light.castShadow = false;
-
-    const targetObj = new THREE.Object3D();
-    targetObj.position.set(0, 1, 0);
     light.target = targetObj;
 
     light.visible = true;
