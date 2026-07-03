@@ -7,7 +7,7 @@ import { updateCameraMovement } from './camera.js';
 import { toggleAnimationCallback, enableClickToAnimate } from './animations.js'
 import { createScene } from './scene.js';
 import { createSteerControl } from './steering.js'
-import { initCameraUI, syncMaterialControls, setupLightCallbacks, setupButtonsCallback, setupTurnSignalCallbacks, setupDoorLightCallbacks } from './ui.js';
+import { initCameraUI, syncMaterialControls, setupLightCallbacks, setupButtonsCallback, setupTurnSignalCallbacks, setupDoorLightCallbacks, setupEngineCallback } from './ui.js';
 import { Settings } from './settings.js';
 import { CubeMapReflections } from './reflections.js';
 import { ensureAudioContextResumed } from './audio.js';
@@ -116,6 +116,7 @@ window.onload = async () => {
     setupLightCallbacks(car_model);
     setupTurnSignalCallbacks(car_model);
     setupDoorLightCallbacks(car_model);
+    setupEngineCallback(car_model);
     const cubeCamera = CubeMapReflections(car_model, scene, renderer);
     enableClickToAnimate(scene, camera, renderer, car_model);
 

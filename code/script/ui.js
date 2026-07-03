@@ -2,6 +2,7 @@ import { getMaterialProperty, setMaterialColor, setMaterialProperty } from './co
 import { goToCameraView, toggleCameraMode } from './camera.js';
 import { toggleCarLight, startBlink, stopBlink } from './lights.js';
 import { toggleAnimationCallback, animatePartToState } from './animations.js';
+import { playSfx, stopStartupSound } from './audio.js';
 
 const materialBindings = [
     { prefix: 'body', materialName: 'body_paint' },
@@ -233,4 +234,46 @@ export function setupDoorLightCallbacks(model) {
 
     if (leftDoorSwitch) leftDoorSwitch.addEventListener('change', handleDoorChange);
     if (rightDoorSwitch) rightDoorSwitch.addEventListener('change', handleDoorChange);
+}
+
+export function setupEngineCallback(model) {
+    const engineBtn = document.getElementById('btnEnginePower');
+    const statusText = document.getElementById('engineStatusText');
+    const runningLightsSwitch = document.getElementById('checkRunningLights');
+    
+    let isEngineRunning = false;
+
+    if (engineBtn) {
+        engineBtn.addEventListener('click', () => {
+            isEngineRunning = !isEngineRunning;
+            
+            if (isEngineRunning) {
+                playSfx('startup');
+                engineBtn.classList.add('engine-on');
+                if (statusText) statusText.textContent = 'STOP';
+                
+                if (model.runningLights) {
+                    model.state.runningLights = true;
+                    toggleCarLight(model.runningLights, true);
+                    
+                    if (runningLightsSwitch) {
+                        runningLightsSwitch.checked = true;
+                    }
+                }
+            } else {
+                stopStartupSound();
+                engineBtn.classList.remove('engine-on');
+                if (statusText) statusText.textContent = 'START';
+                
+                if (model.runningLights) {
+                    model.state.runningLights = false;
+                    toggleCarLight(model.runningLights, false);
+                    
+                    if (runningLightsSwitch) {
+                        runningLightsSwitch.checked = false;
+                    }
+                }
+            }
+        });
+    }
 }

@@ -1,48 +1,38 @@
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-let blinkBuffer = null;
-let doorOpenBuffer = null;
-let doorCloseBuffer = null;
+const audioBuffers = new Map();
+
+const defaultGainNode = audioCtx.createGain();
+defaultGainNode.gain.value = 0.1;
+defaultGainNode.connect(audioCtx.destination);
 
 const blinkGainNode = audioCtx.createGain();
 blinkGainNode.gain.value = 0.1;
 blinkGainNode.connect(audioCtx.destination);
 
-const sfxBuffers = new Map();
-const sfxGainNode = audioCtx.createGain();
-sfxGainNode.gain.value = 0.1;
-sfxGainNode.connect(audioCtx.destination);
+let currentStartupSource = null;
 
-async function loadBlinkAudio() {
+export async function loadAudio(name, path) {
     try {
-        const response = await fetch('../../src/audio/turn_signal.wav');
+        const response = await fetch(path);
         const arrayBuffer = await response.arrayBuffer();
-        blinkBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        const buffer = await audioCtx.decodeAudioData(arrayBuffer);
+        audioBuffers.set(name, buffer);
     } catch (e) {
-        console.error("Error loading turn signal:", e);
+        console.error(`Errore nel caricamento del suono [${name}]:`, e);
     }
 }
 
-const SFX_FILES = {
+const SOUND_FILES = {
+    'turn_signal': '../../src/audio/turn_signal.wav',
     'door_open': '../../src/audio/door_open.wav',
     'door_close': '../../src/audio/door_close.wav',
+    'startup': '../../src/audio/startup.wav'
 };
 
-async function loadAllSfx() {
-    for (const [name, path] of Object.entries(SFX_FILES)) {
-        try {
-            const response = await fetch(path);
-            const arrayBuffer = await response.arrayBuffer();
-            const buffer = await audioCtx.decodeAudioData(arrayBuffer);
-            sfxBuffers.set(name, buffer);
-        } catch (e) {
-            console.warn(`Error loading SFX [${name}]:`, e);
-        }
-    }
-}
-
-loadBlinkAudio();
-loadAllSfx();
+Object.entries(SOUND_FILES).forEach(([name, path]) => {
+    loadAudio(name, path);
+});
 
 export function ensureAudioContextResumed() {
     if (audioCtx.state === 'suspended') {
@@ -50,31 +40,40 @@ export function ensureAudioContextResumed() {
     }
 }
 
-export function playTurnSignalSound() {
-    if (!blinkBuffer) return;
+export function playAudio(name, gainNode = defaultGainNode) {
+    if (!audioBuffers.has(name)) return null;
 
-    if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-    }
+    ensureAudioContextResumed();
+
     const source = audioCtx.createBufferSource();
-    source.buffer = blinkBuffer;
+    source.buffer = audioBuffers.get(name);
     source.loop = false;
-    source.connect(blinkGainNode);
+    source.connect(gainNode);
     source.start(0);
+
+    return source;
+}
+
+export function playTurnSignalSound() {
+    playAudio('turn_signal', blinkGainNode);
 }
 
 export function playSfx(soundName) {
-    if (!soundName || !sfxBuffers.has(soundName)) return;
-
-    if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
+    const source = playAudio(soundName, defaultGainNode);
+    
+    if (soundName === 'startup') {
+        currentStartupSource = source;
     }
+}
 
-    const source = audioCtx.createBufferSource();
-    source.buffer = sfxBuffers.get(soundName);
-    source.loop = false;
-    source.connect(sfxGainNode);
-    source.start(0);
+export function stopStartupSound() {
+    if (currentStartupSource) {
+        try {
+            currentStartupSource.stop();
+        } catch (e) {
+        }
+        currentStartupSource = null;
+    }
 }
 
 export function setTurnSignalVolume(volumeLevel) {
