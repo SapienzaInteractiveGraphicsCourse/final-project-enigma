@@ -23,11 +23,11 @@ export async function loadEnvironment(scene) {
                 });
 
                 scene.add(environment);
-                resolve(environment); // ← ora la Promise si risolve davvero
+                resolve(environment);
             },
             (_xhr) => { },
             (error) => {
-                reject(error); // ← e ora gli errori vengono propagati
+                reject(error);
             }
         );
     });

@@ -1,7 +1,7 @@
 import { getMaterialProperty, setMaterialColor, setMaterialProperty } from './color.js';
 import { goToCameraView, toggleCameraMode } from './camera.js';
 import { toggleCarLight, startBlink, stopBlink } from './lights.js';
-import { toggleAnimationCallback } from './animations.js';
+import { toggleAnimationCallback, animatePartToState } from './animations.js';
 
 const materialBindings = [
     { prefix: 'body', materialName: 'body_paint' },
@@ -82,15 +82,46 @@ export function setupLightCallbacks(model) {
     const highBeamsSwitch = document.getElementById('checkHighBeams');
     const ambientLightSwitch = document.getElementById('checkAmbientLight');
 
-    const applyLowBeamsState = (isVisible) => {
-        toggleCarLight(model.lowBeams, isVisible);
-        model.state.lowBeams = isVisible;
+    const applyLowBeamsState = (isRequestedOn) => {
+        model.state.lowBeams = isRequestedOn;
+
+        if (isRequestedOn) {
+            if (model.animations["Lights_Switch"]) {
+                animatePartToState(model, "Lights_Switch", true);
+            }
+            if (!model.state.highBeams) {
+                toggleCarLight(model.lowBeams, true);
+            }
+        } else {
+            toggleCarLight(model.lowBeams, false);
+            if (model.state.highBeams) {
+                model.state.highBeams = false;
+                toggleCarLight(model.highBeams, false);
+                if (highBeamsSwitch) highBeamsSwitch.checked = false;
+            }
+            if (model.animations["Lights_Switch"]) {
+                animatePartToState(model, "Lights_Switch", false);
+            }
+        }
     };
 
-    const applyHighBeamsState = (isVisible) => {
-        toggleCarLight(model.highBeams, isVisible);
-        model.state.highBeams = isVisible;
-    }
+    const applyHighBeamsState = (isRequestedOn) => {
+        if (isRequestedOn) {
+            if (!model.state.lowBeams) {
+                if (highBeamsSwitch) highBeamsSwitch.checked = false;
+                return;
+            }
+            model.state.highBeams = true;
+            toggleCarLight(model.highBeams, true);
+            toggleCarLight(model.lowBeams, false);
+        } else {
+            model.state.highBeams = false;
+            toggleCarLight(model.highBeams, false);
+            if (model.state.lowBeams) {
+                toggleCarLight(model.lowBeams, true);
+            }
+        }
+    };
 
     const applyAmbientLightState = (isVisible) => {
         toggleCarLight(model.ambientLights, isVisible);

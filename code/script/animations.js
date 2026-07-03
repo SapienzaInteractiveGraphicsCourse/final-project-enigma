@@ -6,15 +6,17 @@ import { playSfx } from './audio.js';
 const hoverSwap = new Map();
 let hoveredPart = null;
 
-export function toggleAnimation(model, animationName) {
+export function setAnimationState(model, animationName, targetState, triggerUiEvent = false) {
     const animation = model.animations[animationName];
-    if (!animation) {
-        return;
-    }
+    if (!animation || !animation.part) return;
 
     const stateKey = animation.stateKey;
     if (!(stateKey in model.state)) {
         model.state[stateKey] = false;
+    }
+
+    if (model.state[stateKey] === targetState && !animation.activeTween) {
+        return;
     }
 
     if (animation.activeTween) {
@@ -22,16 +24,15 @@ export function toggleAnimation(model, animationName) {
         animation.activeTween = null;
     }
 
-    const state = model.state[stateKey];
-    const targetPosition = !state ? animation.toPosition : animation.fromPosition;
-    const targetQuaternion = !state ? animation.toQuaternion : animation.fromQuaternion;
-
-    model.state[stateKey] = !model.state[stateKey];
-    const isOpening = model.state[stateKey];
+    model.state[stateKey] = targetState;
+    const isOpening = targetState;
 
     if (isOpening && animation.sounds?.open) {
         playSfx(animation.sounds.open);
     }
+
+    const targetPosition = targetState ? animation.toPosition : animation.fromPosition;
+    const targetQuaternion = targetState ? animation.toQuaternion : animation.fromQuaternion;
 
     const posDist = animation.fromPosition.distanceTo(animation.toPosition);
     let fraction = 1;
@@ -72,10 +73,24 @@ export function toggleAnimation(model, animationName) {
     if (animation.uiId) {
         const uiElement = document.getElementById(animation.uiId);
         if (uiElement) {
-            uiElement.checked = model.state[stateKey];
-            uiElement.dispatchEvent(new Event('change'));
+            uiElement.checked = targetState;
+            if (triggerUiEvent) {
+                uiElement.dispatchEvent(new Event('change'));
+            }
         }
     }
+}
+
+export function toggleAnimation(model, animationName) {
+    const animation = model.animations[animationName];
+    if (!animation) return;
+
+    const currentState = model.state[animation.stateKey] || false;
+    setAnimationState(model, animationName, !currentState, true);
+}
+
+export function animatePartToState(model, animationName, targetState) {
+    setAnimationState(model, animationName, targetState, false);
 }
 
 function pickAnimationFromHits(model, hits) {

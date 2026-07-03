@@ -9,10 +9,10 @@ export const CAR_MODEL = {
         wingOpen: false,
         steer: 0.0,
         throttle: 0.0,
-        lowBeams: false,
-        highBeams: false,
-        runningLights: false,
-        ambientLight: false,
+        lowBeamsOn: false,
+        highBeamsOn: false,
+        runningLightsOn: false,
+        ambientLightOn: false,
     },
     animations: {
         "Left_door": {
@@ -106,6 +106,18 @@ export const CAR_MODEL = {
                 }
             ],
             milliseconds: 1000,
+        },
+        "Lights_Switch": {
+            clickable: false,
+            stateKey: "lowBeams",
+            uiId: "checkLowBeams",
+            rotations: [
+                {
+                    axis: { x: 0, y: 0, z: 1 },
+                    angle: 112.0,
+                }
+            ],
+            milliseconds: 300,
         },
         "wheel_LF": {
             clickable: false,
