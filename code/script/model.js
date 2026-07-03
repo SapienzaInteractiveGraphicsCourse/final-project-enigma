@@ -104,6 +104,7 @@ export async function loadModel(modelDescription, scene) {
                         clickable: description.clickable,
                         stateKey: description.stateKey,
                         uiId: description.uiId,
+                        sounds: description.sounds,
                         restPosition: part.position.clone(),
                         restQuaternion: part.quaternion.clone(),
                         fromPosition,

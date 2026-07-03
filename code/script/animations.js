@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import * as TWEEN from '@tweenjs/tween.js'
 import { Settings } from './settings.js';
+import { playSfx } from './audio.js';
 
 const hoverSwap = new Map();
 let hoveredPart = null;
@@ -26,6 +27,11 @@ export function toggleAnimation(model, animationName) {
     const targetQuaternion = !state ? animation.toQuaternion : animation.fromQuaternion;
 
     model.state[stateKey] = !model.state[stateKey];
+    const isOpening = model.state[stateKey];
+
+    if (isOpening && animation.sounds?.open) {
+        playSfx(animation.sounds.open);
+    }
 
     const posDist = animation.fromPosition.distanceTo(animation.toPosition);
     let fraction = 1;
@@ -55,13 +61,15 @@ export function toggleAnimation(model, animationName) {
         })
         .onComplete(() => {
             animation.activeTween = null;
+            if (!isOpening && animation.sounds?.close) {
+                playSfx(animation.sounds.close);
+            }
         });
 
     animation.activeTween = tween;
     tween.start();
 
-
-   if (animation.uiId) {
+    if (animation.uiId) {
         const uiElement = document.getElementById(animation.uiId);
         if (uiElement) {
             uiElement.checked = model.state[stateKey];

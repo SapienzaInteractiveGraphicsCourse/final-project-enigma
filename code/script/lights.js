@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import * as TWEEN from '@tweenjs/tween.js';
-import { playTurnSignalSound, stopTurnSignalSound } from './sound.js';
+import { playTurnSignalSound } from './audio.js';
 
 export function setupEnvironmentLights(scene) {
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
@@ -280,8 +280,10 @@ export function startBlink(signals, id = 'turn_signal') {
     const interval = setInterval(() => {
         blinkState = !blinkState;
         signals.forEach(s => setTurnSignalIntensity(s, blinkState));
-        playTurnSignalSound(); 
-    }, 500);
+        if (blinkState) {
+            playTurnSignalSound();
+        }
+    }, 489);
 
     activeBlinks.set(id, interval);
 }
@@ -291,6 +293,5 @@ export function stopBlink(signals, id = 'turn_signal') {
         clearInterval(activeBlinks.get(id));
         activeBlinks.delete(id);
     }
-    signals.forEach(s => setTurnSignalIntensity(s, false)); 
-    stopTurnSignalSound();
+    signals.forEach(s => setTurnSignalIntensity(s, false));
 }

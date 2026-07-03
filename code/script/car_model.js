@@ -19,6 +19,10 @@ export const CAR_MODEL = {
             clickable: true,
             stateKey: "leftDoorOpen",
             uiId: "checkLeftDoor",
+            sounds: {
+                open: 'door_open',
+                close: 'door_close'
+            },
             rotations: [
                 {
                     axis: { x: 0, y: 1, z: 0 },
@@ -47,6 +51,10 @@ export const CAR_MODEL = {
             clickable: true,
             stateKey: "rightDoorOpen",
             uiId: "checkRightDoor",
+            sounds: {
+                open: 'door_open',
+                close: 'door_close'
+            },
             rotations: [
                 {
                     axis: { x: 0, y: 1, z: 0 },
@@ -75,6 +83,10 @@ export const CAR_MODEL = {
             clickable: true,
             stateKey: "hoodOpen",
             uiId: "checkHood",
+            sounds: {
+                open: 'door_open',
+                close: 'door_close'
+            },
             rotations: [
                 {
                     axis: { x: 1, y: 0, z: 0 },

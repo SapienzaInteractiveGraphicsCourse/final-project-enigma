@@ -10,7 +10,7 @@ import { createSteerControl } from './steering.js'
 import { initCameraUI, syncMaterialControls, setupLightCallbacks, setupButtonsCallback, setupTurnSignalCallbacks, setupDoorLightCallbacks } from './ui.js';
 import { Settings } from './settings.js';
 import { CubeMapReflections } from './reflections.js';
-import { primeTurnSignalSound } from './sound.js';
+import { ensureAudioContextResumed } from './audio.js';
 
 const clock = new THREE.Clock();
 
@@ -37,7 +37,7 @@ async function prewarmScene(scene, camera, renderer, model) {
     allWarmLights.forEach((light, index) => {
         light.visible = previousVisibility[index];
     });
-    primeTurnSignalSound(); 
+    ensureAudioContextResumed(); 
 }
 
 let reflectionFrameCounter = 0;
@@ -84,3 +84,7 @@ window.onload = async () => {
 
     animate(scene, camera, renderer, steerControl, car_model, cubeCamera);
 };
+
+window.addEventListener('pointerdown', () => {
+    ensureAudioContextResumed();
+}, { once: true });
