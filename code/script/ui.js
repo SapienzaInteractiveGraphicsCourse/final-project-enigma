@@ -1,7 +1,8 @@
 import { getMaterialProperty, setMaterialColor, setMaterialProperty } from './color.js';
 import { goToCameraView, toggleCameraMode } from './camera.js';
 import { toggleCarLight, startBlink, stopBlink } from './lights.js';
-import { toggleAnimationCallback } from './animations.js';
+import { toggleAnimationCallback, animatePartToState, setSwitchAngle } from './animations.js';
+import { playSfx, stopStartupSound } from './audio.js';
 
 const materialBindings = [
     { prefix: 'body', materialName: 'body_paint' },
@@ -78,42 +79,139 @@ export function setupButtonsCallback(model) {
 }
 
 export function setupLightCallbacks(model) {
+    const runningLightsSwitch = document.getElementById('checkRunningLights');
     const lowBeamsSwitch = document.getElementById('checkLowBeams');
     const highBeamsSwitch = document.getElementById('checkHighBeams');
     const ambientLightSwitch = document.getElementById('checkAmbientLight');
 
-    const applyLowBeamsState = (isVisible) => {
-        toggleCarLight(model.lowBeams, isVisible);
-        model.state.lowBeams = isVisible;
+    const syncLightSwitchKnob = () => {
+        if (model.state.lowBeams || model.state.highBeams) {
+            setSwitchAngle(model, "Lights_Switch", 112);
+        } else if (model.state.runningLights) {
+            setSwitchAngle(model, "Lights_Switch", 71);
+        } else {
+            setSwitchAngle(model, "Lights_Switch", 0);
+        }
     };
 
-    const applyHighBeamsState = (isVisible) => {
-        toggleCarLight(model.highBeams, isVisible);
-        model.state.highBeams = isVisible;
-    }
+    const applyRunningLightsState = (isRequestedOn) => {
+        model.state.runningLights = isRequestedOn;
+
+        if (isRequestedOn) {
+            if (!model.state.lowBeams) {
+                toggleCarLight(model.runningLights, true);
+            }
+        } else {
+            toggleCarLight(model.runningLights, false);
+
+            if (model.state.lowBeams) {
+                model.state.lowBeams = false;
+                toggleCarLight(model.lowBeams, false);
+                if (lowBeamsSwitch) lowBeamsSwitch.checked = false;
+            }
+
+            if (model.state.highBeams) {
+                model.state.highBeams = false;
+                toggleCarLight(model.highBeams, false);
+                if (highBeamsSwitch) highBeamsSwitch.checked = false;
+            }
+        }
+
+        syncLightSwitchKnob();
+    };
+
+    const applyLowBeamsState = (isRequestedOn) => {
+        model.state.lowBeams = isRequestedOn;
+
+        if (isRequestedOn) {
+            if (!model.state.runningLights) {
+                model.state.runningLights = true;
+                if (runningLightsSwitch) runningLightsSwitch.checked = true;
+            } else {
+                toggleCarLight(model.runningLights, false);
+            }
+
+            if (!model.state.highBeams) {
+                toggleCarLight(model.lowBeams, true);
+            }
+        } else {
+            toggleCarLight(model.lowBeams, false);
+
+            if (model.state.highBeams) {
+                model.state.highBeams = false;
+                toggleCarLight(model.highBeams, false);
+                if (highBeamsSwitch) highBeamsSwitch.checked = false;
+            }
+
+            if (runningLightsSwitch && runningLightsSwitch.checked) {
+                model.state.runningLights = true;
+                toggleCarLight(model.runningLights, true);
+            }
+        }
+
+        syncLightSwitchKnob();
+    };
+
+    const applyHighBeamsState = (isRequestedOn) => {
+        if (isRequestedOn) {
+            if (!model.state.lowBeams) {
+                if (lowBeamsSwitch) {
+                    lowBeamsSwitch.checked = true;
+                    applyLowBeamsState(true);
+                }
+            }
+
+            model.state.highBeams = true;
+            toggleCarLight(model.highBeams, true);
+            toggleCarLight(model.lowBeams, false);
+        } else {
+            model.state.highBeams = false;
+            toggleCarLight(model.highBeams, false);
+
+            if (model.state.lowBeams) {
+                toggleCarLight(model.lowBeams, true);
+            }
+        }
+
+        syncLightSwitchKnob();
+    };
 
     const applyAmbientLightState = (isVisible) => {
         toggleCarLight(model.ambientLights, isVisible);
         model.state.ambientLight = isVisible;
+    };
+
+    if (runningLightsSwitch) {
+        runningLightsSwitch.checked = model.state.runningLights || false;
+        applyRunningLightsState(runningLightsSwitch.checked);
+        runningLightsSwitch.addEventListener('change', (event) => {
+            applyRunningLightsState(event.target.checked);
+        });
     }
 
-    lowBeamsSwitch.checked = model.state.lowBeams;
-    applyLowBeamsState(model.state.lowBeams);
-    lowBeamsSwitch.addEventListener('change', (event) => {
-        applyLowBeamsState(event.target.checked);
-    });
+    if (lowBeamsSwitch) {
+        lowBeamsSwitch.checked = model.state.lowBeams || false;
+        applyLowBeamsState(lowBeamsSwitch.checked);
+        lowBeamsSwitch.addEventListener('change', (event) => {
+            applyLowBeamsState(event.target.checked);
+        });
+    }
 
-    highBeamsSwitch.checked = model.state.highBeams;
-    applyHighBeamsState(model.state.highBeams);
-    highBeamsSwitch.addEventListener('change', (event) => {
-        applyHighBeamsState(event.target.checked);
-    });
+    if (highBeamsSwitch) {
+        highBeamsSwitch.checked = model.state.highBeams || false;
+        applyHighBeamsState(highBeamsSwitch.checked);
+        highBeamsSwitch.addEventListener('change', (event) => {
+            applyHighBeamsState(event.target.checked);
+        });
+    }
 
-    ambientLightSwitch.checked = model.state.ambientLight;
-    applyAmbientLightState(model.state.ambientLight);
-    ambientLightSwitch.addEventListener('change', (event) => {
-        applyAmbientLightState(event.target.checked);
-    });
+    if (ambientLightSwitch) {
+        ambientLightSwitch.checked = model.state.ambientLight || false;
+        applyAmbientLightState(ambientLightSwitch.checked);
+        ambientLightSwitch.addEventListener('change', (event) => {
+            applyAmbientLightState(event.target.checked);
+        });
+    }
 }
 
 export function setupTurnSignalCallbacks(model) {
@@ -168,18 +266,70 @@ export function setupTurnSignalCallbacks(model) {
 export function setupDoorLightCallbacks(model) {
     const leftDoorSwitch = document.getElementById('checkLeftDoor');
     const rightDoorSwitch = document.getElementById('checkRightDoor');
+    const ambientSwitch = document.getElementById('checkAmbientLight'); 
+    
     let lightTimer = null;
 
     const handleDoorChange = (event) => {
         if (!event.isTrusted) return; // ← ignora eventi dispatched programmaticamente
         
         const isAnyDoorOpen = leftDoorSwitch.checked || rightDoorSwitch.checked;
+        
         if (lightTimer) clearTimeout(lightTimer);
+        
         lightTimer = setTimeout(() => {
             toggleCarLight(model.ambientLights, isAnyDoorOpen);
+            
+            model.state.ambientLight = isAnyDoorOpen; 
+
+            if (ambientSwitch) {
+                ambientSwitch.checked = isAnyDoorOpen; 
+            }
         }, 200);
     };
 
     if (leftDoorSwitch) leftDoorSwitch.addEventListener('change', handleDoorChange);
     if (rightDoorSwitch) rightDoorSwitch.addEventListener('change', handleDoorChange);
+}
+
+export function setupEngineCallback(model) {
+    const engineBtn = document.getElementById('btnEnginePower');
+    const statusText = document.getElementById('engineStatusText');
+    const runningLightsSwitch = document.getElementById('checkRunningLights');
+    
+    let isEngineRunning = false;
+
+    if (engineBtn) {
+        engineBtn.addEventListener('click', () => {
+            isEngineRunning = !isEngineRunning;
+            
+            if (isEngineRunning) {
+                playSfx('startup');
+                engineBtn.classList.add('engine-on');
+                if (statusText) statusText.textContent = 'STOP';
+                
+                if (model.runningLights) {
+                    model.state.runningLights = true;
+                    toggleCarLight(model.runningLights, true);
+                    
+                    if (runningLightsSwitch) {
+                        runningLightsSwitch.checked = true;
+                    }
+                }
+            } else {
+                stopStartupSound();
+                engineBtn.classList.remove('engine-on');
+                if (statusText) statusText.textContent = 'START';
+                
+                if (model.runningLights) {
+                    model.state.runningLights = false;
+                    toggleCarLight(model.runningLights, false);
+                    
+                    if (runningLightsSwitch) {
+                        runningLightsSwitch.checked = false;
+                    }
+                }
+            }
+        });
+    }
 }

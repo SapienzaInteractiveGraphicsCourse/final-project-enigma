@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { gltfLoader } from './loaders.js';
 import { setupMaterials } from './color.js';
-import { setupLowBeams, setupHighBeams, setupTurnSignals, setupAmbientLights } from './lights.js'; 
+import { setupLowBeams, setupHighBeams, setupTurnSignals, setupAmbientLights, setupRunningLights } from './lights.js'; 
 
 
 export async function loadModel(modelDescription, scene) {
@@ -39,6 +39,7 @@ export async function loadModel(modelDescription, scene) {
                 setupMaterials(gltf_model);
                 model.lowBeams = setupLowBeams(gltf_model);
                 model.highBeams = setupHighBeams(gltf_model);
+                model.runningLights = setupRunningLights(gltf_model);
                 model.ambientLights = setupAmbientLights(gltf_model);
 
                 model.turnSignals = {
@@ -60,13 +61,14 @@ export async function loadModel(modelDescription, scene) {
                     ),
                 };
 
-                Object.keys(animationsDescription).forEach((partName) => {
-                    const part = gltf_model.getObjectByName(partName)
+                Object.keys(animationsDescription).forEach((animKey) => {
+                    const description = animationsDescription[animKey];
+                    const targetMeshName = description.partName || animKey;
+                    const part = gltf_model.getObjectByName(targetMeshName);
+
                     if (!part) {
                         console.error(`error: failed to reference ${partName} in the model`);
                     }
-
-                    const description = animationsDescription[partName];
 
                     let fromPosition = part.position.clone();
                     let toPosition = part.position.clone();
@@ -77,24 +79,28 @@ export async function loadModel(modelDescription, scene) {
 
                     let fromQuaternion = part.quaternion.clone();
                     let toQuaternion = part.quaternion.clone();
-                    if (description.rotate) {
+                    const rotationsList = description.rotations ? description.rotations : (description.rotate ? [description.rotate] : []);
+
+                    rotationsList.forEach(rot => {
                         const localAxis = new THREE.Vector3(
-                            description.rotate.axis.x,
-                            description.rotate.axis.y,
-                            description.rotate.axis.z
+                            rot.axis.x,
+                            rot.axis.y,
+                            rot.axis.z
                         ).normalize();
 
-                        const worldAxis = localAxis.clone().applyQuaternion(part.quaternion).normalize();
-                        const qDelta = new THREE.Quaternion().setFromAxisAngle(worldAxis, description.rotate.angle * Math.PI / 180.0);
-                        toQuaternion = fromQuaternion.clone().multiply(qDelta);
-                    }
+                        const worldAxis = localAxis.clone().applyQuaternion(toQuaternion).normalize();
+                        const qDelta = new THREE.Quaternion().setFromAxisAngle(worldAxis, rot.angle * Math.PI / 180.0);
 
-                    model.animations[partName] = {
+                        toQuaternion.multiply(qDelta);
+                    });
+
+                    model.animations[animKey] = {
                         part,
-                        name: partName,
+                        name: animKey,
                         clickable: description.clickable,
                         stateKey: description.stateKey,
                         uiId: description.uiId,
+                        sounds: description.sounds,
                         restPosition: part.position.clone(),
                         restQuaternion: part.quaternion.clone(),
                         fromPosition,

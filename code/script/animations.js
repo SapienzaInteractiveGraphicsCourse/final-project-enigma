@@ -1,31 +1,79 @@
 import * as THREE from 'three'
 import * as TWEEN from '@tweenjs/tween.js'
 import { Settings } from './settings.js';
+import { playSfx } from './audio.js';
 
 const hoverSwap = new Map();
 let hoveredPart = null;
 
-export function toggleAnimation(model, animationName) {
-    const animation = model.animations[animationName];
-    if (!animation) {
-        return;
+function animatePartTo(part, targetPosition, targetQuaternion, duration, onCompleteCallback = null) {
+    if (part.userData.activeTween) {
+        part.userData.activeTween.stop();
+        part.userData.activeTween = null;
     }
+
+    const startPosition = part.position.clone();
+    const startQuaternion = part.quaternion.clone();
+    const progress = { t: 0 };
+
+    const tween = new TWEEN.Tween(progress)
+        .to({ t: 1 }, duration)
+        .easing(TWEEN.Easing.Quadratic.Out)
+        .onUpdate(({ t }) => {
+            part.position.lerpVectors(startPosition, targetPosition, t);
+            part.quaternion.slerpQuaternions(startQuaternion, targetQuaternion, t);
+        })
+        .onComplete(() => {
+            part.userData.activeTween = null;
+            if (onCompleteCallback) onCompleteCallback();
+        });
+
+    part.userData.activeTween = tween;
+    tween.start();
+}
+
+export function setSwitchAngle(model, partName, targetAngleDegrees) {
+    const part = model.root?.getObjectByName(partName);
+    if (!part) return;
+
+    if (!part.userData.restQuaternion) {
+        part.userData.restQuaternion = part.quaternion.clone();
+    }
+
+    const axis = new THREE.Vector3(0, 0, 1);
+    const qDelta = new THREE.Quaternion().setFromAxisAngle(axis, THREE.MathUtils.degToRad(targetAngleDegrees));
+    const targetQuaternion = part.userData.restQuaternion.clone().multiply(qDelta);
+
+    animatePartTo(part, part.position, targetQuaternion, 250);
+}
+
+export function setAnimationState(model, animationName, targetState, triggerUiEvent = false) {
+    const animation = model.animations[animationName];
+    if (!animation || !animation.part) return;
 
     const stateKey = animation.stateKey;
     if (!(stateKey in model.state)) {
         model.state[stateKey] = false;
     }
 
-    if (animation.activeTween) {
-        animation.activeTween.stop();
-        animation.activeTween = null;
+    const targetPosition = targetState ? animation.toPosition : animation.fromPosition;
+    const targetQuaternion = targetState ? animation.toQuaternion : animation.fromQuaternion;
+
+    if (
+        model.state[stateKey] === targetState &&
+        !animation.part.userData.activeTween &&
+        animation.part.position.distanceToSquared(targetPosition) < 0.000001 &&
+        animation.part.quaternion.angleTo(targetQuaternion) < 0.001
+    ) {
+        return;
     }
 
-    const state = model.state[stateKey];
-    const targetPosition = !state ? animation.toPosition : animation.fromPosition;
-    const targetQuaternion = !state ? animation.toQuaternion : animation.fromQuaternion;
+    model.state[stateKey] = targetState;
+    const isOpening = targetState;
 
-    model.state[stateKey] = !model.state[stateKey];
+    if (isOpening && animation.sounds?.open) {
+        playSfx(animation.sounds.open);
+    }
 
     const posDist = animation.fromPosition.distanceTo(animation.toPosition);
     let fraction = 1;
@@ -43,31 +91,33 @@ export function toggleAnimation(model, animationName) {
 
     const duration = animation.milliseconds * Math.max(0, Math.min(1, fraction));
 
-    const progress = { t: 0 };
-    const startPosition = animation.part.position.clone();
-    const startQuaternion = animation.part.quaternion.clone();
+    animatePartTo(animation.part, targetPosition, targetQuaternion, duration, () => {
+        if (!isOpening && animation.sounds?.close) {
+            playSfx(animation.sounds.close);
+        }
+    });
 
-    const tween = new TWEEN.Tween(progress)
-        .to({ t: 1 }, duration)
-        .onUpdate(({ t }) => {
-            animation.part.position.lerpVectors(startPosition, targetPosition, t);
-            animation.part.quaternion.slerpQuaternions(startQuaternion, targetQuaternion, t);
-        })
-        .onComplete(() => {
-            animation.activeTween = null;
-        });
-
-    animation.activeTween = tween;
-    tween.start();
-
-
-   if (animation.uiId) {
+    if (animation.uiId) {
         const uiElement = document.getElementById(animation.uiId);
         if (uiElement) {
-            uiElement.checked = model.state[stateKey];
-            uiElement.dispatchEvent(new Event('change'));
+            uiElement.checked = targetState;
+            if (triggerUiEvent) {
+                uiElement.dispatchEvent(new Event('change'));
+            }
         }
     }
+}
+
+export function toggleAnimation(model, animationName) {
+    const animation = model.animations[animationName];
+    if (!animation) return;
+
+    const currentState = model.state[animation.stateKey] || false;
+    setAnimationState(model, animationName, !currentState, true);
+}
+
+export function animatePartToState(model, animationName, targetState) {
+    setAnimationState(model, animationName, targetState, false);
 }
 
 function pickAnimationFromHits(model, hits) {
@@ -132,7 +182,7 @@ function applyHoverHighlight(renderer, root) {
         if (node.isMesh) {
             meshes.push(node);
         }
-    })
+    });
 
     for (const mesh of meshes) {
         let entry = hoverSwap.get(mesh.uuid);

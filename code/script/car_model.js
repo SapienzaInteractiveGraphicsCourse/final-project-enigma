@@ -2,72 +2,135 @@ export const CAR_MODEL = {
     path: '../../src/models/car_1/car.glb',
     state: {
         leftDoorOpen: false,
+        leftWindowOpen: false,
         rightDoorOpen: false,
+        rightWindowOpen: false,
         hoodOpen: false,
         wingOpen: false,
         steer: 0.0,
         throttle: 0.0,
-        lowBeams: false,
-        highBeams: false,
-        runningLights: false,
-        ambientLight: false,
+        lowBeamsOn: false,
+        highBeamsOn: false,
+        runningLightsOn: false,
+        ambientLightOn: false,
     },
     animations: {
         "Left_door": {
             clickable: true,
             stateKey: "leftDoorOpen",
             uiId: "checkLeftDoor",
-            rotate: {
-                axis: { x: 0, y: 1, z: 0 },
-                angle: -45.0,
+            sounds: {
+                open: 'door_open',
+                close: 'door_close'
             },
+            rotations: [
+                {
+                    axis: { x: 0, y: 1, z: 0 },
+                    angle: -45.0,
+                }
+            ],
             milliseconds: 1500,
+        },
+        "Left_door_Window_Glass": {
+            clickable: true,
+            stateKey: "leftWindowOpen",
+            uiId: "checkLeftWindow",
+            rotations: [
+                {
+                    axis: { x: 0, y: 1, z: 1 },
+                    angle: 9.0,
+                },
+                {
+                    axis: { x: 1, y: 0, z: 0 },
+                    angle: 1.0,
+                }
+            ],
+            milliseconds: 3500,
         },
         "Right_door": {
             clickable: true,
             stateKey: "rightDoorOpen",
             uiId: "checkRightDoor",
-            rotate: {
-                axis: { x: 0, y: 1, z: 0 },
-                angle: 45.0,
+            sounds: {
+                open: 'door_open',
+                close: 'door_close'
             },
+            rotations: [
+                {
+                    axis: { x: 0, y: 1, z: 0 },
+                    angle: 45.0,
+                }
+            ],
             milliseconds: 1500,
+        },
+         "Right_door_Window_Glass": {
+            clickable: true,
+            stateKey: "rightWindowOpen",
+            uiId: "checkRightWindow",
+            rotations: [
+                {
+                    axis: { x: 0, y: 1, z: 1 },
+                    angle: 10.0,
+                },
+                {
+                    axis: { x: 1, y: 0, z: 0 },
+                    angle: -6.5,
+                }
+            ],
+            milliseconds: 3500,
         },
         "Hood": {
             clickable: true,
             stateKey: "hoodOpen",
             uiId: "checkHood",
-            rotate: {
-                axis: { x: 1, y: 0, z: 0 },
-                angle: -30.0,
+            sounds: {
+                open: 'door_open',
+                close: 'door_close'
             },
+            rotations: [
+                {
+                    axis: { x: 1, y: 0, z: 0 },
+                    angle: -30.0,
+                }
+            ],
             milliseconds: 1500,
         },
         "Spoiler": {
             clickable: true,
             stateKey: "wingOpen",
             uiId: "checkSpoiler",
-            rotate: {
-                axis: { x: 1, y: 0, z: 0 },
-                angle: 25.0,
-            },
+            rotations: [
+                {
+                    axis: { x: 1, y: 0, z: 0 },
+                    angle: 25.0,
+                }
+            ],
             milliseconds: 1000,
+        },
+        "Lights_Switch": {
+            clickable: false,
+            axis: { x: 0, y: 0, z: 1 },
+            milliseconds: 250
         },
         "wheel_LF": {
             clickable: false,
             stateKey: "steer",
-            rotate: {
-                axis: { x: 0, y: 1, z: 0 },
-                angle: 0.0
-            }
+            rotations: [
+                {
+                    axis: { x: 0, y: 1, z: 0 },
+                    angle: 0.0
+                }
+            ]
         },
         "wheel_RF": {
             clickable: false,
             stateKey: "steer",
-            rotate: {
-                axis: { x: 0, y: 1, z: 0 },
-                angle: 0.0
-            }
+            rotations: [
+                {
+                    axis: { x: 0, y: 1, z: 0 },
+                    angle: 0.0
+                }
+            ]
         },
         "Moving_wheel_LR": {
             clickable: false,
@@ -84,10 +147,12 @@ export const CAR_MODEL = {
         "Steering_wheel": {
             clickable: false,
             stateKey: "steer",
-            rotate: {
-                axis: { x: 0, y: 0, z: 1 },
-                angle: 0.0
-            }
+            rotations: [
+                {
+                    axis: { x: 0, y: 0, z: 1 },
+                    angle: 0.0
+                }
+            ]
         },
         "Throttle": {
             clickable: false,

@@ -464,3 +464,59 @@ canvas {
     background-color: #0078d4;
     transform: scale(1.05);
 }
+
+.engine-power-btn {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    width: 76px;
+    height: 76px;
+    background: radial-gradient(circle at 30% 30%, #4a4a4d, #1c1c1e);
+    color: #d1d1d1;
+    border: 2px solid #2d2d30;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 100;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.1);
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.engine-power-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.1);
+    border-color: #3e3e42;
+}
+
+.engine-power-btn:active {
+    transform: scale(0.95);
+}
+
+.engine-text-small {
+    font-size: 0.55rem;
+    letter-spacing: 1px;
+    font-weight: 600;
+    opacity: 0.7;
+}
+
+.engine-text-large {
+    font-size: 0.85rem;
+    font-weight: 800;
+    margin-top: 2px;
+    color: #E7303F;
+    transition: color 0.3s, text-shadow 0.3s;
+}
+
+.engine-power-btn.engine-on {
+    border-color: #E7303F;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.5), 0 0 15px rgba(231, 48, 63, 0.4), inset 0 2px 4px rgba(255,255,255,0.1);
+}
+
+.engine-power-btn.engine-on .engine-text-large {
+    color: #ffffff;
+    text-shadow: 0 0 8px #ffffff;
+}
