@@ -159,10 +159,20 @@ function setupAmbientLight(modelRoot, meshName) {
     const mesh = modelRoot.getObjectByName(meshName);
 
     if (mesh.material) {
+        const oldMat = mesh.material;
 
         mesh.material = new THREE.MeshPhysicalMaterial({
-            emissive: 0xf9f9f9,
+            color: oldMat.color,
+            map: oldMat.map,
+            normalMap: oldMat.normalMap,
+            roughnessMap: oldMat.roughnessMap,
+            metalnessMap: oldMat.metalnessMap,
+
+            emissiveMap: oldMat.map,
+            
+            emissive: 0xeb7a34,
             emissiveIntensity: 0,
+
             roughness: 0.2,
             metalness: 0.1,
             clearcoat: 1.0,
@@ -183,6 +193,40 @@ function setupAmbientLight(modelRoot, meshName) {
     mesh.add(light);
 
     return { mesh, light };
+}
+
+function setupRunningLight(modelRoot, meshName) {
+    const mesh = modelRoot.getObjectByName(meshName);
+
+    if (mesh.material) {
+
+        mesh.material = new THREE.MeshPhysicalMaterial({
+            emissive: 0xf9f9f9,
+            emissiveIntensity: 0,
+            roughness: 0.2,
+            metalness: 0.1,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.0
+        });
+    }
+
+    const light = new THREE.SpotLight(0xffffff, 1, 3, Math.PI / 2, 1.0, 2);
+    light.position.set(0, 0, 0);
+    light.castShadow = false;
+
+    const targetObj = new THREE.Object3D();
+    targetObj.position.set(1, 0, 0);
+    light.target = targetObj;
+
+    light.visible = true;
+    light.intensity = 0;
+    mesh.add(light);
+
+    return { mesh, light };
+}
+
+export function setupRunningLights(modelRoot, meshNames = ['Running_Lights_RF', 'Running_Lights_LF']) {
+    return meshNames.map((name) => setupRunningLight(modelRoot, name)).filter(Boolean);
 }
 
 export function setupLowBeams(modelRoot, emptyNames = ['Low_beam_R', 'Low_beam_L']) {

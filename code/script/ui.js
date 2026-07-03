@@ -78,6 +78,7 @@ export function setupButtonsCallback(model) {
 }
 
 export function setupLightCallbacks(model) {
+    const runningLightsSwitch = document.getElementById('checkRunningLights');
     const lowBeamsSwitch = document.getElementById('checkLowBeams');
     const highBeamsSwitch = document.getElementById('checkHighBeams');
     const ambientLightSwitch = document.getElementById('checkAmbientLight');
@@ -122,6 +123,11 @@ export function setupLightCallbacks(model) {
             }
         }
     };
+
+    const applyRunningLightsState = (isVisible) => {
+        toggleCarLight(model.runningLights, isVisible);
+        model.state.runningLights = isVisible;
+    }
 
     const applyAmbientLightState = (isVisible) => {
         toggleCarLight(model.ambientLights, isVisible);
