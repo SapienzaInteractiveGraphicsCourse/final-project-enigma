@@ -67,13 +67,14 @@ export async function loadModel(modelDescription, scene) {
                     ),
                 };
 
-                Object.keys(animationsDescription).forEach((partName) => {
-                    const part = gltf_model.getObjectByName(partName)
+                Object.keys(animationsDescription).forEach((animKey) => {
+                    const description = animationsDescription[animKey];
+                    const targetMeshName = description.partName || animKey;
+                    const part = gltf_model.getObjectByName(targetMeshName);
+
                     if (!part) {
                         console.error(`error: failed to reference ${partName} in the model`);
                     }
-
-                    const description = animationsDescription[partName];
 
                     let fromPosition = part.position.clone();
                     let toPosition = part.position.clone();
@@ -99,9 +100,9 @@ export async function loadModel(modelDescription, scene) {
                         toQuaternion.multiply(qDelta);
                     });
 
-                    model.animations[partName] = {
+                    model.animations[animKey] = {
                         part,
-                        name: partName,
+                        name: animKey,
                         clickable: description.clickable,
                         stateKey: description.stateKey,
                         uiId: description.uiId,

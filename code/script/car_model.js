@@ -109,15 +109,8 @@ export const CAR_MODEL = {
         },
         "Lights_Switch": {
             clickable: false,
-            stateKey: "lowBeams",
-            uiId: "checkLowBeams",
-            rotations: [
-                {
-                    axis: { x: 0, y: 0, z: 1 },
-                    angle: 112.0,
-                }
-            ],
-            milliseconds: 300,
+            axis: { x: 0, y: 0, z: 1 },
+            milliseconds: 250
         },
         "wheel_LF": {
             clickable: false,

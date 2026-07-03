@@ -1,7 +1,7 @@
 import { getMaterialProperty, setMaterialColor, setMaterialProperty } from './color.js';
 import { goToCameraView, toggleCameraMode } from './camera.js';
 import { toggleCarLight, startBlink, stopBlink } from './lights.js';
-import { toggleAnimationCallback, animatePartToState } from './animations.js';
+import { toggleAnimationCallback, animatePartToState, setSwitchAngle } from './animations.js';
 import { playSfx, stopStartupSound } from './audio.js';
 
 const materialBindings = [
@@ -84,80 +84,134 @@ export function setupLightCallbacks(model) {
     const highBeamsSwitch = document.getElementById('checkHighBeams');
     const ambientLightSwitch = document.getElementById('checkAmbientLight');
 
-    const applyLowBeamsState = (isRequestedOn) => {
-        model.state.lowBeams = isRequestedOn;
+    const syncLightSwitchKnob = () => {
+        if (model.state.lowBeams || model.state.highBeams) {
+            setSwitchAngle(model, "Lights_Switch", 112);
+        } else if (model.state.runningLights) {
+            setSwitchAngle(model, "Lights_Switch", 71);
+        } else {
+            setSwitchAngle(model, "Lights_Switch", 0);
+        }
+    };
+
+    const applyRunningLightsState = (isRequestedOn) => {
+        model.state.runningLights = isRequestedOn;
 
         if (isRequestedOn) {
-            if (model.animations["Lights_Switch"]) {
-                animatePartToState(model, "Lights_Switch", true);
-            }
-            if (!model.state.highBeams) {
-                toggleCarLight(model.lowBeams, true);
+            if (!model.state.lowBeams) {
+                toggleCarLight(model.runningLights, true);
             }
         } else {
-            toggleCarLight(model.lowBeams, false);
+            toggleCarLight(model.runningLights, false);
+
+            if (model.state.lowBeams) {
+                model.state.lowBeams = false;
+                toggleCarLight(model.lowBeams, false);
+                if (lowBeamsSwitch) lowBeamsSwitch.checked = false;
+            }
+
             if (model.state.highBeams) {
                 model.state.highBeams = false;
                 toggleCarLight(model.highBeams, false);
                 if (highBeamsSwitch) highBeamsSwitch.checked = false;
             }
-            if (model.animations["Lights_Switch"]) {
-                animatePartToState(model, "Lights_Switch", false);
+        }
+
+        syncLightSwitchKnob();
+    };
+
+    const applyLowBeamsState = (isRequestedOn) => {
+        model.state.lowBeams = isRequestedOn;
+
+        if (isRequestedOn) {
+            if (!model.state.runningLights) {
+                model.state.runningLights = true;
+                if (runningLightsSwitch) runningLightsSwitch.checked = true;
+            } else {
+                toggleCarLight(model.runningLights, false);
+            }
+
+            if (!model.state.highBeams) {
+                toggleCarLight(model.lowBeams, true);
+            }
+        } else {
+            toggleCarLight(model.lowBeams, false);
+
+            if (model.state.highBeams) {
+                model.state.highBeams = false;
+                toggleCarLight(model.highBeams, false);
+                if (highBeamsSwitch) highBeamsSwitch.checked = false;
+            }
+
+            if (runningLightsSwitch && runningLightsSwitch.checked) {
+                model.state.runningLights = true;
+                toggleCarLight(model.runningLights, true);
             }
         }
+
+        syncLightSwitchKnob();
     };
 
     const applyHighBeamsState = (isRequestedOn) => {
         if (isRequestedOn) {
             if (!model.state.lowBeams) {
-                if (highBeamsSwitch) highBeamsSwitch.checked = false;
-                return;
+                if (lowBeamsSwitch) {
+                    lowBeamsSwitch.checked = true;
+                    applyLowBeamsState(true);
+                }
             }
+
             model.state.highBeams = true;
             toggleCarLight(model.highBeams, true);
             toggleCarLight(model.lowBeams, false);
         } else {
             model.state.highBeams = false;
             toggleCarLight(model.highBeams, false);
+
             if (model.state.lowBeams) {
                 toggleCarLight(model.lowBeams, true);
             }
         }
-    };
 
-    const applyRunningLightsState = (isVisible) => {
-        toggleCarLight(model.runningLights, isVisible);
-        model.state.runningLights = isVisible;
-    }
+        syncLightSwitchKnob();
+    };
 
     const applyAmbientLightState = (isVisible) => {
         toggleCarLight(model.ambientLights, isVisible);
         model.state.ambientLight = isVisible;
+    };
+
+    if (runningLightsSwitch) {
+        runningLightsSwitch.checked = model.state.runningLights || false;
+        applyRunningLightsState(runningLightsSwitch.checked);
+        runningLightsSwitch.addEventListener('change', (event) => {
+            applyRunningLightsState(event.target.checked);
+        });
     }
 
-    lowBeamsSwitch.checked = model.state.lowBeams;
-    applyLowBeamsState(model.state.lowBeams);
-    lowBeamsSwitch.addEventListener('change', (event) => {
-        applyLowBeamsState(event.target.checked);
-    });
+    if (lowBeamsSwitch) {
+        lowBeamsSwitch.checked = model.state.lowBeams || false;
+        applyLowBeamsState(lowBeamsSwitch.checked);
+        lowBeamsSwitch.addEventListener('change', (event) => {
+            applyLowBeamsState(event.target.checked);
+        });
+    }
 
-    highBeamsSwitch.checked = model.state.highBeams;
-    applyHighBeamsState(model.state.highBeams);
-    highBeamsSwitch.addEventListener('change', (event) => {
-        applyHighBeamsState(event.target.checked);
-    });
+    if (highBeamsSwitch) {
+        highBeamsSwitch.checked = model.state.highBeams || false;
+        applyHighBeamsState(highBeamsSwitch.checked);
+        highBeamsSwitch.addEventListener('change', (event) => {
+            applyHighBeamsState(event.target.checked);
+        });
+    }
 
-    ambientLightSwitch.checked = model.state.ambientLight;
-    applyAmbientLightState(model.state.ambientLight);
-    ambientLightSwitch.addEventListener('change', (event) => {
-        applyAmbientLightState(event.target.checked);
-    });
-
-    runningLightsSwitch.checked = model.state.runningLights || false;
-    applyRunningLightsState(runningLightsSwitch.checked);
-    runningLightsSwitch.addEventListener('change', (event) => {
-        applyRunningLightsState(event.target.checked);
-    });
+    if (ambientLightSwitch) {
+        ambientLightSwitch.checked = model.state.ambientLight || false;
+        applyAmbientLightState(ambientLightSwitch.checked);
+        ambientLightSwitch.addEventListener('change', (event) => {
+            applyAmbientLightState(event.target.checked);
+        });
+    }
 }
 
 export function setupTurnSignalCallbacks(model) {

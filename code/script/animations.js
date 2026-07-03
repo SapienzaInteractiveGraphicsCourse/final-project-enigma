@@ -6,6 +6,47 @@ import { playSfx } from './audio.js';
 const hoverSwap = new Map();
 let hoveredPart = null;
 
+function animatePartTo(part, targetPosition, targetQuaternion, duration, onCompleteCallback = null) {
+    if (part.userData.activeTween) {
+        part.userData.activeTween.stop();
+        part.userData.activeTween = null;
+    }
+
+    const startPosition = part.position.clone();
+    const startQuaternion = part.quaternion.clone();
+    const progress = { t: 0 };
+
+    const tween = new TWEEN.Tween(progress)
+        .to({ t: 1 }, duration)
+        .easing(TWEEN.Easing.Quadratic.Out)
+        .onUpdate(({ t }) => {
+            part.position.lerpVectors(startPosition, targetPosition, t);
+            part.quaternion.slerpQuaternions(startQuaternion, targetQuaternion, t);
+        })
+        .onComplete(() => {
+            part.userData.activeTween = null;
+            if (onCompleteCallback) onCompleteCallback();
+        });
+
+    part.userData.activeTween = tween;
+    tween.start();
+}
+
+export function setSwitchAngle(model, partName, targetAngleDegrees) {
+    const part = model.root?.getObjectByName(partName);
+    if (!part) return;
+
+    if (!part.userData.restQuaternion) {
+        part.userData.restQuaternion = part.quaternion.clone();
+    }
+
+    const axis = new THREE.Vector3(0, 0, 1);
+    const qDelta = new THREE.Quaternion().setFromAxisAngle(axis, THREE.MathUtils.degToRad(targetAngleDegrees));
+    const targetQuaternion = part.userData.restQuaternion.clone().multiply(qDelta);
+
+    animatePartTo(part, part.position, targetQuaternion, 250);
+}
+
 export function setAnimationState(model, animationName, targetState, triggerUiEvent = false) {
     const animation = model.animations[animationName];
     if (!animation || !animation.part) return;
@@ -15,13 +56,16 @@ export function setAnimationState(model, animationName, targetState, triggerUiEv
         model.state[stateKey] = false;
     }
 
-    if (model.state[stateKey] === targetState && !animation.activeTween) {
-        return;
-    }
+    const targetPosition = targetState ? animation.toPosition : animation.fromPosition;
+    const targetQuaternion = targetState ? animation.toQuaternion : animation.fromQuaternion;
 
-    if (animation.activeTween) {
-        animation.activeTween.stop();
-        animation.activeTween = null;
+    if (
+        model.state[stateKey] === targetState &&
+        !animation.part.userData.activeTween &&
+        animation.part.position.distanceToSquared(targetPosition) < 0.000001 &&
+        animation.part.quaternion.angleTo(targetQuaternion) < 0.001
+    ) {
+        return;
     }
 
     model.state[stateKey] = targetState;
@@ -30,9 +74,6 @@ export function setAnimationState(model, animationName, targetState, triggerUiEv
     if (isOpening && animation.sounds?.open) {
         playSfx(animation.sounds.open);
     }
-
-    const targetPosition = targetState ? animation.toPosition : animation.fromPosition;
-    const targetQuaternion = targetState ? animation.toQuaternion : animation.fromQuaternion;
 
     const posDist = animation.fromPosition.distanceTo(animation.toPosition);
     let fraction = 1;
@@ -50,25 +91,11 @@ export function setAnimationState(model, animationName, targetState, triggerUiEv
 
     const duration = animation.milliseconds * Math.max(0, Math.min(1, fraction));
 
-    const progress = { t: 0 };
-    const startPosition = animation.part.position.clone();
-    const startQuaternion = animation.part.quaternion.clone();
-
-    const tween = new TWEEN.Tween(progress)
-        .to({ t: 1 }, duration)
-        .onUpdate(({ t }) => {
-            animation.part.position.lerpVectors(startPosition, targetPosition, t);
-            animation.part.quaternion.slerpQuaternions(startQuaternion, targetQuaternion, t);
-        })
-        .onComplete(() => {
-            animation.activeTween = null;
-            if (!isOpening && animation.sounds?.close) {
-                playSfx(animation.sounds.close);
-            }
-        });
-
-    animation.activeTween = tween;
-    tween.start();
+    animatePartTo(animation.part, targetPosition, targetQuaternion, duration, () => {
+        if (!isOpening && animation.sounds?.close) {
+            playSfx(animation.sounds.close);
+        }
+    });
 
     if (animation.uiId) {
         const uiElement = document.getElementById(animation.uiId);
@@ -155,7 +182,7 @@ function applyHoverHighlight(renderer, root) {
         if (node.isMesh) {
             meshes.push(node);
         }
-    })
+    });
 
     for (const mesh of meshes) {
         let entry = hoverSwap.get(mesh.uuid);
