@@ -151,6 +151,12 @@ export function setupLightCallbacks(model) {
     ambientLightSwitch.addEventListener('change', (event) => {
         applyAmbientLightState(event.target.checked);
     });
+
+    runningLightsSwitch.checked = model.state.runningLights || false;
+    applyRunningLightsState(runningLightsSwitch.checked);
+    runningLightsSwitch.addEventListener('change', (event) => {
+        applyRunningLightsState(event.target.checked);
+    });
 }
 
 export function setupTurnSignalCallbacks(model) {

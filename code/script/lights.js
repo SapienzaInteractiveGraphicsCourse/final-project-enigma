@@ -158,6 +158,11 @@ function setupTurnSignal(modelRoot, meshName, targetPos = [0, 0, 1]) {
 function setupAmbientLight(modelRoot, meshName) {
     const mesh = modelRoot.getObjectByName(meshName);
 
+    if (!mesh) {
+        console.error(`error: failed to reference ${meshName} in the model`);
+        return null;
+    }
+
     if (mesh.material) {
         const oldMat = mesh.material;
 
@@ -198,6 +203,11 @@ function setupAmbientLight(modelRoot, meshName) {
 function setupRunningLight(modelRoot, meshName) {
     const mesh = modelRoot.getObjectByName(meshName);
 
+    if (!mesh) {
+        console.error(`error: failed to reference ${meshName} in the model`);
+        return null;
+    }
+
     if (mesh.material) {
 
         mesh.material = new THREE.MeshPhysicalMaterial({
@@ -215,7 +225,7 @@ function setupRunningLight(modelRoot, meshName) {
     light.castShadow = false;
 
     const targetObj = new THREE.Object3D();
-    targetObj.position.set(1, 0, 0);
+    targetObj.position.set(0, 1, 0);
     light.target = targetObj;
 
     light.visible = true;
@@ -225,7 +235,7 @@ function setupRunningLight(modelRoot, meshName) {
     return { mesh, light };
 }
 
-export function setupRunningLights(modelRoot, meshNames = ['Running_Lights_RF', 'Running_Lights_LF']) {
+export function setupRunningLights(modelRoot, meshNames = ['Running_lights_RF', 'Running_lights_LF']) {
     return meshNames.map((name) => setupRunningLight(modelRoot, name)).filter(Boolean);
 }
 

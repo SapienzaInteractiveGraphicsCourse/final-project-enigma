@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { setupMaterials } from './color.js';
-import { setupLowBeams, setupHighBeams, setupTurnSignals, setupAmbientLights } from './lights.js'; 
+import { setupLowBeams, setupHighBeams, setupTurnSignals, setupAmbientLights, setupRunningLights } from './lights.js'; 
 
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
@@ -45,6 +45,7 @@ export async function loadModel(modelDescription, scene) {
                 setupMaterials(gltf_model);
                 model.lowBeams = setupLowBeams(gltf_model);
                 model.highBeams = setupHighBeams(gltf_model);
+                model.runningLights = setupRunningLights(gltf_model);
                 model.ambientLights = setupAmbientLights(gltf_model);
 
                 model.turnSignals = {
