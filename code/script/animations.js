@@ -287,6 +287,10 @@ export function enableClickToAnimate(scene, camera, renderer, model) {
 
 export function toggleAnimationCallback(model, buttonName, animationName) {
     const button = document.getElementById(buttonName);
+    if (!button) {
+        console.warn(`[Animazioni] Attenzione: il bottone HTML con ID '${buttonName}' non è stato trovato per l'animazione '${animationName}'.`);
+        return;
+    }
     button.onclick = () => { toggleAnimation(model, animationName); };
 }
 

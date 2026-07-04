@@ -296,8 +296,7 @@ export function setupEngineCallback(model) {
     const engineBtn = document.getElementById('btnEnginePower');
     const statusText = document.getElementById('engineStatusText');
     const runningLightsSwitch = document.getElementById('checkRunningLights');
-    
-    // Funzione centralizzata per gestire audio, fari e aspetto grafico del pulsante
+
     const applyEngineLogic = (isRunning) => {
         if (isRunning) {
             playSfx('startup');
@@ -322,7 +321,6 @@ export function setupEngineCallback(model) {
         }
     };
 
-    // Allineamento iniziale allo stato corrente del modello
     applyEngineLogic(model.state.ignitionOn || false);
 
     if (engineBtn) {

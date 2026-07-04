@@ -4,7 +4,7 @@ import { loadModel } from './model.js';
 import { CAR_MODEL } from './car_model.js';
 import { loadEnvironment } from './environment.js';
 import { updateCameraMovement } from './camera.js';
-import { toggleAnimationCallback, enableClickToAnimate } from './animations.js'
+import { enableClickToAnimate } from './animations.js'
 import { createScene } from './scene.js';
 import { createSteerControl } from './steering.js'
 import { initCameraUI, syncMaterialControls, setupLightCallbacks, setupButtonsCallback, setupTurnSignalCallbacks, setupDoorLightCallbacks, setupEngineCallback } from './ui.js';
