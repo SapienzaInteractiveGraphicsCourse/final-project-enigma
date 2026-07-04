@@ -73,7 +73,7 @@ export async function loadModel(modelDescription, scene) {
                     const part = gltf_model.getObjectByName(targetMeshName);
 
                     if (!part) {
-                        console.error(`error: failed to reference ${partName} in the model`);
+                        console.error(`error: failed to reference ${targetMeshName} in the model`);
                     }
 
                     let fromPosition = part.position.clone();

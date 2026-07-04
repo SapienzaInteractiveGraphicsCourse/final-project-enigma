@@ -13,6 +13,7 @@ export const CAR_MODEL = {
         highBeamsOn: false,
         runningLightsOn: false,
         ambientLightOn: false,
+        ignitionOn: false,
     },
     animations: {
         "Left_door": {
@@ -111,6 +112,18 @@ export const CAR_MODEL = {
             clickable: false,
             axis: { x: 0, y: 0, z: 1 },
             milliseconds: 250
+        },
+        "key": {
+            clickable: true,
+            stateKey: "ignitionOn",
+            uiId: "btnEnginePower",
+            rotations: [
+                {
+                    axis: { x: 0, y: 0, z: 1 },
+                    angle: -30.0
+                }
+            ],
+            milliseconds: 300,
         },
         "wheel_LF": {
             clickable: false,

@@ -77,7 +77,7 @@ async function prewarmScene(scene, camera, renderer, model) {
     renderer.render(scene, camera);
     await new Promise((resolve) => requestAnimationFrame(resolve));
 
-    ensureAudioContextResumed(); 
+    ensureAudioContextResumed();
 }
 
 let reflectionFrameCounter = 0;

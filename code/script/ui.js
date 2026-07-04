@@ -1,7 +1,7 @@
 import { getMaterialProperty, setMaterialColor, setMaterialProperty } from './color.js';
 import { goToCameraView, toggleCameraMode } from './camera.js';
 import { toggleCarLight, startBlink, stopBlink } from './lights.js';
-import { toggleAnimationCallback, animatePartToState, setSwitchAngle } from './animations.js';
+import { toggleAnimationCallback, toggleAnimation, animatePartToState, setSwitchAngle } from './animations.js';
 import { playSfx, stopStartupSound } from './audio.js';
 
 const materialBindings = [
@@ -295,38 +295,43 @@ export function setupEngineCallback(model) {
     const statusText = document.getElementById('engineStatusText');
     const runningLightsSwitch = document.getElementById('checkRunningLights');
     
-    let isEngineRunning = false;
+    // Funzione centralizzata per gestire audio, fari e aspetto grafico del pulsante
+    const applyEngineLogic = (isRunning) => {
+        if (isRunning) {
+            playSfx('startup');
+            if (engineBtn) engineBtn.classList.add('engine-on');
+            if (statusText) statusText.textContent = 'STOP';
+            
+            if (model.runningLights) {
+                model.state.runningLights = true;
+                toggleCarLight(model.runningLights, true);
+                if (runningLightsSwitch) runningLightsSwitch.checked = true;
+            }
+        } else {
+            stopStartupSound();
+            if (engineBtn) engineBtn.classList.remove('engine-on');
+            if (statusText) statusText.textContent = 'START';
+            
+            if (model.runningLights) {
+                model.state.runningLights = false;
+                toggleCarLight(model.runningLights, false);
+                if (runningLightsSwitch) runningLightsSwitch.checked = false;
+            }
+        }
+    };
+
+    // Allineamento iniziale allo stato corrente del modello
+    applyEngineLogic(model.state.ignitionOn || false);
 
     if (engineBtn) {
+
+        engineBtn.addEventListener('change', () => {
+            applyEngineLogic(model.state.ignitionOn || false);
+        });
+
         engineBtn.addEventListener('click', () => {
-            isEngineRunning = !isEngineRunning;
-            
-            if (isEngineRunning) {
-                playSfx('startup');
-                engineBtn.classList.add('engine-on');
-                if (statusText) statusText.textContent = 'STOP';
-                
-                if (model.runningLights) {
-                    model.state.runningLights = true;
-                    toggleCarLight(model.runningLights, true);
-                    
-                    if (runningLightsSwitch) {
-                        runningLightsSwitch.checked = true;
-                    }
-                }
-            } else {
-                stopStartupSound();
-                engineBtn.classList.remove('engine-on');
-                if (statusText) statusText.textContent = 'START';
-                
-                if (model.runningLights) {
-                    model.state.runningLights = false;
-                    toggleCarLight(model.runningLights, false);
-                    
-                    if (runningLightsSwitch) {
-                        runningLightsSwitch.checked = false;
-                    }
-                }
+            if (typeof toggleAnimation === 'function') {
+                toggleAnimation(model, 'Key');
             }
         });
     }
