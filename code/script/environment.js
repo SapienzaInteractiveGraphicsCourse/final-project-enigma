@@ -1,16 +1,10 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { gltfLoader } from './loaders.js'
 
 export async function loadEnvironment(scene) {
-    const loader = new GLTFLoader();
-    const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
-    dracoLoader.setDecoderConfig({ type: 'js' });
-    loader.setDRACOLoader(dracoLoader);
 
     return new Promise((resolve, reject) => {
-        loader.load(
+        gltfLoader.load(
             '../../src/models/garage_1/garage.glb',
             (gltf) => {
                 const environment = gltf.scene;

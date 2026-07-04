@@ -90,7 +90,7 @@ function animate(scene, camera, renderer, steerControl, car_model, cubeCamera) {
     TWEEN.update();
 
     reflectionFrameCounter++;
-    if (reflectionFrameCounter % 10 === 0) {
+    if (reflectionFrameCounter % 60 === 0) {
         car_model.root.visible = false;
         cubeCamera.update(renderer, scene);
         car_model.root.visible = true;

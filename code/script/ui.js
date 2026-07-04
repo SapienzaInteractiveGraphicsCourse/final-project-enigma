@@ -270,7 +270,9 @@ export function setupDoorLightCallbacks(model) {
     
     let lightTimer = null;
 
-    const handleDoorChange = () => {
+    const handleDoorChange = (event) => {
+        if (!event.isTrusted) return; // ← ignora eventi dispatched programmaticamente
+        
         const isAnyDoorOpen = leftDoorSwitch.checked || rightDoorSwitch.checked;
         
         if (lightTimer) clearTimeout(lightTimer);

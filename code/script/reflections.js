@@ -19,7 +19,7 @@ export function CubeMapReflections(car, scene, renderer) {
         return;
     }
 
-    const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(512, { 
+    const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256, { 
         format: THREE.RGBAFormat, 
         generateMipmaps: true,
         minFilter: THREE.LinearMipmapLinearFilter 
