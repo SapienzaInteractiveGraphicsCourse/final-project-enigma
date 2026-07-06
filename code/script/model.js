@@ -24,13 +24,18 @@ export async function loadModel(modelDescription, scene) {
                const SHADOW_CASTERS = ['body', 'hood', 'door', 'wheel', 'bumper'];
 
                gltf_model.traverse((child) => {
-                 if (child.isMesh) {
-                            const nameLower = child.name.toLowerCase();
-                            const shouldCastShadow = SHADOW_CASTERS.some(keyword => nameLower.includes(keyword));
-                            child.castShadow = shouldCastShadow;
-                            child.receiveShadow = true;
-                        }
-                    });
+                    if (child.isMesh) {
+                        const nameLower = child.name.toLowerCase();
+                        const shouldCastShadow = SHADOW_CASTERS.some(keyword => nameLower.includes(keyword));
+                        child.castShadow = shouldCastShadow;
+                        child.receiveShadow = true;
+                    }
+                    if (child.name === 'glass') {
+                        child.castShadow = false;
+                        child.receiveShadow = false;
+                    }
+                });
+                    
 
                 gltf_model.scale.set(1, 1, 1);
                 gltf_model.position.set(0, 0, 0);
