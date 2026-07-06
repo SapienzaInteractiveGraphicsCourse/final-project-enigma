@@ -89,12 +89,12 @@ window.onload = async () => {
     Settings.init();
     const { scene, camera, renderer } = createScene();
 
-    initCameraUI(camera);
-
     const [_, car_model] = await Promise.all([
-    loadEnvironment(scene),
-    loadModel(CAR_MODEL, scene)
-            ]);
+        loadEnvironment(scene),
+        loadModel(CAR_MODEL, scene)
+    ]);
+
+    initCameraUI(camera, car_model);
 
     syncMaterialControls();
     const steerControl = createSteerControl(car_model);

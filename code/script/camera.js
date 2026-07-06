@@ -2,7 +2,10 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 export let currentCameraMode = 'orbit';
+export let isDriverViewActive = false;
+let previousCameraState = { position: new THREE.Vector3(), target: new THREE.Vector3(), mode: 'orbit' };
 let orbitControls;
+let driverBaseY = 0;
 
 const keys = { w: false, a: false, s: false, d: false, q: false, e: false };
 let isDragging = false;
@@ -30,6 +33,19 @@ export const views = {
     Right: new THREE.Vector3(6, 1, 0),
     Top: new THREE.Vector3(0, 6, 0.01) 
 };
+
+function updateDriverButtonVisual() {
+    const btn = document.getElementById('btnViewDriver');
+    if (btn) {
+        if (isDriverViewActive) {
+            btn.style.backgroundColor = '#007bff';
+            btn.style.color = '#ffffff';
+        } else {
+            btn.style.backgroundColor = '';
+            btn.style.color = '';
+        }
+    }
+}
 
 export function animateCameraTransition(camera, targetPosition) {
     if (currentCameraMode !== 'orbit') return; 
@@ -99,11 +115,23 @@ export function setupCamera(camera, renderer) {
 
         const sensitivity = 0.003;
         euler.setFromQuaternion(camera.quaternion);
+        
         euler.y -= deltaMove.x * sensitivity;
         euler.x -= deltaMove.y * sensitivity;
-        euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.x));
-        camera.quaternion.setFromEuler(euler);
 
+        euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.x));
+
+        if (isDriverViewActive) {
+            let diffY = euler.y - driverBaseY;
+            
+            while (diffY > Math.PI) diffY -= Math.PI * 2;
+            while (diffY < -Math.PI) diffY += Math.PI * 2;
+            
+            diffY = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, diffY));
+            euler.y = driverBaseY + diffY;
+        }
+
+        camera.quaternion.setFromEuler(euler);
         previousMousePosition = { x: e.clientX, y: e.clientY };
     });
 
@@ -130,6 +158,15 @@ export function setupCamera(camera, renderer) {
         euler.y -= deltaMove.x * sensitivity;
         euler.x -= deltaMove.y * sensitivity;
         euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.x));
+
+        if (isDriverViewActive) {
+            let diffY = euler.y - driverBaseY;
+            while (diffY > Math.PI) diffY -= Math.PI * 2;
+            while (diffY < -Math.PI) diffY += Math.PI * 2;
+            diffY = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, diffY));
+            euler.y = driverBaseY + diffY;
+        }
+
         camera.quaternion.setFromEuler(euler);
 
         previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -143,6 +180,14 @@ export function setupCamera(camera, renderer) {
 }
 
 export function goToCameraView(camera, viewName) {
+    isDriverViewActive = false;
+    updateDriverButtonVisual();
+
+    if (currentCameraMode !== 'orbit') {
+        currentCameraMode = 'orbit';
+        orbitControls.enabled = true;
+    }
+
     const targetPosition = views[viewName];
     if (!targetPosition) return;
 
@@ -157,6 +202,12 @@ export function toggleCameraMode() {
         currentCameraMode = 'orbit';
         orbitControls.enabled = true;
     }
+
+    if (isDriverViewActive) {
+        isDriverViewActive = false;
+        updateDriverButtonVisual();
+    }
+
     return currentCameraMode;
 }
 
@@ -165,6 +216,8 @@ export function updateCameraMovement(camera) {
         orbitControls.update();
         return;
     }
+
+    if (isDriverViewActive) return;
 
     const speed = 0.1;
     moveVector.set(0, 0, 0);
@@ -188,5 +241,51 @@ export function updateCameraMovement(camera) {
         camera.position.x = Math.max(-9.5, Math.min(9.5, camera.position.x));
         camera.position.y = Math.max(0.5, Math.min(10.0, camera.position.y));
         camera.position.z = Math.max(-9.5, Math.min(9.5, camera.position.z));
+    }
+}
+
+export function setDriverView(camera, carModel, blenderCameraName) {
+    if (isDriverViewActive) {
+        isDriverViewActive = false;
+        updateDriverButtonVisual();
+
+        camera.position.copy(previousCameraState.position);
+        orbitControls.target.copy(previousCameraState.target);
+        
+        if (currentCameraMode !== previousCameraState.mode) {
+            toggleCameraMode();
+        }
+        orbitControls.update();
+        return;
+    }
+
+    const driverCam = carModel.root.getObjectByName(blenderCameraName);
+    
+    if (!driverCam) {
+        console.warn(`Attenzione: Camera '${blenderCameraName}' non trovata nel modello 3D.`);
+        return;
+    }
+
+    previousCameraState.position.copy(camera.position);
+    previousCameraState.target.copy(orbitControls.target);
+    previousCameraState.mode = currentCameraMode;
+
+    isDriverViewActive = true;
+    updateDriverButtonVisual();
+
+    const worldPos = new THREE.Vector3();
+    driverCam.getWorldPosition(worldPos);
+    camera.position.copy(worldPos);
+
+    const worldQuat = new THREE.Quaternion();
+    driverCam.getWorldQuaternion(worldQuat);
+    camera.quaternion.copy(worldQuat);
+
+    euler.setFromQuaternion(camera.quaternion);
+    driverBaseY = euler.y;
+
+    if (currentCameraMode === 'orbit') {
+        currentCameraMode = 'firstPerson';
+        orbitControls.enabled = false;
     }
 }

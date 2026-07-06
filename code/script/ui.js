@@ -3,6 +3,7 @@ import { goToCameraView, toggleCameraMode } from './camera.js';
 import { toggleCarLight, startBlink, stopBlink } from './lights.js';
 import { toggleAnimationCallback, toggleAnimation, animatePartToState, setSwitchAngle } from './animations.js';
 import { playSfx, stopStartupSound } from './audio.js';
+import { setDriverView } from './camera.js';
 
 const materialBindings = [
     { prefix: 'body', materialName: 'body_paint' },
@@ -37,7 +38,7 @@ materialBindings.forEach(({ prefix, materialName }) => {
     }
 });
 
-export function initCameraUI(camera) {
+export function initCameraUI(camera, carModel) {
     document.getElementById('btnViewFront')?.addEventListener('click', () => goToCameraView(camera, 'Front'));
     document.getElementById('btnViewBack')?.addEventListener('click', () => goToCameraView(camera, 'Back'));
     document.getElementById('btnViewLeft')?.addEventListener('click', () => goToCameraView(camera, 'Left'));
@@ -48,6 +49,13 @@ export function initCameraUI(camera) {
         const newMode = toggleCameraMode();
         e.target.textContent = newMode === 'orbit' ? 'Orbit Camera' : 'Free Camera';
     });
+
+    const btnViewDriver = document.getElementById('btnViewDriver');
+    if (btnViewDriver) {
+        btnViewDriver.addEventListener('click', () => {
+            setDriverView(camera, carModel, 'onboard_camera'); 
+        });
+    }
 }
 
 export function syncMaterialControls() {

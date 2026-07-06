@@ -31,14 +31,22 @@ export function createSteerControl(model) {
         speed: 4,
         applyValue: (_, throttle, dt) => {
             const t = THREE.MathUtils.clamp(throttle, -maxThrottle, maxThrottle);
-            const targetSpeed = t * maxRadPerSec;
 
-            if (t !== 0) {
+            if (t > 0) {
+                const targetSpeed = t * maxRadPerSec;
                 const delta = targetSpeed - wheelSpinSpeedRadians;
                 const step = Math.sign(delta) * Math.min(Math.abs(delta), accel * dt);
                 wheelSpinSpeedRadians += step;
+            } else if (t < 0) {
+                const brakingForce = brakeDrag * 2.5 * dt * Math.abs(t);
+                
+                if (Math.abs(wheelSpinSpeedRadians) <= brakingForce) {
+                    wheelSpinSpeedRadians = 0; 
+                } else {
+                    wheelSpinSpeedRadians -= Math.sign(wheelSpinSpeedRadians) * brakingForce;
+                }
             } else {
-                const dec = Math.min(Math.abs(wheelSpinSpeedRadians), coastingDrag * dt);
+                const dec = Math.min(Math.abs(wheelSpinSpeedRadians), (coastingDrag * 0.15) * dt);
                 wheelSpinSpeedRadians -= Math.sign(wheelSpinSpeedRadians) * dec;
             }
 
