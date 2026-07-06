@@ -3,8 +3,8 @@ import * as TWEEN from '@tweenjs/tween.js';
 import { playTurnSignalSound } from './audio.js';
 
 export function setupEnvironmentLights(scene) {
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-    scene.add(ambientLight);
+    // const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    // scene.add(ambientLight);
 
     const createOptimizedLight = (intensity, posX, posY, posZ) => {
         const light = new THREE.DirectionalLight(0xffffff, intensity);
