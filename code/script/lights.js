@@ -23,7 +23,7 @@ export function setupEnvironmentLights(scene) {
         return light;
     };
 
-    scene.add(createOptimizedLight(5.5, 0, 6, 10));
+    scene.add(createOptimizedLight(9.5, 0, 6, 10));
     scene.add(createOptimizedLight(4.5, -10, 6, 0));
 }
 

@@ -21,7 +21,7 @@ export async function loadModel(modelDescription, scene) {
                 const gltf_model = gltf.scene;
                 model.root = gltf_model;
 
-               const SHADOW_CASTERS = ['body', 'hood', 'door', 'wheel', 'glass', 'bumper'];
+               const SHADOW_CASTERS = ['body', 'hood', 'door', 'wheel', 'bumper'];
 
                gltf_model.traverse((child) => {
                  if (child.isMesh) {
