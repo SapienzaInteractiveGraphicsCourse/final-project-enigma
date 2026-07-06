@@ -139,24 +139,47 @@ function setupTurnSignal(modelRoot, meshName, targetPos = [0, 0, 1]) {
 }
 
 function setupAmbientLight(modelRoot, meshName) {
-    const mesh = modelRoot.getObjectByName(meshName);
-    if (!mesh) { console.error(`error: failed to reference ${meshName}`); return null; }
+    const rootObj = modelRoot.getObjectByName(meshName);
+    if (!rootObj) { console.error(`error: failed to reference ${meshName}`); return null; }
 
-    upgradeToEmissiveMaterial(mesh, 0xeb7a34);
+    let actualMesh = rootObj.isMesh ? rootObj : null;
+    if (!actualMesh) {
+        rootObj.traverse((child) => {
+            if (child.isMesh && !actualMesh) actualMesh = child;
+        });
+    }
+    
+    if (!actualMesh) { console.error(`error: no mesh found inside ${meshName}`); return null; }
 
-    const light = new THREE.SpotLight(0xffffff, 1, 3, Math.PI / 2, 1.0, 2);
-    light.position.set(0, 0, 0);
+    actualMesh.material = new THREE.MeshPhysicalMaterial({
+        color: 0xffffff,
+        emissive: 0xffffff,
+        emissiveIntensity: 0, 
+        roughness: 0.2,
+        metalness: 0.1
+    });
+
+    const light = new THREE.SpotLight(0xffffff, 0, 5, Math.PI / 2, 0.5, 2);
     light.castShadow = false;
 
+    const worldPos = new THREE.Vector3();
+    actualMesh.getWorldPosition(worldPos);
+    
+    modelRoot.worldToLocal(worldPos);
+    
+    light.position.copy(worldPos);
+    light.position.y -= 0.05;
+
     const targetObj = new THREE.Object3D();
-    targetObj.position.set(0, 0, 1);
+    targetObj.position.copy(light.position);
+    targetObj.position.y -= 1.0; 
+
+    modelRoot.add(light, targetObj);
     light.target = targetObj;
 
     light.visible = true;
-    light.intensity = 0;
-    mesh.add(light);
 
-    return { mesh, light, maxLightInt: 3.0, maxEmissiveInt: 3.0 };
+    return { mesh: actualMesh, light: light, maxLightInt: 3.0, maxEmissiveInt: 8.0 };
 }
 
 export function setupRunningLights(modelRoot, meshNames = ['Running_lights_RF', 'Running_lights_LF']) {

@@ -270,16 +270,14 @@ export function setupDoorLightCallbacks(model) {
     
     let lightTimer = null;
 
-    const handleDoorChange = (event) => {
-        if (!event.isTrusted) return; // ← ignora eventi dispatched programmaticamente
-        
-        const isAnyDoorOpen = leftDoorSwitch.checked || rightDoorSwitch.checked;
+    const handleDoorChange = () => {
+        const isAnyDoorOpen = (leftDoorSwitch && leftDoorSwitch.checked) || 
+                              (rightDoorSwitch && rightDoorSwitch.checked);
         
         if (lightTimer) clearTimeout(lightTimer);
         
         lightTimer = setTimeout(() => {
             toggleCarLight(model.ambientLights, isAnyDoorOpen);
-            
             model.state.ambientLight = isAnyDoorOpen; 
 
             if (ambientSwitch) {
