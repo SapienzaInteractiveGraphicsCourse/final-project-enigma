@@ -12,6 +12,8 @@ export const CAR_MODEL = {
         lowBeamsOn: false,
         highBeamsOn: false,
         runningLightsOn: false,
+        tailLightsOn: false,
+        brakeLightsOn: false,
         ambientLightOn: false,
         ignitionOn: false,
     },

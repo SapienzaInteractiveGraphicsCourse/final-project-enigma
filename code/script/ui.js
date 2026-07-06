@@ -108,9 +108,11 @@ export function setupLightCallbacks(model) {
         if (isRequestedOn) {
             if (!model.state.lowBeams) {
                 toggleCarLight(model.runningLights, true);
+                toggleCarLight(model.tailLights, true);
             }
         } else {
             toggleCarLight(model.runningLights, false);
+            toggleCarLight(model.tailLights, false);
 
             if (model.state.lowBeams) {
                 model.state.lowBeams = false;
@@ -308,12 +310,6 @@ export function setupEngineCallback(model) {
             playSfx('startup');
             if (engineBtn) engineBtn.classList.add('engine-on');
             if (statusText) statusText.textContent = 'STOP';
-            
-            if (model.runningLights) {
-                model.state.runningLights = true;
-                toggleCarLight(model.runningLights, true);
-                if (runningLightsSwitch) runningLightsSwitch.checked = true;
-            }
         } else {
             stopStartupSound();
             if (engineBtn) engineBtn.classList.remove('engine-on');

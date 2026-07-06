@@ -69,6 +69,35 @@ function setupRunningLight(modelRoot, meshName) {
     return { mesh, light, maxLightInt: 5.0, maxEmissiveInt: 3.0 };
 }
 
+function setupTailLight(modelRoot, meshName) {
+    const mesh = modelRoot.getObjectByName(meshName);
+    if (!mesh) return null;
+
+    upgradeToEmissiveMaterial(mesh, 0xff0000);
+
+    const light = new THREE.SpotLight(0xff0000, 0, 35.0, Math.PI / 2, 0.6, 2.2);
+    const worldPos = new THREE.Vector3();
+    mesh.getWorldPosition(worldPos);
+    light.position.copy(worldPos);
+    light.position.y -= 0.15;
+    light.castShadow = false;
+
+    const targetObj = new THREE.Object3D();
+    targetObj.position.copy(worldPos).add(new THREE.Vector3(0, 5, -40));
+
+    modelRoot.add(light, targetObj);
+    light.target = targetObj;
+    light.visible = true;
+    light.intensity = 0;
+
+    return { 
+        mesh, 
+        light, 
+        maxLightInt: 1.0,
+        maxEmissiveInt: 2.0
+    };
+}
+
 function setupLowBeam(modelRoot, meshName) {
     const mesh = modelRoot.getObjectByName(meshName);
     if (!mesh) { console.error(`error: failed to reference ${meshName}`); return null; }
@@ -184,6 +213,10 @@ function setupAmbientLight(modelRoot, meshName) {
 
 export function setupRunningLights(modelRoot, meshNames = ['Running_lights_RF', 'Running_lights_LF']) {
     return meshNames.map((name) => setupRunningLight(modelRoot, name)).filter(Boolean);
+}
+
+export function setupTailLights(modelRoot, meshNames = ['Running_lights_RB', 'Running_lights_LB']) {
+    return meshNames.map((name) => setupTailLight(modelRoot, name)).filter(Boolean);
 }
 
 export function setupLowBeams(modelRoot, meshNames = ['Low_beam_RF', 'Low_beam_LF']) {

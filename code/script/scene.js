@@ -2,11 +2,8 @@ import * as THREE from 'three';
 import { createFloor } from './floor.js'
 import { setupCamera } from './camera.js'
 import { setupEnvironmentLights } from './lights.js';
-import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 
 export function createScene() {
-    RectAreaLightUniformsLib.init();
-    
     const container = document.getElementById('canvas-container');
 
     const scene = new THREE.Scene();
