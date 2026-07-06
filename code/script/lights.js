@@ -23,37 +23,34 @@ export function setupEnvironmentLights(scene) {
         return light;
     };
 
-    const frontLight = createOptimizedLight(5.5, 0, 6, 10);
-    scene.add(frontLight);
+    scene.add(createOptimizedLight(5.5, 0, 6, 10));
+    scene.add(createOptimizedLight(4.5, -10, 6, 0));
+}
 
-    const leftLight = createOptimizedLight(4.5, -10, 6, 0);
-    scene.add(leftLight);
+function upgradeToEmissiveMaterial(mesh, emissiveHex) {
+    if (!mesh || !mesh.material) return;
+    const oldMat = mesh.material;
+    mesh.material = new THREE.MeshPhysicalMaterial({
+        color: oldMat.color,
+        map: oldMat.map,
+        normalMap: oldMat.normalMap,
+        roughnessMap: oldMat.roughnessMap,
+        metalnessMap: oldMat.metalnessMap,
+        emissiveMap: oldMat.map,
+        emissive: emissiveHex,
+        emissiveIntensity: 0,
+        roughness: 0.2,
+        metalness: 0.1,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.0
+    });
 }
 
 function setupRunningLight(modelRoot, meshName) {
     const mesh = modelRoot.getObjectByName(meshName);
-    if (!mesh) {
-        console.error(`error: failed to reference ${meshName} in the model`);
-        return null;
-    }
+    if (!mesh) { console.error(`error: failed to reference ${meshName}`); return null; }
 
-    if (mesh.material) {
-        const oldMat = mesh.material;
-        mesh.material = new THREE.MeshPhysicalMaterial({
-            color: oldMat.color,
-            map: oldMat.map,
-            normalMap: oldMat.normalMap,
-            roughnessMap: oldMat.roughnessMap,
-            metalnessMap: oldMat.metalnessMap,
-            emissiveMap: oldMat.map,
-            emissive: 0xd4e3ff,
-            emissiveIntensity: 0,
-            roughness: 0.2,
-            metalness: 0.1,
-            clearcoat: 1.0,
-            clearcoatRoughness: 0.0
-        });
-    }
+    upgradeToEmissiveMaterial(mesh, 0xd4e3ff);
 
     const light = new THREE.SpotLight(0xd4e3ff, 50.0, 35.0, Math.PI / 7, 0.6, 2.2);
     const worldPos = new THREE.Vector3();
@@ -64,170 +61,88 @@ function setupRunningLight(modelRoot, meshName) {
     const targetObj = new THREE.Object3D();
     targetObj.position.copy(worldPos).add(new THREE.Vector3(0, -0.5, 28));
 
-    modelRoot.add(light);
-    modelRoot.add(targetObj);
+    modelRoot.add(light, targetObj);
     light.target = targetObj;
-
     light.visible = true;
     light.intensity = 0;
 
-    return { mesh, light };
+    return { mesh, light, maxLightInt: 5.0, maxEmissiveInt: 3.0 };
 }
 
-function setupLowBeam(modelRoot, emptyName) {
-    const anchor = modelRoot.getObjectByName(emptyName);
-    if (!anchor) {
-        console.error(`error: failed to reference ${emptyName} in the model`);
-        return null;
-    }
+function setupLowBeam(modelRoot, meshName) {
+    const mesh = modelRoot.getObjectByName(meshName);
+    if (!mesh) { console.error(`error: failed to reference ${meshName}`); return null; }
 
-    const beamGroup = new THREE.Group();
-    anchor.add(beamGroup);
+    upgradeToEmissiveMaterial(mesh, 0xd4e3ff);
 
-    const lowbeam = new THREE.SpotLight(0xd4e3ff, 50.0, 35.0, Math.PI / 7, 0.6, 2.2);
-    lowbeam.position.set(0, 0, 0);
-    lowbeam.shadow.bias = -0.001; 
-    beamGroup.add(lowbeam);
+    const light = new THREE.SpotLight(0xd4e3ff, 50.0, 35.0, Math.PI / 7, 0.6, 2.2);
+    const worldPos = new THREE.Vector3();
+    mesh.getWorldPosition(worldPos);
+    light.position.copy(worldPos);
+    light.castShadow = false;
 
-    const bulb = new THREE.Mesh(
-        new THREE.SphereGeometry(0.025, 12, 12),
-        new THREE.MeshStandardMaterial({
-            color: 0x111111,
-            emissive: 0xffffff,
-            emissiveIntensity: 0,
-            roughness: 0.3,
-            metalness: 0.0,
-        })
-    );
-    beamGroup.add(bulb);
+    const targetObj = new THREE.Object3D();
+    targetObj.position.copy(worldPos).add(new THREE.Vector3(0, -0.5, 28));
 
-    const target = new THREE.Object3D();
-    target.position.set(0, -0.5, 28); 
-    beamGroup.add(target);
-    lowbeam.target = target;
+    modelRoot.add(light, targetObj);
+    light.target = targetObj;
+    light.visible = true;
+    light.intensity = 0;
 
-    return beamGroup;
+    return { mesh, light, maxLightInt: 50.0, maxEmissiveInt: 6.0 };
 }
 
-function setupHighBeam(modelRoot, emptyName) {
-    const anchor = modelRoot.getObjectByName(emptyName);
-    if (!anchor) {
-        console.error(`error: failed to reference ${emptyName} in the model`);
-        return null;
-    }
+function setupHighBeam(modelRoot, meshName) {
+    const mesh = modelRoot.getObjectByName(meshName);
+    if (!mesh) { console.error(`error: failed to reference ${meshName}`); return null; }
 
-    const beamGroup = new THREE.Group();
-    anchor.add(beamGroup);
+    upgradeToEmissiveMaterial(mesh, 0xd4e3ff);
 
-    const highbeam = new THREE.SpotLight(0xd4e3ff, 180.0, 220.0, Math.PI / 16, 0.2, 1.4);
-    highbeam.position.set(0, 0, 0);
-    highbeam.shadow.bias = -0.001; 
-    beamGroup.add(highbeam);
+    const light = new THREE.SpotLight(0xd4e3ff, 180.0, 220.0, Math.PI / 16, 0.2, 1.4);
+    const worldPos = new THREE.Vector3();
+    mesh.getWorldPosition(worldPos);
+    light.position.copy(worldPos);
+    light.castShadow = false;
 
-    const bulb = new THREE.Mesh(
-        new THREE.SphereGeometry(0.025, 12, 12),
-        new THREE.MeshStandardMaterial({
-            color: 0x111111,
-            emissive: 0xffffff,
-            emissiveIntensity: 0,
-            roughness: 0.3,
-            metalness: 0.0,
-        })
-    );
-    beamGroup.add(bulb);
+    const targetObj = new THREE.Object3D();
+    targetObj.position.copy(worldPos).add(new THREE.Vector3(0, 0, 120));
 
-    const target = new THREE.Object3D();
-    target.position.set(0, 0, 120); 
-    beamGroup.add(target);
-    highbeam.target = target;
+    modelRoot.add(light, targetObj);
+    light.target = targetObj;
+    light.visible = true;
+    light.intensity = 0;
 
-    return beamGroup;
+    return { mesh, light, maxLightInt: 180.0, maxEmissiveInt: 10.0 };
 }
 
 function setupTurnSignal(modelRoot, meshName, targetPos = [0, 0, 1]) {
     const mesh = modelRoot.getObjectByName(meshName);
+    if (!mesh) { console.error(`error: failed to reference ${meshName}`); return null; }
 
-    if (!mesh) {
-        console.error(`error: failed to reference ${meshName} in the model`);
-        return null;
-    }
-
-    if (mesh.material) {
-        const oldMat = mesh.material;
-
-        mesh.material = new THREE.MeshPhysicalMaterial({
-            color: oldMat.color,
-            map: oldMat.map,
-            normalMap: oldMat.normalMap,
-            roughnessMap: oldMat.roughnessMap,
-            metalnessMap: oldMat.metalnessMap,
-
-            emissiveMap: oldMat.map,
-            
-            emissive: 0xeb7a34,
-            emissiveIntensity: 0,
-
-            roughness: 0.2,
-            metalness: 0.1,
-            clearcoat: 1.0,
-            clearcoatRoughness: 0.0
-        });
-    }
+    upgradeToEmissiveMaterial(mesh, 0xeb7a34);
 
     const light = new THREE.SpotLight(0xffaa00, 0, 3, Math.PI / 2, 1.0, 2);
     light.position.set(0, 0, 0);
-    if (mesh.name.includes('LF') || mesh.name.includes('LB')) {
-        light.position.x += 0.2; 
-    }
-    else if (mesh.name.includes('RF') || mesh.name.includes('RB')) {
-        light.position.x -= 0.2; 
-    }
-
+    if (mesh.name.includes('LF') || mesh.name.includes('LB')) light.position.x += 0.2; 
+    else if (mesh.name.includes('RF') || mesh.name.includes('RB')) light.position.x -= 0.2; 
     light.castShadow = false;
 
     const targetObj = new THREE.Object3D();
-
-    targetObj.position.set(targetPos[0], targetPos[1], targetPos[2]); 
+    targetObj.position.set(...targetPos); 
     
-    mesh.add(targetObj);
+    mesh.add(targetObj, light);
     light.target = targetObj;
-
     light.visible = true;
     light.intensity = 0;
-    mesh.add(light);
 
-    return { mesh, light };
+    return { mesh, light, maxLightInt: 5.0, maxEmissiveInt: 4.0 };
 }
 
 function setupAmbientLight(modelRoot, meshName) {
     const mesh = modelRoot.getObjectByName(meshName);
+    if (!mesh) { console.error(`error: failed to reference ${meshName}`); return null; }
 
-    if (!mesh) {
-        console.error(`error: failed to reference ${meshName} in the model`);
-        return null;
-    }
-
-    if (mesh.material) {
-        const oldMat = mesh.material;
-
-        mesh.material = new THREE.MeshPhysicalMaterial({
-            color: oldMat.color,
-            map: oldMat.map,
-            normalMap: oldMat.normalMap,
-            roughnessMap: oldMat.roughnessMap,
-            metalnessMap: oldMat.metalnessMap,
-
-            emissiveMap: oldMat.map,
-            
-            emissive: 0xeb7a34,
-            emissiveIntensity: 0,
-
-            roughness: 0.2,
-            metalness: 0.1,
-            clearcoat: 1.0,
-            clearcoatRoughness: 0.0
-        });
-    }
+    upgradeToEmissiveMaterial(mesh, 0xeb7a34);
 
     const light = new THREE.SpotLight(0xffffff, 1, 3, Math.PI / 2, 1.0, 2);
     light.position.set(0, 0, 0);
@@ -241,27 +156,23 @@ function setupAmbientLight(modelRoot, meshName) {
     light.intensity = 0;
     mesh.add(light);
 
-    return { mesh, light };
+    return { mesh, light, maxLightInt: 3.0, maxEmissiveInt: 3.0 };
 }
 
 export function setupRunningLights(modelRoot, meshNames = ['Running_lights_RF', 'Running_lights_LF']) {
     return meshNames.map((name) => setupRunningLight(modelRoot, name)).filter(Boolean);
 }
 
-export function setupLowBeams(modelRoot, emptyNames = ['Low_beam_R', 'Low_beam_L']) {
-    return emptyNames.map((emptyName) => setupLowBeam(modelRoot, emptyName)).filter(Boolean);
+export function setupLowBeams(modelRoot, meshNames = ['Low_beam_RF', 'Low_beam_LF']) {
+    return meshNames.map((name) => setupLowBeam(modelRoot, name)).filter(Boolean);
 }
 
-export function setupHighBeams(modelRoot, emptyNames = ['High_beam_R', 'High_beam_L']) {
-    return emptyNames.map((emptyName) => setupHighBeam(modelRoot, emptyName)).filter(Boolean);
+export function setupHighBeams(modelRoot, meshNames = ['High_beam_RF', 'High_beam_LF']) {
+    return meshNames.map((name) => setupHighBeam(modelRoot, name)).filter(Boolean);
 }
 
 export function setupTurnSignals(modelRoot, meshNames, targetPositions = []) {
-    return meshNames.map((name, i) => setupTurnSignal(
-        modelRoot, 
-        name, 
-        targetPositions[i]
-    )).filter(Boolean);
+    return meshNames.map((name, i) => setupTurnSignal(modelRoot, name, targetPositions[i])).filter(Boolean);
 }
 
 export function setupAmbientLights(modelRoot, meshName = ['ambient_light_model']) {
@@ -278,30 +189,7 @@ export function toggleCarLight(lightObject, isVisible) {
 
         const duration = isVisible ? 100 : 400;
 
-        if (item instanceof THREE.Object3D && !item.light) {
-            item.visible = true;
-            
-            item.traverse(child => {
-                if (child.isLight) {
-                    child.visible = true;
-                    const maxInt = child.distance > 100 ? 180.0 : 50.0; 
-                    
-                    new TWEEN.Tween({ int: child.intensity })
-                        .to({ int: isVisible ? maxInt : 0.0 }, duration)
-                        .easing(TWEEN.Easing.Quadratic.Out)
-                        .onUpdate((obj) => child.intensity = obj.int)
-                        .start();
-                }
-                if (child.isMesh && child.material && child.material.emissive) {
-                    new TWEEN.Tween({ eInt: child.material.emissiveIntensity })
-                        .to({ eInt: isVisible ? 20.0 : 0.0 }, duration)
-                        .easing(TWEEN.Easing.Quadratic.Out)
-                        .onUpdate((obj) => child.material.emissiveIntensity = obj.eInt)
-                        .start();
-                }
-            });
-
-        } else if (item.mesh || item.light) {
+        if (item.mesh || item.light) {
             if (item.light) item.light.visible = true;
 
             const currentVals = {
@@ -309,8 +197,8 @@ export function toggleCarLight(lightObject, isVisible) {
                 eInt: item.mesh && item.mesh.material ? item.mesh.material.emissiveIntensity : 0
             };
 
-            const targetLight = isVisible ? 3.0 : 0.0; 
-            const targetEmissive = isVisible ? 3.0 : 0.0;
+            const targetLight = isVisible ? (item.maxLightInt ?? 3.0) : 0.0; 
+            const targetEmissive = isVisible ? (item.maxEmissiveInt ?? 3.0) : 0.0;
 
             item.activeTween = new TWEEN.Tween(currentVals)
                 .to({ lInt: targetLight, eInt: targetEmissive }, duration)
@@ -319,7 +207,7 @@ export function toggleCarLight(lightObject, isVisible) {
                     if (item.light) item.light.intensity = currentVals.lInt;
                     if (item.mesh && item.mesh.material) item.mesh.material.emissiveIntensity = currentVals.eInt;
                 })
-                .onComplete(() => item.activeTween = null)
+                .onComplete(() => { item.activeTween = null; })
                 .start();
         }
     };
@@ -333,11 +221,11 @@ export function toggleCarLight(lightObject, isVisible) {
 
 function setTurnSignalIntensity(signalObj, isOn) {
     if (signalObj.mesh && signalObj.mesh.material) {
-        signalObj.mesh.material.emissiveIntensity = isOn ? 4.0 : 0;
+        signalObj.mesh.material.emissiveIntensity = isOn ? (signalObj.maxEmissiveInt ?? 4.0) : 0;
     }
     if (signalObj.light) {
         signalObj.light.visible = true;
-        signalObj.light.intensity = isOn ? 5.0 : 0; 
+        signalObj.light.intensity = isOn ? (signalObj.maxLightInt ?? 5.0) : 0; 
     }
 }
 

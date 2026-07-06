@@ -26,21 +26,7 @@ async function prewarmScene(scene, camera, renderer, model) {
     const turnRight = model.turnSignals?.right ?? [];
 
     const forceLightsState = (isOn) => {
-        [...lowBeams, ...highBeams].forEach(group => {
-            if (!group) return;
-                        
-            group.traverse(child => {
-                if (child.isLight) {
-                    const maxInt = child.distance > 100 ? 180.0 : 50.0; 
-                    child.intensity = isOn ? maxInt : 0.0;
-                }
-                if (child.isMesh && child.material && child.material.emissive) {
-                    child.material.emissiveIntensity = isOn ? 20.0 : 0.0;
-                }
-            });
-        });
-
-        [...ambientLights, ...turnLeft, ...turnRight].forEach(item => {
+        [...lowBeams, ...highBeams, ...ambientLights, ...turnLeft, ...turnRight].forEach(item => {
             if (!item) return;
             
             if (item.light) {
