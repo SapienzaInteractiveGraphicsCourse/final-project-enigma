@@ -81,6 +81,9 @@ function animate(scene, camera, renderer, steerControl, car_model, cubeCamera) {
         cubeCamera.update(renderer, scene);
         car_model.root.visible = true;
     }
+    
+    console.log("Draw Calls (Chiamate GPU):", renderer.info.render.calls);
+    console.log("Triangoli a schermo:", renderer.info.render.triangles);
 
     renderer.render(scene, camera);
 }

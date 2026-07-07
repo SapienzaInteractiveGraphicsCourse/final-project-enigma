@@ -151,15 +151,16 @@ function pickAnimationFromHits(model, hits) {
     return best ? { name: best.name, part: best.part } : null;
 }
 
-function getRayHits(renderer, camera, mouse, raycaster, raycastRoot, event) {
+function getRayHits(renderer, camera, mouse, raycaster, targetObjects, event) {
     const rect = renderer.domElement.getBoundingClientRect();
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
 
-    const targets = raycastRoot.children ?? [raycastRoot];
-    return raycaster.intersectObjects(targets, true);
+    // Passiamo direttamente l'array di bersagli pre-calcolati.
+    // Il 'true' serve perché le portiere potrebbero essere Gruppi contenenti la mesh vera e propria.
+    return raycaster.intersectObjects(targetObjects, true);
 }
 
 function applyHoverHighlight(renderer, root) {
@@ -232,10 +233,16 @@ function clearHoverHighlight(renderer) {
 export function enableClickToAnimate(scene, camera, renderer, model) {
     const mouse = new THREE.Vector2();
     const raycaster = new THREE.Raycaster();
-    const raycastRoot = model.root ?? scene;
+    
+    // 1. FILTRO: Creiamo una lista che contiene SOLO i pezzi che si possono cliccare
+    const clickableTargets = [];
+    Object.values(model.animations).forEach(anim => {
+        if (anim.clickable && anim.part) {
+            clickableTargets.push(anim.part);
+        }
+    });
 
     let lastHoverCheck = 0;
-    
     let pointerDownPos = { x: 0, y: 0 };
 
     renderer.domElement.addEventListener('pointerdown', (e) => {
@@ -252,7 +259,8 @@ export function enableClickToAnimate(scene, camera, renderer, model) {
             }
             lastHoverCheck = now;
 
-            const hits = getRayHits(renderer, camera, mouse, raycaster, raycastRoot, e);
+            // 2. Passiamo l'array filtrato invece dell'intero modello
+            const hits = getRayHits(renderer, camera, mouse, raycaster, clickableTargets, e);
             const animation = hits.length ? pickAnimationFromHits(model, hits) : null;
 
             if (!animation) {
@@ -277,7 +285,8 @@ export function enableClickToAnimate(scene, camera, renderer, model) {
             return;
         }
 
-        const hits = getRayHits(renderer, camera, mouse, raycaster, raycastRoot, e);
+        // 3. Stessa cosa per il click effettivo
+        const hits = getRayHits(renderer, camera, mouse, raycaster, clickableTargets, e);
         const animation = hits.length ? pickAnimationFromHits(model, hits) : null;
         if (animation) {
             toggleAnimation(model, animation.name);
