@@ -72,13 +72,17 @@ function animate(scene, camera, renderer, steerControl, car_model, reflectionCon
     const dt = clock.getDelta();
     requestAnimationFrame(() => animate(scene, camera, renderer, steerControl, car_model, reflectionController));
 
-    updateCameraMovement(camera);
+    // 1. PRIMA muovi l'auto e calcola la nuova posizione fisica
     steerControl.update(dt);
+    
+    // 2. DOPO aggiorna la telecamera basandoti sulla posizione appena calcolata!
+    updateCameraMovement(camera, car_model); 
+    
     TWEEN.update();
 
     reflectionFrameCounter++;
     
-    if (reflectionController.camera.userData.forceUpdate || reflectionFrameCounter % 60 === 0) {
+    if (reflectionController.camera.userData.forceUpdate) { 
         car_model.root.visible = false;
         reflectionController.camera.update(renderer, scene);
         car_model.root.visible = true;
@@ -94,15 +98,38 @@ window.onload = async () => {
     Settings.init();
     const { scene, camera, renderer } = createScene();
 
-    const [_, car_model] = await Promise.all([
+    // 1. Salviamo il risultato di loadEnvironment nella variabile 'env_model'
+    const [env_model, car_model] = await Promise.all([
         loadEnvironment(scene),
         loadModel(CAR_MODEL, scene)
     ]);
 
     car_model.root.rotation.y = THREE.MathUtils.degToRad(-110);
 
+    // 2. Estraiamo tutte le mesh dall'ambiente per passarle ai sensori (Raycaster)
+    const trackMeshes = [];
+    if (env_model) {
+        // Presumendo che env_model sia la scena o il gruppo restituito dal GLTFLoader dell'ambiente
+        env_model.traverse((child) => {
+            if (child.isMesh) {
+                trackMeshes.push(child);
+            }
+        });
+    } else {
+        // Se loadEnvironment non restituisce il modello direttamente, cerca nella scena
+        scene.traverse((child) => {
+            // Escludiamo la macchina stessa dalla lista degli ostacoli!
+            if (child.isMesh && !car_model.root.children.includes(child)) {
+                trackMeshes.push(child);
+            }
+        });
+    }
+
     syncMaterialControls();
-    const steerControl = createSteerControl(car_model);
+    
+    // 3. Passiamo le mesh della pista al nostro sistema di sterzo e collisione!
+    const steerControl = createSteerControl(car_model, trackMeshes);
+    
     setupButtonsCallback(car_model);
     setupLightCallbacks(car_model);
     setupTurnSignalCallbacks(car_model);

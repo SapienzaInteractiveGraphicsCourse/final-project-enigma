@@ -310,23 +310,39 @@ export function continuousAnimationController({
     input = 0,
     speed = 1.0,
     clamp = [-1, 1],
+    epsilon = 0.0001 // Soglia per interrompere i calcoli
 }) {
     if (!(stateKey in model.state)) {
         model.state[stateKey] = 0;
     }
 
-    let target = input;
+    const [min, max] = clamp;
+    // Limita il target iniziale
+    let target = Math.max(min, Math.min(max, input));
 
     return {
-        setInput: (v) => { target = v; },
+        setInput: (v) => { 
+            // Limita immediatamente i futuri input
+            target = Math.max(min, Math.min(max, v)); 
+        },
         update: (dt) => {
-            const [min, max] = clamp;
             const current = model.state[stateKey];
-            const next = current + (target - current) * Math.min(1, speed * dt);
 
-            const value = Math.max(min, Math.min(max, next));
-            model.state[stateKey] = value;
-            applyValue(model, value, dt);
+            // Se siamo abbastanza vicini al target, allineiamoci ed usciamo
+            if (Math.abs(target - current) < epsilon) {
+                if (current !== target) {
+                    model.state[stateKey] = target;
+                    applyValue(model, target, dt);
+                }
+                return; // Sleep: Nessun calcolo necessario in questo frame
+            }
+
+            // Smoothing esponenziale indipendente dal framerate
+            const lerpFactor = 1 - Math.exp(-speed * dt);
+            const next = current + (target - current) * lerpFactor;
+
+            model.state[stateKey] = next;
+            applyValue(model, next, dt);
         }
     };
 }
