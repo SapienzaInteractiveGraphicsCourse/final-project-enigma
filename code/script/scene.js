@@ -22,7 +22,7 @@ export function createScene() {
         powerPreference: "high-performance"
     });
     renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(1.5);
 
     renderer.outputColorSpace = THREE.SRGBColorSpace;
 
