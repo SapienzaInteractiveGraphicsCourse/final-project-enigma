@@ -4,6 +4,7 @@ import { toggleCarLight, startBlink, stopBlink } from './lights.js';
 import { toggleAnimationCallback, toggleAnimation, animatePartToState, setSwitchAngle } from './animations.js';
 import { playSfx, stopStartupSound } from './audio.js';
 import { setDriverView } from './camera.js';
+import { updateTimeOfDay } from './lights.js';
 
 const materialBindings = [
     { prefix: 'body', materialName: 'body_paint' },
@@ -38,7 +39,7 @@ materialBindings.forEach(({ prefix, materialName }) => {
     }
 });
 
-export function initCameraUI(camera, carModel) {
+export function initCameraUI(camera, carModel, scene, onTimeChange) {
     document.getElementById('btnViewFront')?.addEventListener('click', () => goToCameraView(camera, 'Front'));
     document.getElementById('btnViewBack')?.addEventListener('click', () => goToCameraView(camera, 'Back'));
     document.getElementById('btnViewLeft')?.addEventListener('click', () => goToCameraView(camera, 'Left'));
@@ -54,6 +55,24 @@ export function initCameraUI(camera, carModel) {
     if (btnViewDriver) {
         btnViewDriver.addEventListener('click', () => {
             setDriverView(camera, carModel, 'onboard_camera'); 
+        });
+    }
+
+    const timeSlider = document.getElementById('timeSlider');
+    const timeDisplay = document.getElementById('timeDisplay');
+
+    if (timeSlider && timeDisplay) {
+        timeSlider.addEventListener('input', (e) => {
+            const timeValue = Number.parseFloat(e.target.value);
+            
+            const hours = Math.floor(timeValue);
+            const minutes = Math.floor((timeValue - hours) * 60);
+            timeDisplay.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            
+            updateTimeOfDay(timeValue, scene);
+            
+            const currentDayFactor = updateTimeOfDay(timeValue, scene);
+            if (onTimeChange) onTimeChange(currentDayFactor);
         });
     }
 }

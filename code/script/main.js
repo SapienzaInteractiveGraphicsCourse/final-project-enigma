@@ -67,24 +67,26 @@ async function prewarmScene(scene, camera, renderer, model) {
 }
 
 let reflectionFrameCounter = 0;
-function animate(scene, camera, renderer, steerControl, car_model, cubeCamera) {
+
+function animate(scene, camera, renderer, steerControl, car_model, reflectionController) {
     const dt = clock.getDelta();
-    requestAnimationFrame(() => animate(scene, camera, renderer, steerControl, car_model, cubeCamera));
+    requestAnimationFrame(() => animate(scene, camera, renderer, steerControl, car_model, reflectionController));
 
     updateCameraMovement(camera);
     steerControl.update(dt);
     TWEEN.update();
 
     reflectionFrameCounter++;
-    if (reflectionFrameCounter % 60 === 0) {
+    
+    if (reflectionController.camera.userData.forceUpdate || reflectionFrameCounter % 60 === 0) {
         car_model.root.visible = false;
-        cubeCamera.update(renderer, scene);
+        reflectionController.camera.update(renderer, scene);
         car_model.root.visible = true;
+        
+        reflectionController.camera.userData.forceUpdate = false; 
+        reflectionFrameCounter = 0; 
     }
     
-    console.log("Draw Calls (Chiamate GPU):", renderer.info.render.calls);
-    console.log("Triangoli a schermo:", renderer.info.render.triangles);
-
     renderer.render(scene, camera);
 }
 
@@ -99,8 +101,6 @@ window.onload = async () => {
 
     car_model.root.rotation.y = THREE.MathUtils.degToRad(-110);
 
-    initCameraUI(camera, car_model);
-
     syncMaterialControls();
     const steerControl = createSteerControl(car_model);
     setupButtonsCallback(car_model);
@@ -108,13 +108,18 @@ window.onload = async () => {
     setupTurnSignalCallbacks(car_model);
     setupDoorLightCallbacks(car_model);
     setupEngineCallback(car_model);
-    const cubeCamera = CubeMapReflections(car_model.root, scene, renderer);
+    const reflectionController = CubeMapReflections(car_model.root, scene, renderer);
     enableClickToAnimate(scene, camera, renderer, car_model);
+
+    initCameraUI(camera, car_model, scene, (dayFactor) => {
+        reflectionController.camera.userData.forceUpdate = true;
+        reflectionController.updateIntensity(dayFactor);
+    });
 
     await prewarmScene(scene, camera, renderer, car_model);
     setLoadingOverlayHidden();
 
-    animate(scene, camera, renderer, steerControl, car_model, cubeCamera);
+    animate(scene, camera, renderer, steerControl, car_model, reflectionController);
 };
 
 window.addEventListener('pointerdown', () => {

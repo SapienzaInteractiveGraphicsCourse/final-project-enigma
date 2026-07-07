@@ -42,11 +42,26 @@ export function CubeMapReflections(car, scene, renderer) {
             if (child.isMesh && child.material) {
                 if (child.material.isMeshStandardMaterial || child.material.isMeshPhysicalMaterial) {
                     child.material.envMap = cubeRenderTarget.texture;
+                    child.material.userData.baseEnvIntensity = 2.0; 
                     child.material.envMapIntensity = 2.0; 
                     child.material.needsUpdate = true;
                 }
             }
         });
     });
-    return cubeCamera; 
+
+    return {
+        camera: cubeCamera,
+        updateIntensity: (factor) => {
+            if (!carRoot) return;
+            carRoot.traverse((child) => {
+                if (child.isMesh && child.material && child.material.userData.baseEnvIntensity !== undefined) {
+                    
+                    const minIntensity = 0.5; 
+                    
+                    child.material.envMapIntensity = minIntensity + (child.material.userData.baseEnvIntensity - minIntensity) * factor;
+                }
+            });
+        }
+    };
 }

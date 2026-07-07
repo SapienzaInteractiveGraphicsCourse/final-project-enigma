@@ -2,12 +2,15 @@ import * as THREE from 'three';
 import * as TWEEN from '@tweenjs/tween.js';
 import { playTurnSignalSound } from './audio.js';
 
+let hemiLight, sunLight;
+let isNightMode = false;
+
 export function setupEnvironmentLights(scene) {
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
+    hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
     hemiLight.position.set(0, 200, 0);
     scene.add(hemiLight);
 
-    const sunLight = new THREE.DirectionalLight(0xfff8e7, 8.5);
+    sunLight = new THREE.DirectionalLight(0xfff8e7, 8.5);
     sunLight.position.set(100, 150, 50);
     sunLight.castShadow = true;
 
@@ -309,4 +312,34 @@ export function stopBlink(signals, id = 'turn_signal') {
         activeBlinks.delete(id);
     }
     signals.forEach(s => setTurnSignalIntensity(s, false));
+}
+
+export function updateTimeOfDay(timeInHours, scene) {
+    let dayFactor = 0;
+    
+    if (timeInHours >= 5 && timeInHours < 9) {
+        dayFactor = (timeInHours - 5) / 4;
+    } 
+    else if (timeInHours >= 9 && timeInHours <= 16) {
+        dayFactor = 1;
+    } 
+    else if (timeInHours > 16 && timeInHours <= 20) {
+        dayFactor = 1 - ((timeInHours - 16) / 4);
+    }
+
+    dayFactor = dayFactor * dayFactor * (3 - 2 * dayFactor);
+
+    const hemiIntensity = 0.35 + (0.85 * dayFactor); 
+    const sunIntensity = 0.0 + (8.5 * dayFactor);
+    const bgIntensity = 0.15 + (0.85 * dayFactor);
+    const envIntensity = 0.3 + (0.7 * dayFactor);
+
+    if (hemiLight) hemiLight.intensity = hemiIntensity;
+    if (sunLight) sunLight.intensity = sunIntensity;
+    if (scene.backgroundIntensity !== undefined) scene.backgroundIntensity = bgIntensity;
+    if (scene.environmentIntensity !== undefined) scene.environmentIntensity = envIntensity;
+
+    const isNight = timeInHours < 6.0 || timeInHours > 19.0;
+    
+    return dayFactor;
 }
