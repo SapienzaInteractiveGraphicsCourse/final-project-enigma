@@ -20,30 +20,11 @@ export async function loadEnvironment(scene) {
                 environment.scale.set(1, 1, 1);
                 environment.traverse((child) => {
                     if (child.isMesh) {
-                        
-                        // Ottimizzazione matrici (che già avevi)
+
                         child.matrixAutoUpdate = false;
                         child.updateMatrix();
-
-                        // FILTRO PER GLI ALBERI
-                        // Assicurati che 'tree' o 'albero' sia il nome che hai dato in Blender
-                        if (child.name === 'BOOM4' || child.name === 'BOOM4.001') {
-                            
-                            // 1. Forza l'illuminazione su entrambi i lati del rettangolo
-                            if (child.material) {
-                                child.material.side = THREE.DoubleSide;
-                                child.material.needsUpdate = true;
-                            }
-
-                            // 2. Disabilita le ombre incrociate
-                            child.castShadow = false;
-                            child.receiveShadow = false; 
-
-                        } else {
-                            // Per tutto il resto (asfalto, guardrail, cordoli) mantieni le ombre attive
-                            child.receiveShadow = true;
-                            child.castShadow = true; 
-                        }
+                        child.receiveShadow = true;
+                        child.castShadow = true; 
                     }
                 });
 
