@@ -33,14 +33,12 @@ export function createScene() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
-    scene.fog = new THREE.FogExp2(0x8eb3d9, 0.015);
-
     setupEnvironmentLights(scene);
 
     setupCamera(camera, renderer);
 
-    const floor = createFloor();
-    scene.add(floor);
+    // const floor = createFloor();
+    // scene.add(floor);
 
     window.addEventListener('resize', () => {
         const width = container.clientWidth;

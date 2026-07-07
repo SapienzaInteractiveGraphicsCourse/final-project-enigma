@@ -94,6 +94,8 @@ window.onload = async () => {
         loadModel(CAR_MODEL, scene)
     ]);
 
+    car_model.root.rotation.y = THREE.MathUtils.degToRad(-110);
+
     initCameraUI(camera, car_model);
 
     syncMaterialControls();
