@@ -3,28 +3,26 @@ import * as TWEEN from '@tweenjs/tween.js';
 import { playTurnSignalSound } from './audio.js';
 
 export function setupEnvironmentLights(scene) {
-    // const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-    // scene.add(ambientLight);
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
+    hemiLight.position.set(0, 200, 0);
+    scene.add(hemiLight);
 
-    const createOptimizedLight = (intensity, posX, posY, posZ) => {
-        const light = new THREE.DirectionalLight(0xffffff, intensity);
-        light.position.set(posX, posY, posZ);
-        light.castShadow = true;
-        light.shadow.mapSize.width = 512;
-        light.shadow.mapSize.height = 512;
-        light.shadow.camera.near = 0.5;
-        light.shadow.camera.far = 20;
-        light.shadow.camera.left = -5;
-        light.shadow.camera.right = 5;
-        light.shadow.camera.top = 5;
-        light.shadow.camera.bottom = -5;
-        light.shadow.bias = -0.001;
-        light.shadow.normalBias = 0.05;
-        return light;
-    };
+    const sunLight = new THREE.DirectionalLight(0xfff8e7, 8.5);
+    sunLight.position.set(100, 150, 50);
+    sunLight.castShadow = true;
 
-    scene.add(createOptimizedLight(9.5, 0, 6, 10));
-    scene.add(createOptimizedLight(4.5, -10, 6, 0));
+    const d = 120;
+    sunLight.shadow.camera.left = -d;
+    sunLight.shadow.camera.right = d;
+    sunLight.shadow.camera.top = d;
+    sunLight.shadow.camera.bottom = -d;
+    sunLight.shadow.camera.near = 0.5;
+    sunLight.shadow.camera.far = 500;
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.bias = -0.0005;
+    sunLight.shadow.normalBias = 0.05;
+    scene.add(sunLight);
 }
 
 function upgradeToEmissiveMaterial(mesh, emissiveHex) {

@@ -105,7 +105,7 @@ window.onload = async () => {
     setupTurnSignalCallbacks(car_model);
     setupDoorLightCallbacks(car_model);
     setupEngineCallback(car_model);
-    const cubeCamera = CubeMapReflections(car_model, scene, renderer);
+    const cubeCamera = CubeMapReflections(car_model.root, scene, renderer);
     enableClickToAnimate(scene, camera, renderer, car_model);
 
     await prewarmScene(scene, camera, renderer, car_model);
