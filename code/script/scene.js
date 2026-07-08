@@ -34,11 +34,7 @@ export function createScene() {
     container.appendChild(renderer.domElement);
 
     setupEnvironmentLights(scene);
-
     setupCamera(camera, renderer);
-
-    // const floor = createFloor();
-    // scene.add(floor);
 
     window.addEventListener('resize', () => {
         const width = container.clientWidth;
