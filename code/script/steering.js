@@ -2,240 +2,329 @@ import * as THREE from 'three'
 import { continuousAnimationController } from './animations.js'
 
 export function createSteerControl(model, trackMeshes = []) {
-    let wheelSpinSpeedRadians = 0;
-    let wheelSpinAngleRadians = 0;
+    let wheelSpinSpeedRadians = 0; //velocità della ruota in rad
+    let wheelSpinAngleRadians = 0;//posizione della ruota in rad
     let steerAngleRadians = 0;
 
-    let smoothedPitch = 0;
-    let smoothedRoll = 0;
+    let smoothedPitch = 0; //beccheggio
+    let smoothedRoll = 0; //rollio
+    let smoothedThrottleInput = 0; // rampa graduale dell'acceleratore (-1..1)
 
     const steerTargetMaxRadians = THREE.MathUtils.degToRad(30);
-    const steerResponse = 6; 
+    const steerResponse = 1.5; //quanto velocemento le ruote raggiungono i 30 gradi
 
     // Parametri fisici della Carrera
-    const mass = 1505;              
-    const wheelRadius = 0.357;      
-    const wheelBase = 2.45;         
-    const maxEngineForce = 9500;    
-    const maxBrakeForce = 18000;    
-    const aeroDragCoeff = 0.35;     
-    const rollingResistance = 250;  
-    
-    let carLinearSpeed = 0;         
-    let currentAcceleration = 0;    
+    const mass = 1505;
+    const wheelRadius = 0.357;
+    const wheelBase = 2.45;
+    const maxEngineForce = 9500;
+    const maxBrakeForce = 18000;
+    const aeroDragCoeff = 0.35; //resistenza areodinamica
+    const rollingResistance = 250; //attrito degli pneumatici
 
-    // Inizializzazione dei Raycaster per collisioni e terreno
+    let carLinearSpeed = 0;
+    let currentAcceleration = 0;
+
+    // Raycaster
     const groundRaycaster = new THREE.Raycaster();
     const wallRaycaster = new THREE.Raycaster();
-    const carUpVector = new THREE.Vector3(0, 1, 0);
-    const downDirection = new THREE.Vector3(0, -1, 0);
+    const carUpVector = new THREE.Vector3(0, 1, 0); //verso dove si trova il cielo
+    const downDirection = new THREE.Vector3(0, -1, 0); //verso della gravità
+
+    // ── Oggetti riutilizzabili — creati una volta sola, mai dentro i loop ────
+
+    // updateSteerPose
+    const _steerAxis = new THREE.Vector3(0, 1, 0); //le ruote sterzano attorno a un asse verticale
+    const _spinAxis  = new THREE.Vector3(1, 0, 0); //le ruote girano attorno all'asse x
+    const _swAxis    = new THREE.Vector3(0, 0, 1); //come gira il volante
+    
+    //gradi per la grafica 3D
+    const _steerRot  = new THREE.Quaternion();
+    const _spinRot   = new THREE.Quaternion();
+    const _swRot     = new THREE.Quaternion();
+
+    // checkWallCollisions-->non sono inizializzati perhce i valori variano da frame a frame in base alle decisioni dell'utente
+    const _forwardDir   = new THREE.Vector3(); //direzione avanti
+    const _rightDir     = new THREE.Vector3(); //direzione destra
+    const _rayStart     = new THREE.Vector3(); //da dove partono i raggi
+    const _worldNormal  = new THREE.Vector3(); //è la normale del volume della pista
+    const _normalMatrix = new THREE.Matrix3(); //orienta la normale in modo che abbia senso nella pista
+    
+    const _rayOrigins   = Array(7).fill().map(() => new THREE.Vector3()); //i punti di partenza dei raggi
+    const _wallDirs = Array(7).fill().map(() => new THREE.Vector3()); // le direzioni
+
+    // clampToGround-->incolla l'auto alla pista e inclina correttamente quando affronti salite/discese
+    const _groundRayStart      = new THREE.Vector3(); //per capire a che altezza si trova il pavimento
+    const _groundNormal        = new THREE.Vector3(); //la normale al terreno
+    const _groundNormalMatrix  = new THREE.Matrix3(); //serve a convertire l'inclinazione del terreno in un inclinazione globale
+
+    //servono a capire le nuove direzioni (avanti,destra) in salita/discesa
+    const _groundForward       = new THREE.Vector3();
+    const _groundRight         = new THREE.Vector3();
+    const _correctedForward    = new THREE.Vector3();
+
+    const _groundMatrix        = new THREE.Matrix4();
+    const _targetQuat          = new THREE.Quaternion(); //converte '_groungMatrix' in un Quaternione
+
+    // Cache bodyMesh — evita getObjectByName ogni frame
+    let _bodyMesh = null;
+    //funzione che viene chiamata quando bisogna muovere la carrozzeria dell'auto
+    function getBodyMesh() {
+        if (!_bodyMesh && model.root) {
+            _bodyMesh = model.root.getObjectByName('body') ?? null;
+        }
+        return _bodyMesh;
+    }
+
 
     const activeKeys = new Set();
-    window.addEventListener('keydown', (e) => { activeKeys.add(e.code); });
-    window.addEventListener('keyup', (e) => { activeKeys.delete(e.code); });
-    window.addEventListener('blur', () => { activeKeys.clear(); });
+
+    function onKeyDown(e) { activeKeys.add(e.code); }
+    function onKeyUp(e) { activeKeys.delete(e.code); }
+    function onBlur() { activeKeys.clear(); }
+
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onBlur);
 
     const throttleController = continuousAnimationController({
         model,
         stateKey: "throttle",
-        speed: 4.0,
-        applyValue: () => {} 
+        speed: 2.0,  //più il numero è alto, più l'animazione è scattante
+        applyValue: () => {}
     });
+
+    // ── Funzioni interne ──────────────────────────────────────────────────────
 
     function updateSteerPose(dt) {
         const steerInput = THREE.MathUtils.clamp(model.state.steer, -1, 1);
 
-        // ----------------------------------------------------
-        // NUOVO: STERZO SENSIBILE ALLA VELOCITÀ
-        // ----------------------------------------------------
-        // Definiamo una velocità di riferimento (es. 15 m/s, circa 54 km/h) 
-        // oltre la quale lo sterzo inizia a diventare più rigido e limitato
-        const thresholdSpeed = 10; 
-        
+        // Sterzo sensibile alla velocità
+        const thresholdSpeed = 10;
         const speedFactor = Math.max(0.4, 1.0 - Math.max(0, Math.abs(carLinearSpeed) - thresholdSpeed) / 40.0);
+        const steerTargetRad = steerInput * steerTargetMaxRadians * speedFactor;
 
-        // Applichiamo il fattore di riduzione all'angolo massimo di 30 gradi
-        const adjustedMaxRadians = steerTargetMaxRadians * speedFactor;
-        const steerTargetRad = steerInput * adjustedMaxRadians;
-
-        // Il resto della funzione rimane identico per l'interpolazione fluida
         const k = Math.min(1, steerResponse * dt);
         steerAngleRadians += (steerTargetRad - steerAngleRadians) * k;
 
-        // Recupero animazioni originali delle ruote e volante
-        const steerLeftFront = model.animations["wheel_LF"]?.part;
-        const steerRightFront = model.animations["wheel_RF"]?.part;
-        const spinLeftFront = model.animations["Moving_wheel_LF"]?.part;
-        const spinRightFront = model.animations["Moving_wheel_RF"]?.part;
-        const spinLeftBack = model.animations["Moving_wheel_LR"]?.part;
-        const spinRightBack = model.animations["Moving_wheel_RR"]?.part;
-        const steeringWheel = model.animations["Steering_wheel"]?.part;
+        // Quaternioni riutilizzati — nessun "new" ogni frame
+        _steerRot.setFromAxisAngle(_steerAxis, steerAngleRadians);
+        _spinRot.setFromAxisAngle(_spinAxis, wheelSpinAngleRadians);
 
-        const steerRot = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), steerAngleRadians);
-        const spinRot = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), wheelSpinAngleRadians);
+        const anim = model.animations;
+        const steerLF = anim["wheel_LF"]?.part;
+        const steerRF = anim["wheel_RF"]?.part;
+        const spinLF  = anim["Moving_wheel_LF"]?.part;
+        const spinRF  = anim["Moving_wheel_RF"]?.part;
+        const spinLR  = anim["Moving_wheel_LR"]?.part;
+        const spinRR  = anim["Moving_wheel_RR"]?.part;
+        const sw      = anim["Steering_wheel"]?.part;
 
-        if (steerLeftFront) steerLeftFront.quaternion.copy(model.animations["wheel_LF"].restQuaternion).multiply(steerRot);
-        if (steerRightFront) steerRightFront.quaternion.copy(model.animations["wheel_RF"].restQuaternion).multiply(steerRot);
-        if (spinLeftFront) spinLeftFront.quaternion.copy(model.animations["Moving_wheel_LF"].restQuaternion).multiply(spinRot);
-        if (spinRightFront) spinRightFront.quaternion.copy(model.animations["Moving_wheel_RF"].restQuaternion).multiply(spinRot);
-        if (spinLeftBack) spinLeftBack.quaternion.copy(model.animations["Moving_wheel_LR"].restQuaternion).multiply(spinRot);
-        if (spinRightBack) spinRightBack.quaternion.copy(model.animations["Moving_wheel_RR"].restQuaternion).multiply(spinRot);
-        
-        if (steeringWheel) {
-            const steeringWheelRot = new THREE.Quaternion().setFromAxisAngle(
-                new THREE.Vector3(0, 0, 1),
-                -steerAngleRadians * 12 / steerTargetMaxRadians
-            );
-            steeringWheel.quaternion.copy(model.animations["Steering_wheel"].restQuaternion).multiply(steeringWheelRot);
+        if (steerLF) steerLF.quaternion.copy(anim["wheel_LF"].restQuaternion).multiply(_steerRot);
+        if (steerRF) steerRF.quaternion.copy(anim["wheel_RF"].restQuaternion).multiply(_steerRot);
+        if (spinLF)  spinLF.quaternion.copy(anim["Moving_wheel_LF"].restQuaternion).multiply(_spinRot);
+        if (spinRF)  spinRF.quaternion.copy(anim["Moving_wheel_RF"].restQuaternion).multiply(_spinRot);
+        if (spinLR)  spinLR.quaternion.copy(anim["Moving_wheel_LR"].restQuaternion).multiply(_spinRot);
+        if (spinRR)  spinRR.quaternion.copy(anim["Moving_wheel_RR"].restQuaternion).multiply(_spinRot);
+
+        if (sw) {
+            _swRot.setFromAxisAngle(_swAxis, -steerAngleRadians * 12 / steerTargetMaxRadians);
+            sw.quaternion.copy(anim["Steering_wheel"].restQuaternion).multiply(_swRot);
         }
 
-        // Effetto visivo peso ammortizzatori (Rollio e Beccheggio dinamico)
-        const bodyMesh = model.root?.getObjectByName('body'); 
+        // Rollio e beccheggio dinamico
+        const bodyMesh = getBodyMesh();
         if (bodyMesh) {
-            const targetPitch = currentAcceleration * 0.0035; 
-            const centrifugalForce = (carLinearSpeed * carLinearSpeed * (steerAngleRadians / wheelBase)) * 0.1;
+            const targetPitch = currentAcceleration * 0.0035;
+            const centrifugalForce = carLinearSpeed * carLinearSpeed * (steerAngleRadians / wheelBase) * 0.1;
             const targetRoll = THREE.MathUtils.clamp(centrifugalForce * 0.0008, -0.05, 0.05);
 
             smoothedPitch += (targetPitch - smoothedPitch) * Math.min(1, 12 * dt);
-            smoothedRoll += (targetRoll - smoothedRoll) * Math.min(1, 12 * dt);
+            smoothedRoll  += (targetRoll  - smoothedRoll)  * Math.min(1, 12 * dt);
             bodyMesh.rotation.set(smoothedPitch, 0, smoothedRoll);
         }
     }
 
-    // FUNZIONE DI SENSORI FRONTALI PER MURO
-   function checkWallCollisions() {
+    function checkWallCollisions(dt) {
         if (!model.root || trackMeshes.length === 0) return false;
 
-        const forwardDirection = new THREE.Vector3(0, 0, 1).applyQuaternion(model.root.quaternion).normalize();
-        
-        // Direzioni delle antenne di rilevamento (Centro, Sinistra, Destra)
-        const directions = [
-            forwardDirection,
-            forwardDirection.clone().applyAxisAngle(carUpVector, THREE.MathUtils.degToRad(25)),
-            forwardDirection.clone().applyAxisAngle(carUpVector, THREE.MathUtils.degToRad(-25))
-        ];
+        // Calcoliamo la direzione Avanti (Z) e la direzione Destra (X)
+        _forwardDir.set(0, 0, 1).applyQuaternion(model.root.quaternion).normalize();
+        _rightDir.crossVectors(carUpVector, _forwardDir).normalize();
 
-        // CORREZIONE 1: Alziamo il punto di partenza (y += 0.5) all'altezza dei fari/paraurti
-        // così i raggi volano sopra l'asfalto senza toccarlo
-        const rayStart = model.root.position.clone().add(forwardDirection.clone().multiplyScalar(1.5));
-        rayStart.y += 0.5; 
+        // ----------------------------------------------------
+        // IL NUOVO PARAURTI LASER
+        // ----------------------------------------------------
+        const frontOffset = 2.1; // Distanza dal centro al muso (metri)
+        const halfWidth = 0.85;  // Distanza dal centro alla fiancata laterale (metri)
 
-        const safetyDistance = 1.2; // Distanza di attivazione del freno da muro
+        // Troviamo il punto centrale esatto del paraurti anteriore
+        _rayStart.copy(model.root.position).addScaledVector(_forwardDir, frontOffset);
+        _rayStart.y += 0.5; // Altezza fari
 
-        for (let dir of directions) {
-            wallRaycaster.set(rayStart, dir);
+        // Distribuiamo le 7 origini come un rastrello, da -0.85m (Sinistra) a +0.85m (Destra)
+        for (let i = 0; i < 7; i++) {
+            // Questo calcolo genera valori da -1 a 1 (es: -1, -0.66, -0.33, 0, 0.33...)
+            const lateralFactor = (i / 3) - 1; 
+            
+            // Posizioniamo l'origine del raggio spostandola lateralmente
+            _rayOrigins[i].copy(_rayStart).addScaledVector(_rightDir, lateralFactor * halfWidth);
+
+            // Facciamo guardare tutti i raggi dritti in avanti...
+            _wallDirs[i].copy(_forwardDir);
+            
+            // ...Tranne i due più estremi (spigoli), che pieghiamo in fuori di 20 gradi 
+            // per evitare di graffiare i muri in curva
+            if (i === 0) _wallDirs[i].applyAxisAngle(carUpVector, THREE.MathUtils.degToRad(20));
+            if (i === 6) _wallDirs[i].applyAxisAngle(carUpVector, THREE.MathUtils.degToRad(-20));
+        }
+
+        const predictedTravelDistance = Math.abs(carLinearSpeed) * dt;
+        const safetyDistance = Math.max(1.0, predictedTravelDistance + 0.6);
+
+        // Cicliamo sui 7 raggi appena posizionati
+        for (let i = 0; i < 7; i++) {
+            wallRaycaster.set(_rayOrigins[i], _wallDirs[i]); // Usiamo le nuove origini distribuite!
+            wallRaycaster.far = safetyDistance + 0.5;
             const intersections = wallRaycaster.intersectObjects(trackMeshes, true);
 
             if (intersections.length > 0) {
                 const hit = intersections[0];
-                
-                // Convertiamo la normale del poligono colpito nello spazio del mondo reale
-                const worldNormal = hit.face.normal.clone();
-                worldNormal.applyMatrix3(new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld)).normalize();
 
-                // CORREZIONE 2: Se la superficie colpita punta verso l'alto (worldNormal.y > 0.5), 
-                // significa che è l'asfalto della pista o una salita, NON un muro! Usiamo 'continue' per ignorarla.
-                if (worldNormal.y > 0.5) continue; 
+                _worldNormal.copy(hit.face.normal);
+                _normalMatrix.getNormalMatrix(hit.object.matrixWorld);
+                _worldNormal.applyMatrix3(_normalMatrix).normalize();
 
-                // Se arriviamo qui, abbiamo colpito un vero muro verticale
+                // Ignora asfalto e salite, considera solo muri verticali
+                if (_worldNormal.y > 0.5) continue;
+
                 if (hit.distance < safetyDistance) {
-                    if (carLinearSpeed > 2) {
-                        // Rimbalzo elastico
-                        carLinearSpeed = -carLinearSpeed * 0.3; 
-                        model.root.position.add(worldNormal.multiplyScalar(0.15));
-                    } else {
-                        carLinearSpeed = 0;
+                    const impactDot = _forwardDir.dot(_worldNormal);
+
+                    if (impactDot < 0) {
+                        const impactSeverity = Math.abs(impactDot); 
+                        carLinearSpeed *= (1.0 - (impactSeverity * 0.9));
+
+                        if (impactSeverity > 0.75 && Math.abs(carLinearSpeed) > 5) {
+                            carLinearSpeed = -carLinearSpeed * 0.3;
+                        }
                     }
+
+                    const penetration = safetyDistance - hit.distance;
+                    model.root.position.addScaledVector(_worldNormal, penetration * 1.05);
+
                     return true;
                 }
             }
         }
         return false;
     }
-    // FUNZIONE DI CLAMPING AL PAVIMENTO
-   // FUNZIONE DI CLAMPING AL PAVIMENTO CON MATRICE DI BASE (Soluzione definitiva al rollio laterale)
+
     function clampToGround(dt) {
         if (!model.root || trackMeshes.length === 0) return;
 
-        // Alza il punto di partenza del raggio sopra la macchina per evitare di mancare il suolo
-        const rayStart = model.root.position.clone();
-        rayStart.y += 1.5; 
+        _groundRayStart.copy(model.root.position);
+        _groundRayStart.y += 1.5;
+        groundRaycaster.far = 4.0;
 
-        groundRaycaster.set(rayStart, downDirection);
+        groundRaycaster.set(_groundRayStart, downDirection);
         const intersections = groundRaycaster.intersectObjects(trackMeshes, true);
 
         if (intersections.length > 0) {
             const hit = intersections[0];
-            // Incolliamo l'altezza della Porsche al punto esatto di intersezione
             model.root.position.y = hit.point.y;
 
-            // 1. TRASFORMAZIONE DELLA NORMALE IN SPAZIO MONDO
-            // Questo converte la normale locale della pista nelle coordinate reali del mondo 3D
-            const worldNormal = hit.face.normal.clone();
-            worldNormal.applyMatrix3(new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld)).normalize();
+            _groundNormal.copy(hit.face.normal);
+            _groundNormalMatrix.getNormalMatrix(hit.object.matrixWorld);
+            _groundNormal.applyMatrix3(_groundNormalMatrix).normalize();
 
-            // 2. RECUPERO DELLA DIREZIONE ATTUALE DI MARCIA
-            // Capiamo dove sta guardando la macchina in questo millisecondo
-            const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(model.root.quaternion).normalize();
+            _groundForward.set(0, 0, 1).applyQuaternion(model.root.quaternion).normalize();
+            _groundRight.crossVectors(_groundNormal, _groundForward).normalize();
+            _correctedForward.crossVectors(_groundRight, _groundNormal).normalize();
 
-            // 3. COSTRUZIONE DI UN SISTEMA DI ASSI ORTOGONALI PERFETTI
-            // L'asse Destra (X) deve essere perpendicolare sia alla normale del terreno che alla direzione di marcia
-            const right = new THREE.Vector3().crossVectors(worldNormal, forward).normalize();
-            
-            // L'asse Avanti (Z) viene ricalcolato matematicamente per giacere piatto sulla pendenza esatta della pista
-            const correctedForward = new THREE.Vector3().crossVectors(right, worldNormal).normalize();
+            _groundMatrix.makeBasis(_groundRight, _groundNormal, _correctedForward);
+            _targetQuat.setFromRotationMatrix(_groundMatrix);
 
-            // 4. CREAZIONE DELLA MATRICE DI ROTAZIONE ASSOLUTA
-            // Creiamo un orientamento puro che contiene simultaneamente Direzione, Pendenza e Rollio della pista
-            const matrix = new THREE.Matrix4().makeBasis(right, worldNormal, correctedForward);
-            const targetQuat = new THREE.Quaternion().setFromRotationMatrix(matrix);
-
-            // 5. ALLINEAMENTO FLUIDO AMMORTIZZATO
-            // Lo slerp allinea la macchina senza scatti. 15 è la rigidità degli ammortizzatori.
-            // Quando l'auto è ferma, targetQuat rimane identico e l'auto sta perfettamente immobile.
-            model.root.quaternion.slerp(targetQuat, Math.min(1, 15 * dt));
+            model.root.quaternion.slerp(_targetQuat, Math.min(1, 15 * dt));
         }
     }
 
+    // ── API pubblica ──────────────────────────────────────────────────────────
     return {
         setInput: (steerV, throttleV = model.state.throttle) => {
             model.state.steer = steerV;
             throttleController.setInput(throttleV);
         },
+
         update: (dt) => {
+            // Input
             let nextThrottle = 0;
-            if (activeKeys.has('ArrowUp')) nextThrottle += 1;
+            if (activeKeys.has('ArrowUp'))   nextThrottle += 1;
             if (activeKeys.has('ArrowDown')) nextThrottle -= 1;
 
             let nextSteer = 0;
-            if (activeKeys.has('ArrowLeft')) nextSteer += 1;
+            if (activeKeys.has('ArrowLeft'))  nextSteer += 1;
             if (activeKeys.has('ArrowRight')) nextSteer -= 1;
 
             throttleController.setInput(nextThrottle);
             model.state.steer = nextSteer;
             throttleController.update(dt);
 
-            const isAccelerating = activeKeys.has('ArrowUp');
-            const isBraking = activeKeys.has('ArrowDown');
+            // FIX: rampa graduale dell'acceleratore. Prima la forza motore
+            // passava da 0 a maxEngineForce (9500N) istantaneamente al primo
+            // frame in cui ArrowUp risultava premuto, causando uno scatto di
+            // accelerazione innaturale. Ora smoothedThrottleInput sale/scende
+            // gradualmente verso il target (-1..1), come già fatto per lo
+            // sterzo (steerAngleRadians) e per pitch/roll della carrozzeria.
+            //
+            // FIX 2: la rampa è ASIMMETRICA. Con una singola velocità di
+            // rampa in entrambi i sensi, al rilascio del tasto
+            // smoothedThrottleInput restava per qualche frame sopra la soglia
+            // "isAccelerating", applicando una spinta motore residua anche
+            // se il tasto non era più premuto: l'auto "strisciava" in avanti,
+            // poi la frenata motore la tirava indietro non appena la soglia
+            // veniva superata → oscillazione avanti/indietro da fermo. Ora,
+            // quando il target è 0 (o inverte segno rispetto al valore
+            // attuale), usiamo una rampa molto più rapida, eliminando la
+            // spinta fantasma dopo il rilascio.
+            const throttleRampUpSpeed = 3;    // 1/s — salita: più basso = partenza più morbida
+            const throttleReleaseSpeed = 15;  // 1/s — rilascio/inversione: alto per fermare la spinta quasi subito
+            const targetThrottleInput = nextThrottle; // già calcolato sopra: +1 ArrowUp, -1 ArrowDown
 
+            const isReleasingOrReversing =
+                targetThrottleInput === 0 ||
+                Math.abs(targetThrottleInput) < Math.abs(smoothedThrottleInput) ||
+                Math.sign(targetThrottleInput) !== Math.sign(smoothedThrottleInput);
+
+            const throttleRampSpeed = isReleasingOrReversing ? throttleReleaseSpeed : throttleRampUpSpeed;
+            smoothedThrottleInput += (targetThrottleInput - smoothedThrottleInput) * Math.min(1, throttleRampSpeed * dt);
+
+            // Evita una coda asintotica infinitesima che non tocca mai lo zero
+            if (Math.abs(smoothedThrottleInput) < 0.01) smoothedThrottleInput = 0;
+
+            const isAccelerating = smoothedThrottleInput > 0.02;
+            const isBraking      = smoothedThrottleInput < -0.02;
+
+            // Calcolo forze
             let propulsionForce = 0;
             let brakeForce = 0;
 
             if (isAccelerating) {
-                if (carLinearSpeed >= -0.1) propulsionForce = maxEngineForce;
+                if (carLinearSpeed >= -0.1) propulsionForce = maxEngineForce * smoothedThrottleInput;
                 else brakeForce = maxBrakeForce;
             } else if (isBraking) {
-                if (carLinearSpeed <= 0.1) propulsionForce = -maxEngineForce * 0.5;
+                // smoothedThrottleInput è già negativo qui, quindi il segno risulta corretto (spinta in retromarcia)
+                if (carLinearSpeed <= 0.1) propulsionForce = maxEngineForce * 0.5 * smoothedThrottleInput;
                 else brakeForce = maxBrakeForce;
             }
 
-            const dragForce = aeroDragCoeff * carLinearSpeed * carLinearSpeed * Math.sign(carLinearSpeed);
+            const dragForce    = aeroDragCoeff * carLinearSpeed * carLinearSpeed * Math.sign(carLinearSpeed);
             const rollingForce = rollingResistance * Math.sign(carLinearSpeed);
-            let totalForce = propulsionForce - dragForce;
+            let totalForce     = propulsionForce - dragForce;
 
             if (!isAccelerating && !isBraking) {
-                const engineBrakeForce = 5500; 
-                if (carLinearSpeed > 0.1) totalForce -= (engineBrakeForce + rollingForce);
+                const engineBrakeForce = 5500;
+                if      (carLinearSpeed >  0.1) totalForce -= (engineBrakeForce + rollingForce);
                 else if (carLinearSpeed < -0.1) totalForce += (engineBrakeForce + rollingForce);
                 else totalForce = 0;
             } else if (carLinearSpeed > 0) {
@@ -247,6 +336,7 @@ export function createSteerControl(model, trackMeshes = []) {
             currentAcceleration = totalForce / mass;
             carLinearSpeed += currentAcceleration * dt;
 
+            // Dead-stop: evita micro-oscillazioni attorno a zero
             if (Math.abs(carLinearSpeed) < 0.15) {
                 if (brakeForce > 0 || (!isAccelerating && !isBraking)) {
                     carLinearSpeed = 0;
@@ -255,38 +345,40 @@ export function createSteerControl(model, trackMeshes = []) {
             }
 
             carLinearSpeed = THREE.MathUtils.clamp(carLinearSpeed, -14, 81.5);
-            wheelSpinSpeedRadians = carLinearSpeed / wheelRadius;
+            wheelSpinSpeedRadians  = carLinearSpeed / wheelRadius;
             wheelSpinAngleRadians += wheelSpinSpeedRadians * dt;
 
             updateSteerPose(dt);
 
-            // CONTROLLO DELLE COLLISIONI PRIMA DI SPOSTARE LA MACCHINA
-            if (carLinearSpeed > 0.05) {
-                checkWallCollisions();
+            // FIX: collisioni controllate in entrambe le direzioni (non solo avanti)
+            if (Math.abs(carLinearSpeed) > 0.05) {
+                checkWallCollisions(dt);
             }
 
-            // SPOSTAMENTO REALE 3D
-            // SPOSTAMENTO REALE 3D CORRETTO
+            // Spostamento con perdita di aderenza ad alta velocità
             const distanceThisFrame = carLinearSpeed * dt;
-            if (Math.abs(distanceThisFrame) > 0.001) {
-                
-                // NUOVO: Simulatore di perdita di aderenza. 
-                // A 0 km/h aderenza = 100%. A 230+ km/h aderenza = 25%.
-                // Questo allarga le curve ad alta velocità impedendo i testacoda irreali.
-                const gripFactor = Math.max(0.25, 1.0 - (Math.abs(carLinearSpeed) / 65.0));
-                
-                // Moltiplichiamo il risultato per il gripFactor!
+            if (Math.abs(distanceThisFrame) > 0.001 && model.root) {
+                const gripFactor = Math.max(0.25, 1.0 - Math.abs(carLinearSpeed) / 65.0);
                 const turnAngleThisFrame = (distanceThisFrame / wheelBase) * Math.tan(steerAngleRadians) * gripFactor;
-                
-                if (model.root) {
-                    model.root.rotateY(turnAngleThisFrame);
-                    model.root.translateZ(distanceThisFrame); 
-                }
+                model.root.rotateY(turnAngleThisFrame);
+                model.root.translateZ(distanceThisFrame);
             }
-            
 
-            // CORREZIONE ALTEZZA: Incolliamo l'auto al suolo dopo lo spostamento orizzontale
             clampToGround(dt);
-        }
+        },
+
+        // Espone la velocità per HUD, cronometro, ecc.
+        getSpeed: () => carLinearSpeed,
+
+        // FIX: rimuove i listener globali. Chiamare SEMPRE questo metodo
+        // prima di distruggere/ricreare il controllo (es. cambio scena,
+        // remount del componente, hot-reload) per evitare istanze
+        // "fantasma" che continuano a muovere model.root in parallelo.
+        dispose: () => {
+            window.removeEventListener('keydown', onKeyDown);
+            window.removeEventListener('keyup', onKeyUp);
+            window.removeEventListener('blur', onBlur);
+            activeKeys.clear();
+        },
     };
 }

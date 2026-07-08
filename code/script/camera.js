@@ -215,11 +215,10 @@ export function toggleCameraMode() {
 }
 
 export function updateCameraMovement(camera, carModel) { 
-    // Assicuriamoci che l'auto sia stata caricata
     if (carModel && carModel.root) {
         const currentCarPos = carModel.root.position;
 
-        // Inizializza il tracking la prima volta che la funzione viene chiamata
+        // Inizializza il tracking la prima volta
         if (!isTrackingInitialized) {
             previousCarPosition.copy(currentCarPos);
             orbitControls.target.copy(currentCarPos);
@@ -228,25 +227,46 @@ export function updateCameraMovement(camera, carModel) {
 
         // 1. INSEGUIMENTO IN MODALITÀ ORBIT
         if (currentCameraMode === 'orbit') {
-            // Calcola di quanto si è spostata l'auto rispetto al frame precedente
             const deltaPos = currentCarPos.clone().sub(previousCarPosition);
             
             if (deltaPos.lengthSq() > 0) {
-                // Sposta sia la telecamera che il punto di rotazione del target
                 camera.position.add(deltaPos);
-                orbitControls.target.add(deltaPos);
+                // Invece di sommare il delta, è più sicuro ancorare il target esattamente all'auto
+                orbitControls.target.copy(currentCarPos); 
             }
             
             previousCarPosition.copy(currentCarPos);
+            
+            // FIX: Spegniamo temporaneamente il damping per questo singolo frame!
+            // Questo permette alla telecamera di muoversi istantaneamente con l'auto,
+            // mantenendo però l'inerzia fluida quando usi il mouse.
+            const wasDamping = orbitControls.enableDamping;
+            orbitControls.enableDamping = false;
             orbitControls.update();
+            orbitControls.enableDamping = wasDamping;
+            
             return;
         }
 
         // 2. INSEGUIMENTO IN MODALITÀ DRIVER
         if (isDriverViewActive && activeDriverCam) {
             const worldPos = new THREE.Vector3();
+            const worldQuat = new THREE.Quaternion();
+            
             activeDriverCam.getWorldPosition(worldPos);
-            camera.position.copy(worldPos); // Incolla la telecamera al sedile
+            activeDriverCam.getWorldQuaternion(worldQuat);
+            
+            // Incolla la telecamera al sedile
+            camera.position.copy(worldPos); 
+            
+            // FIX: Fai ruotare la telecamera col volante!
+            // Nota: se vuoi permettere al giocatore di guardarsi intorno (mouse look) 
+            // mentre guida, servirà una logica extra per sommare la rotazione del mouse 
+            // a questa rotazione base dell'auto. Per ora, questo ferma il lag.
+            if (!isDragging) {
+                camera.quaternion.copy(worldQuat);
+            }
+            
             return;
         }
     } else if (currentCameraMode === 'orbit') {
@@ -256,7 +276,7 @@ export function updateCameraMovement(camera, carModel) {
 
     if (isDriverViewActive) return;
 
-    // 3. FREE FLY (Il tuo codice esistente per muovere la camera liberamente)
+    // 3. FREE FLY (Il tuo codice esistente)
     const speed = 0.1;
     moveVector.set(0, 0, 0);
 
