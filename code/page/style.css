@@ -2,19 +2,22 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
 }
 
 body {
     overflow: hidden;
-    background-color: #1a1a1a;
-    color: #ffffff;
+    background-color: #0a0a0c;
+    color: #f5f5f7;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
 }
 
+/* -------------------------------------
+    LOADING OVERLAY (Stile Garage High-Tech)
+-------------------------------------- */
 .loading-overlay {
     position: fixed;
     inset: 0;
@@ -22,10 +25,10 @@ body {
     display: grid;
     place-items: center;
     background:
-        radial-gradient(circle at top, rgba(0, 120, 212, 0.24), transparent 38%),
-        linear-gradient(135deg, rgba(10, 10, 12, 0.98), rgba(24, 24, 28, 0.98));
-    backdrop-filter: blur(10px);
-    transition: opacity 0.35s ease, visibility 0.35s ease;
+        radial-gradient(circle at top, rgba(255, 42, 59, 0.15), transparent 45%),
+        linear-gradient(135deg, #060608 0%, #141419 100%);
+    backdrop-filter: blur(12px);
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.4s;
 }
 
 .loading-overlay.is-hidden {
@@ -36,57 +39,64 @@ body {
 
 .loading-card {
     width: min(460px, calc(100vw - 48px));
-    padding: 28px 30px;
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(18, 18, 22, 0.86);
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+    padding: 35px 30px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 42, 59, 0.2);
+    background: linear-gradient(180deg, rgba(22, 22, 28, 0.95) 0%, rgba(14, 14, 18, 0.98) 100%);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255, 42, 59, 0.05);
 }
 
 .loading-kicker {
-    font-size: 0.8rem;
-    letter-spacing: 0.18em;
+    font-size: 0.75rem;
+    letter-spacing: 0.25em;
     text-transform: uppercase;
-    color: #8fbfff;
-    margin-bottom: 12px;
+    color: #ff2a3b;
+    font-weight: 700;
+    margin-bottom: 8px;
+    text-shadow: 0 0 10px rgba(255, 42, 59, 0.3);
 }
 
 .loading-title {
-    font-size: 1.8rem;
-    font-weight: 700;
-    margin-bottom: 16px;
+    font-size: 1.9rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 20px;
+    text-transform: uppercase;
 }
 
 .loading-bar {
     width: 100%;
-    height: 8px;
+    height: 6px;
     border-radius: 999px;
     overflow: hidden;
-    background: rgba(255, 255, 255, 0.08);
-    margin-bottom: 14px;
+    background: rgba(255, 255, 255, 0.05);
+    margin-bottom: 16px;
 }
 
 .loading-bar span {
     display: block;
-    width: 42%;
+    width: 45%;
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(90deg, #0078d4, #7cc0ff, #0078d4);
-    animation: loading-shift 1.2s ease-in-out infinite;
+    background: linear-gradient(90deg, #ff2a3b, #ff7682, #ff2a3b);
+    animation: loading-shift 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 .loading-note {
-    color: #c8c8cc;
-    font-size: 0.95rem;
+    color: #9898a0;
+    font-size: 0.9rem;
     line-height: 1.5;
+    font-weight: 500;
 }
 
 @keyframes loading-shift {
-    0% { transform: translateX(-120%); }
-    50% { transform: translateX(90%); }
-    100% { transform: translateX(260%); }
+    0% { transform: translateX(-110%); }
+    100% { transform: translateX(210%); }
 }
 
+/* -------------------------------------
+    APP LAYOUT & SIDEBAR (Paddock Cockpit)
+-------------------------------------- */
 .app-container {
     display: flex;
     width: 100vw;
@@ -95,74 +105,89 @@ body {
 
 .sidebar {
     width: 320px;
-    background-color: #252526; 
-    border-right: 1px solid #3e3e42;
+    background: linear-gradient(180deg, #141419 0%, #0b0b0d 100%);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
     padding: 24px;
     display: flex;
     flex-direction: column;
     gap: 20px;
-    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.4);
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.6);
     z-index: 10;
     overflow-y: auto;
 }
 
 .sidebar::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
 }
 
 .sidebar::-webkit-scrollbar-track {
-    background: #252526;
+    background: #141419;
 }
 
 .sidebar::-webkit-scrollbar-thumb {
-    background: #3e3e42;
+    background: #2a2a35;
     border-radius: 4px;
 }
 
 .sidebar::-webkit-scrollbar-thumb:hover {
-    background: #55555a;
+    background: #ff2a3b;
 }
 
 .sidebar h2 {
-    font-size: 1.4rem;
-    font-weight: 600;
-    border-bottom: 2px solid #0078d4;
-    padding-bottom: 12px;
+    font-size: 1.25rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #ffffff;
+    border-bottom: 2px solid #ff2a3b;
+    padding-bottom: 10px;
     margin-bottom: 4px;
     flex-shrink: 0;
+    text-shadow: 0 0 15px rgba(255, 42, 59, 0.2);
 }
 
 .control-group {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     flex-shrink: 0;
 }
 
 .mt-auto {
-    margin-top: 10px;
+    margin-top: auto;
 }
 
+/* -------------------------------------
+    COLLAPSIBLE SECTIONS (Moduli Tuning)
+-------------------------------------- */
 .collapsible-section {
-    background-color: #2d2d30;
-    border-radius: 8px;
-    border: 1px solid #3e3e42;
+    background-color: rgba(30, 30, 38, 0.6);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
     overflow: hidden;
     flex-shrink: 0;
+    transition: border-color 0.2s;
+}
+
+.collapsible-section:hover {
+    border-color: rgba(255, 42, 59, 0.3);
 }
 
 .collapsible-section summary {
-    padding: 12px 16px;
-    font-size: 1rem;
-    font-weight: 600;
-    background-color: #333337;
+    padding: 14px 16px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background-color: #1a1a22;
     cursor: pointer;
     user-select: none;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, color 0.2s;
 }
 
 .collapsible-section summary:hover {
-    background-color: #3e3e42;
+    background-color: #22222d;
+    color: #ff2a3b;
 }
 
 .section-content {
@@ -170,24 +195,31 @@ body {
     display: flex;
     flex-direction: column;
     gap: 14px;
+    background-color: rgba(16, 16, 22, 0.4);
 }
 
 .material-row {
-    border: 1px solid #3e3e42;
+    border: 1px solid rgba(255, 255, 255, 0.04);
     border-radius: 8px;
-    background-color: #262629;
+    background-color: #121218;
     overflow: hidden;
+    transition: border-color 0.2s;
+}
+
+.material-row:hover {
+    border-color: rgba(255, 42, 59, 0.2);
 }
 
 .material-row summary {
     list-style: none;
     padding: 12px 14px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #ffffff;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #d1d1d6;
     cursor: pointer;
     user-select: none;
-    background-color: #313135;
+    background-color: #1a1a22;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -199,36 +231,45 @@ body {
 
 .material-row summary::after {
     content: "";
-    width: 8px;
-    height: 8px;
-    border-right: 2px solid #cccccc;
-    border-bottom: 2px solid #cccccc;
+    width: 6px;
+    height: 6px;
+    border-right: 2px solid #8a8a93;
+    border-bottom: 2px solid #8a8a93;
     transform: rotate(-45deg);
-    transition: transform 0.2s ease;
+    transition: transform 0.2s ease, border-color 0.2s;
+}
+
+.material-row summary:hover::after {
+    border-color: #ff2a3b;
 }
 
 .material-row[open] summary::after {
     transform: rotate(45deg);
+    border-color: #ff2a3b;
 }
 
+/* -------------------------------------
+    CONTROLS & INPUTS (Interfaccia Dashboard)
+-------------------------------------- */
 .material-top {
-    padding: 12px 14px 0;
+    padding: 12px 14px 4px;
     display: flex;
     justify-content: flex-end;
 }
 
 .color-control {
     display: grid;
-    grid-template-columns: 86px 1fr;
+    grid-template-columns: auto 1fr;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     width: 100%;
 }
 
 .color-control span {
-    font-size: 0.9rem;
-    color: #cccccc;
-    user-select: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #a1a1aa;
+    text-transform: uppercase;
 }
 
 .color-control input[type="color"] {
@@ -240,21 +281,23 @@ body {
 }
 
 .compact-material summary {
-    background-color: #2f2f33;
+    background-color: #16161f;
 }
 
 .material-row label,
 .slider-row label {
-    font-size: 0.9rem;
-    color: #cccccc;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #a1a1aa;
+    text-transform: uppercase;
     cursor: pointer;
 }
 
 .slider-group {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 12px 14px 14px;
+    gap: 12px;
+    padding: 8px 14px 14px;
 }
 
 .slider-row {
@@ -264,15 +307,38 @@ body {
     gap: 10px;
 }
 
+/* Slider Custom (Stile Telemetria) */
 input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
     width: 100%;
-    accent-color: #0078d4;
-    cursor: pointer;
+    height: 4px;
+    background: #272730;
+    border-radius: 999px;
+    outline: none;
 }
 
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #ff2a3b;
+    cursor: pointer;
+    transition: transform 0.1s, background-color 0.1s;
+    box-shadow: 0 0 8px rgba(255, 42, 59, 0.5);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    background: #ff5564;
+}
+
+/* Color Picker Circolare */
 input[type="color"] {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     padding: 0;
     border: none;
     border-radius: 50%;
@@ -286,33 +352,38 @@ input[type="color"]::-webkit-color-swatch-wrapper {
 }
 
 input[type="color"]::-webkit-color-swatch {
-    border: 2px solid #4a4a4d;
+    border: 2px solid #272730;
     border-radius: 50%;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
 }
 
+/* Pulsante Principale (Launch Control) */
 button {
-    padding: 12px;
-    background-color: #0078d4; 
+    padding: 14px;
+    background: linear-gradient(90deg, #ff2a3b 0%, #c91825 100%);
     color: white;
     border: none;
-    border-radius: 6px;
-    font-size: 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
     cursor: pointer;
-    font-weight: 500;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(255, 42, 59, 0.3);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 button:hover {
-    background-color: #005a9e;
+    background: linear-gradient(90deg, #ff4151 0%, #e01b2b 100%);
+    box-shadow: 0 6px 20px rgba(255, 42, 59, 0.5);
 }
 
 button:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
 }
 
 /* -------------------------------------
-   TOGGLE SWITCH
+    TOGGLE SWITCH (Stile Switch Aviazione/Tuning)
 -------------------------------------- */
 .toggle-switch {
     display: flex;
@@ -322,9 +393,10 @@ button:active {
 }
 
 .toggle-switch span {
-    font-size: 0.9rem;
-    color: #cccccc;
-    user-select: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #a1a1aa;
+    text-transform: uppercase;
 }
 
 .toggle-switch input[type="checkbox"] {
@@ -334,37 +406,40 @@ button:active {
 .toggle-switch .slider {
     position: relative;
     width: 44px;
-    height: 24px;
-    background-color: #4a4a4d;
+    height: 22px;
+    background-color: #272730;
     border-radius: 24px;
-    transition: background-color 0.3s ease;
+    border: 1px solid rgba(255,255,255,0.05);
+    transition: background-color 0.2s;
 }
 
 .toggle-switch .slider::before {
     content: "";
     position: absolute;
-    height: 18px;
-    width: 18px;
+    height: 14px;
+    width: 14px;
     left: 3px;
     bottom: 3px;
-    background-color: white;
+    background-color: #9898a0;
     border-radius: 50%;
-    transition: transform 0.3s ease;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s;
 }
 
 .toggle-switch input[type="checkbox"]:checked + .slider {
-    background-color: #0078d4;
+    background-color: rgba(255, 42, 59, 0.2);
+    border-color: #ff2a3b;
 }
 
 .toggle-switch input[type="checkbox"]:checked + .slider::before {
-    transform: translateX(20px);
+    transform: translateX(22px);
+    background-color: #ff2a3b;
+    box-shadow: 0 0 8px rgba(255, 42, 59, 0.6);
 }
 
 #canvas-container {
     flex-grow: 1;
     position: relative;
-    background-color: #000000;
+    background-color: #050507;
 }
 
 canvas {
@@ -374,7 +449,7 @@ canvas {
 }
 
 /* -------------------------------------
-   COMPASS
+    CAMERA COMPASS (Giroscopio HUD)
 -------------------------------------- */
 .camera-compass {
     position: absolute;
@@ -383,14 +458,14 @@ canvas {
     display: grid;
     grid-template-columns: 40px 40px 40px;
     grid-template-rows: 40px 40px 40px;
-    gap: 4px;
+    gap: 6px;
     z-index: 100;
-    background-color: rgba(37, 37, 38, 0.7);
+    background-color: rgba(14, 14, 18, 0.85);
     padding: 10px;
     border-radius: 50%;
-    border: 1px solid #3e3e42;
-    backdrop-filter: blur(4px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255, 42, 59, 0.3);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.7);
 }
 
 .compass-btn {
@@ -398,49 +473,30 @@ canvas {
     height: 100%;
     border: none;
     border-radius: 50%;
-    background-color: #333337;
-    color: #cccccc;
-    font-size: 0.75rem;
-    font-weight: bold;
+    background-color: #1c1c24;
+    color: #a1a1aa;
+    font-size: 0.7rem;
+    font-weight: 800;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     padding: 0;
 }
 
 .compass-btn:hover {
-    background-color: #0078d4;
+    background-color: #ff2a3b;
     color: white;
-    transform: scale(1.1);
+    transform: scale(1.15);
+    box-shadow: 0 0 10px rgba(255, 42, 59, 0.5);
 }
 
-#btnViewBack { 
-    grid-column: 2; 
-    grid-row: 1; 
-}
-
-#btnViewLeft { 
-    grid-column: 1; 
-    grid-row: 2; 
-}
-
-#btnViewTop { 
-    grid-column: 2; 
-    grid-row: 2; 
-    background-color: #4a4a4d; 
-}
-
-#btnViewRight { 
-    grid-column: 3; 
-    grid-row: 2; 
-}
-
-#btnViewFront { 
-    grid-column: 2; 
-    grid-row: 3; 
-}
+#btnViewBack { grid-column: 2; grid-row: 1; }
+#btnViewLeft { grid-column: 1; grid-row: 2; }
+#btnViewTop { grid-column: 2; grid-row: 2; background-color: #272733; color: #ff2a3b; }
+#btnViewRight { grid-column: 3; grid-row: 2; }
+#btnViewFront { grid-column: 2; grid-row: 3; }
 
 .compass-mode-btn-long {
     position: absolute;
@@ -448,36 +504,42 @@ canvas {
     right: 32px;
     width: 138px;
     height: 36px;
-    border: 1px solid #3e3e42;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 6px;
-    background-color: rgba(37, 37, 38, 0.9);
+    background-color: rgba(20, 20, 25, 0.9);
     color: #ffffff;
     cursor: pointer;
-    font-size: 0.85rem;
-    font-weight: 600;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     display: flex;
     justify-content: center;
     align-items: center;
     transition: all 0.2s ease;
-    backdrop-filter: blur(4px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
     z-index: 100;
 }
 
 .compass-mode-btn-long:hover {
-    background-color: #0078d4;
-    transform: scale(1.05);
+    border-color: #ff2a3b;
+    background-color: #ff2a3b;
+    box-shadow: 0 0 15px rgba(255, 42, 59, 0.4);
 }
 
+/* -------------------------------------
+    ENGINE START BUTTON (Ignition Button)
+-------------------------------------- */
 .engine-power-btn {
     position: absolute;
     bottom: 30px;
     right: 30px;
-    width: 76px;
-    height: 76px;
-    background: radial-gradient(circle at 30% 30%, #4a4a4d, #1c1c1e);
-    color: #d1d1d1;
-    border: 2px solid #2d2d30;
+    width: 84px;
+    height: 84px;
+    background: radial-gradient(circle at 35% 35%, #2a2a35 0%, #0d0d11 100%);
+    color: #a1a1aa;
+    border: 3px solid #1c1c24;
     border-radius: 50%;
     display: flex;
     flex-direction: column;
@@ -485,120 +547,139 @@ canvas {
     align-items: center;
     cursor: pointer;
     z-index: 100;
-    box-shadow: 0 6px 12px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.1);
-    transition: all 0.3s ease;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.7), inset 0 2px 4px rgba(255,255,255,0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     outline: none;
 }
 
 .engine-power-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 8px 16px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.1);
-    border-color: #3e3e42;
+    transform: scale(1.06);
+    border-color: #32323f;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.8);
 }
 
 .engine-power-btn:active {
-    transform: scale(0.95);
+    transform: scale(0.94);
 }
 
 .engine-text-small {
     font-size: 0.55rem;
-    letter-spacing: 1px;
-    font-weight: 600;
-    opacity: 0.7;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    opacity: 0.6;
 }
 
 .engine-text-large {
-    font-size: 0.85rem;
-    font-weight: 800;
-    margin-top: 2px;
-    color: #E7303F;
+    font-size: 0.9rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    margin-top: 1px;
+    color: #ff2a3b;
+    text-transform: uppercase;
     transition: color 0.3s, text-shadow 0.3s;
+    text-shadow: 0 0 4px rgba(255, 42, 59, 0.2);
 }
 
+/* Engine Active (Stile "Pressione Massima") */
 .engine-power-btn.engine-on {
-    border-color: #E7303F;
-    box-shadow: 0 6px 12px rgba(0,0,0,0.5), 0 0 15px rgba(231, 48, 63, 0.4), inset 0 2px 4px rgba(255,255,255,0.1);
+    border-color: #ff2a3b;
+    background: radial-gradient(circle at 35% 35%, #3a1215 0%, #160405 100%);
+    box-shadow: 
+        0 10px 25px rgba(0,0,0,0.7), 
+        0 0 25px rgba(255, 42, 59, 0.5), 
+        inset 0 2px 4px rgba(255,255,255,0.1);
 }
 
 .engine-power-btn.engine-on .engine-text-large {
     color: #ffffff;
-    text-shadow: 0 0 8px #ffffff;
+    text-shadow: 0 0 10px #ffffff, 0 0 20px #ff2a3b;
 }
 
+.engine-power-btn.engine-on .engine-text-small {
+    color: #ff7682;
+    opacity: 0.9;
+}
+
+/* -------------------------------------
+    TIME SLIDER CONTAINER (Quadro Strumenti)
+-------------------------------------- */
 .time-slider-container {
     position: absolute;
     bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(22, 22, 24, 0.85);
+    background: rgba(14, 14, 18, 0.85);
     padding: 16px 28px;
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    border-radius: 14px;
+    border: 1px solid rgba(255, 42, 59, 0.2);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     z-index: 100;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
     width: 340px;
     text-align: center;
 }
 
 .time-slider-container label {
-    font-size: 1.05rem;
-    font-weight: 600;
-    color: #e0e0e0;
-    letter-spacing: 0.5px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #a1a1aa;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
 }
 
 .time-slider-container #timeDisplay {
-    color: #0078d4;
-    font-family: 'Segoe UI', monospace;
-    font-size: 1.25rem;
-    font-weight: 700;
+    color: #ff2a3b;
+    font-family: 'SF Mono', SFMono-Regular, Consolas, monospace;
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-shadow: 0 0 15px rgba(255, 42, 59, 0.4);
 }
 
 #timeSlider {
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
-    height: 6px;
-    background: linear-gradient(90deg, #2d2d30, #4a4a4d);
-    border-radius: 8px;
+    height: 5px;
+    background: #272730;
+    border-radius: 999px;
     outline: none;
     cursor: pointer;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 #timeSlider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 22px;
-    height: 22px;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
-    background: #0078d4;
+    background: #ff2a3b;
     border: 3px solid #ffffff;
-    box-shadow: 0 0 12px rgba(0, 120, 212, 0.7);
-    transition: transform 0.2s ease, background 0.2s ease;
+    box-shadow: 0 0 15px rgba(255, 42, 59, 0.8);
+    transition: transform 0.15s ease, background-color 0.15s ease;
 }
 
 #timeSlider::-webkit-slider-thumb:hover {
-    transform: scale(1.15);
-    background: #2a94f0;
+    transform: scale(1.25);
+    background: #ff5564;
 }
 
 #timeSlider::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
-    background: #0078d4;
+    background: #ff2a3b;
     border: 3px solid #ffffff;
-    box-shadow: 0 0 12px rgba(0, 120, 212, 0.7);
-    transition: transform 0.2s ease, background 0.2s ease;
+    box-shadow: 0 0 15px rgba(255, 42, 59, 0.8);
+    transition: transform 0.15s ease, background-color 0.15s ease;
 }
 
 #timeSlider::-moz-range-thumb:hover {
-    transform: scale(1.15);
-    background: #2a94f0;
+    transform: scale(1.25);
+    background: #ff5564;
 }
