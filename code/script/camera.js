@@ -5,7 +5,8 @@ export let currentCameraMode = 'orbit';
 export let isDriverViewActive = false;
 let previousCameraState = { position: new THREE.Vector3(), target: new THREE.Vector3(), mode: 'orbit' };
 let orbitControls;
-let driverBaseY = 0;
+let driverLookYaw = 0; 
+let driverLookPitch = 0;
 let previousCarPosition = new THREE.Vector3();
 let isTrackingInitialized = false;
 let activeDriverCam = null;
@@ -115,26 +116,25 @@ export function setupCamera(camera, renderer) {
             x: e.clientX - previousMousePosition.x,
             y: e.clientY - previousMousePosition.y
         };
-
         const sensitivity = 0.003;
-        euler.setFromQuaternion(camera.quaternion);
-        
-        euler.y -= deltaMove.x * sensitivity;
-        euler.x -= deltaMove.y * sensitivity;
-
-        euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.x));
 
         if (isDriverViewActive) {
-            let diffY = euler.y - driverBaseY;
-            
-            while (diffY > Math.PI) diffY -= Math.PI * 2;
-            while (diffY < -Math.PI) diffY += Math.PI * 2;
-            
-            diffY = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, diffY));
-            euler.y = driverBaseY + diffY;
+            // Se siamo in auto, il mouse gira solo "la testa"
+            driverLookYaw -= deltaMove.x * sensitivity;
+            driverLookPitch -= deltaMove.y * sensitivity;
+
+            // Limiti: non puoi girare la testa a 360 gradi come un gufo!
+            driverLookYaw = Math.max(-Math.PI / 1.5, Math.min(Math.PI / 1.5, driverLookYaw));
+            driverLookPitch = Math.max(-Math.PI / 6, Math.min(Math.PI / 6, driverLookPitch));
+        } else {
+            // Se stiamo volando (Free Fly), ruota la telecamera normalmente
+            euler.setFromQuaternion(camera.quaternion);
+            euler.y -= deltaMove.x * sensitivity;
+            euler.x -= deltaMove.y * sensitivity;
+            euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.x));
+            camera.quaternion.setFromEuler(euler);
         }
 
-        camera.quaternion.setFromEuler(euler);
         previousMousePosition = { x: e.clientX, y: e.clientY };
     });
 
@@ -155,22 +155,20 @@ export function setupCamera(camera, renderer) {
             x: e.touches[0].clientX - previousMousePosition.x,
             y: e.touches[0].clientY - previousMousePosition.y
         };
-
         const sensitivity = 0.004;
-        euler.setFromQuaternion(camera.quaternion);
-        euler.y -= deltaMove.x * sensitivity;
-        euler.x -= deltaMove.y * sensitivity;
-        euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.x));
 
         if (isDriverViewActive) {
-            let diffY = euler.y - driverBaseY;
-            while (diffY > Math.PI) diffY -= Math.PI * 2;
-            while (diffY < -Math.PI) diffY += Math.PI * 2;
-            diffY = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, diffY));
-            euler.y = driverBaseY + diffY;
+            driverLookYaw -= deltaMove.x * sensitivity;
+            driverLookPitch -= deltaMove.y * sensitivity;
+            driverLookYaw = Math.max(-Math.PI / 1.5, Math.min(Math.PI / 1.5, driverLookYaw));
+            driverLookPitch = Math.max(-Math.PI / 6, Math.min(Math.PI / 6, driverLookPitch));
+        } else {
+            euler.setFromQuaternion(camera.quaternion);
+            euler.y -= deltaMove.x * sensitivity;
+            euler.x -= deltaMove.y * sensitivity;
+            euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.x));
+            camera.quaternion.setFromEuler(euler);
         }
-
-        camera.quaternion.setFromEuler(euler);
 
         previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }, { passive: true });
@@ -249,29 +247,42 @@ export function updateCameraMovement(camera, carModel) {
         }
 
         // 2. INSEGUIMENTO IN MODALITÀ DRIVER
-        if (isDriverViewActive && activeDriverCam) {
+      if (isDriverViewActive && activeDriverCam) {
             const worldPos = new THREE.Vector3();
             const worldQuat = new THREE.Quaternion();
             
             activeDriverCam.getWorldPosition(worldPos);
             activeDriverCam.getWorldQuaternion(worldQuat);
             
-            // Incolla la telecamera al sedile
+            // 1. Incolla la telecamera al sedile
             camera.position.copy(worldPos); 
             
-            // FIX: Fai ruotare la telecamera col volante!
-            // Nota: se vuoi permettere al giocatore di guardarsi intorno (mouse look) 
-            // mentre guida, servirà una logica extra per sommare la rotazione del mouse 
-            // a questa rotazione base dell'auto. Per ora, questo ferma il lag.
+            // 2. Fai guardare la telecamera dove punta l'auto
+            camera.quaternion.copy(worldQuat);
+            
+            // 3. Se il giocatore sta girando la testa col mouse, aggiungi la rotazione
+            if (driverLookYaw !== 0 || driverLookPitch !== 0) {
+                const headRotation = new THREE.Quaternion();
+                // Ordine YXZ: prima gira a dx/sx (Y), poi su/giù (X)
+                const eulerOffset = new THREE.Euler(driverLookPitch, driverLookYaw, 0, 'YXZ');
+                headRotation.setFromEuler(eulerOffset);
+                
+                // Moltiplica la rotazione dell'auto per la rotazione della testa locale
+                camera.quaternion.multiply(headRotation);
+            }
+
+            // 4. (Opzionale) Se rilasci il mouse, la testa torna dritta morbidamente
             if (!isDragging) {
-                camera.quaternion.copy(worldQuat);
+                driverLookYaw = THREE.MathUtils.lerp(driverLookYaw, 0, 0.08);
+                driverLookPitch = THREE.MathUtils.lerp(driverLookPitch, 0, 0.08);
+                
+                // Se è quasi dritta, forzala a zero per evitare micro-calcoli
+                if (Math.abs(driverLookYaw) < 0.001) driverLookYaw = 0;
+                if (Math.abs(driverLookPitch) < 0.001) driverLookPitch = 0;
             }
             
             return;
         }
-    } else if (currentCameraMode === 'orbit') {
-        orbitControls.update();
-        return;
     }
 
     if (isDriverViewActive) return;
@@ -341,8 +352,10 @@ export function setDriverView(camera, carModel, blenderCameraName) {
     driverCam.getWorldQuaternion(worldQuat);
     camera.quaternion.copy(worldQuat);
 
-    euler.setFromQuaternion(camera.quaternion);
-    driverBaseY = euler.y;
+    //euler.setFromQuaternion(camera.quaternion);
+    //driverBaseY = euler.y;
+    driverLookYaw = 0;
+    driverLookPitch = 0;
 
     if (currentCameraMode === 'orbit') {
         currentCameraMode = 'firstPerson';

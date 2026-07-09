@@ -17,7 +17,7 @@ export function createSteerControl(model, trackMeshes = []) {
     const mass = 1505;
     const wheelRadius = 0.357;
     const wheelBase = 2.45;
-    const maxEngineForce = 9500;
+    const maxEngineForce = 5500;
     const maxBrakeForce = 18000;
     const aeroDragCoeff = 0.35; //resistenza areodinamica
     const rollingResistance = 250; //attrito degli pneumatici
@@ -95,6 +95,9 @@ export function createSteerControl(model, trackMeshes = []) {
     });
 
     // ── Funzioni interne ──────────────────────────────────────────────────────
+    //1.Gestisce il volante e il suo orientamento graduale
+    //2.Collega le ruote allo sterzo
+    //3.Simula Beccheggio e Rollio
 
     function updateSteerPose(dt) {
         const steerInput = THREE.MathUtils.clamp(model.state.steer, -1, 1);
@@ -144,48 +147,46 @@ export function createSteerControl(model, trackMeshes = []) {
             bodyMesh.rotation.set(smoothedPitch, 0, smoothedRoll);
         }
     }
-
-    function checkWallCollisions(dt) {
+    
+    //Gesisce l'impatto con gli ostacoli
+   function checkWallCollisions(dt) {
         if (!model.root || trackMeshes.length === 0) return false;
 
-        // Calcoliamo la direzione Avanti (Z) e la direzione Destra (X)
         _forwardDir.set(0, 0, 1).applyQuaternion(model.root.quaternion).normalize();
         _rightDir.crossVectors(carUpVector, _forwardDir).normalize();
 
-        // ----------------------------------------------------
-        // IL NUOVO PARAURTI LASER
-        // ----------------------------------------------------
-        const frontOffset = 2.1; // Distanza dal centro al muso (metri)
-        const halfWidth = 0.85;  // Distanza dal centro alla fiancata laterale (metri)
+        const frontOffset = 2.6; // (Il valore che hai modificato prima)
+        const halfWidth = 1.4;   // (Il valore che hai modificato prima)
 
-        // Troviamo il punto centrale esatto del paraurti anteriore
-        _rayStart.copy(model.root.position).addScaledVector(_forwardDir, frontOffset);
-        _rayStart.y += 0.5; // Altezza fari
+        _rayStart.copy(model.root.position);
+        _rayStart.y += 0.5; 
 
-        // Distribuiamo le 7 origini come un rastrello, da -0.85m (Sinistra) a +0.85m (Destra)
         for (let i = 0; i < 7; i++) {
-            // Questo calcolo genera valori da -1 a 1 (es: -1, -0.66, -0.33, 0, 0.33...)
             const lateralFactor = (i / 3) - 1; 
-            
-            // Posizioniamo l'origine del raggio spostandola lateralmente
             _rayOrigins[i].copy(_rayStart).addScaledVector(_rightDir, lateralFactor * halfWidth);
-
-            // Facciamo guardare tutti i raggi dritti in avanti...
             _wallDirs[i].copy(_forwardDir);
             
-            // ...Tranne i due più estremi (spigoli), che pieghiamo in fuori di 20 gradi 
-            // per evitare di graffiare i muri in curva
             if (i === 0) _wallDirs[i].applyAxisAngle(carUpVector, THREE.MathUtils.degToRad(20));
             if (i === 6) _wallDirs[i].applyAxisAngle(carUpVector, THREE.MathUtils.degToRad(-20));
         }
 
-        const predictedTravelDistance = Math.abs(carLinearSpeed) * dt;
-        const safetyDistance = Math.max(1.0, predictedTravelDistance + 0.6);
+        // ----------------------------------------------------
+        // FIX PER LA RETROMARCIA
+        // ----------------------------------------------------
+        // Se l'auto si sta muovendo all'indietro (velocità negativa), 
+        // disattiviamo il paraurti anteriore per permetterle di disincastrarsi.
+        if (carLinearSpeed < -0.01) {
+            return false; 
+        }
 
-        // Cicliamo sui 7 raggi appena posizionati
+        const predictedTravelDistance = Math.abs(carLinearSpeed) * dt;
+        const lookAheadDistance = frontOffset + predictedTravelDistance + 0.5;
+        const bumperBuffer = 0.05; 
+        const collisionThreshold = frontOffset + predictedTravelDistance + bumperBuffer;
+
         for (let i = 0; i < 7; i++) {
-            wallRaycaster.set(_rayOrigins[i], _wallDirs[i]); // Usiamo le nuove origini distribuite!
-            wallRaycaster.far = safetyDistance + 0.5;
+            wallRaycaster.set(_rayOrigins[i], _wallDirs[i]); 
+            wallRaycaster.far = lookAheadDistance;
             const intersections = wallRaycaster.intersectObjects(trackMeshes, true);
 
             if (intersections.length > 0) {
@@ -195,10 +196,17 @@ export function createSteerControl(model, trackMeshes = []) {
                 _normalMatrix.getNormalMatrix(hit.object.matrixWorld);
                 _worldNormal.applyMatrix3(_normalMatrix).normalize();
 
-                // Ignora asfalto e salite, considera solo muri verticali
-                if (_worldNormal.y > 0.5) continue;
+                if (_worldNormal.y > 0.5) continue; // Ignora asfalto/salite
 
-                if (hit.distance < safetyDistance) {
+                if (hit.distance <= collisionThreshold) {
+                    
+                    // Snap-to-Wall: Se ci stiamo per scontrare, teletrasportiamo il muso a 5cm dal muro
+                    // prima di innescare il rimbalzo.
+                    if (hit.distance > frontOffset + bumperBuffer) {
+                        const snapDistance = hit.distance - (frontOffset + bumperBuffer);
+                        model.root.position.addScaledVector(_forwardDir, snapDistance);
+                    }
+
                     const impactDot = _forwardDir.dot(_worldNormal);
 
                     if (impactDot < 0) {
@@ -206,12 +214,16 @@ export function createSteerControl(model, trackMeshes = []) {
                         carLinearSpeed *= (1.0 - (impactSeverity * 0.9));
 
                         if (impactSeverity > 0.75 && Math.abs(carLinearSpeed) > 5) {
-                            carLinearSpeed = -carLinearSpeed * 0.3;
+                            carLinearSpeed = -carLinearSpeed * 0.3; 
                         }
                     }
 
-                    const penetration = safetyDistance - hit.distance;
-                    model.root.position.addScaledVector(_worldNormal, penetration * 1.05);
+                    // Anti-compenetrazione: Se il muso dell'auto è già finito DENTRO il muro,
+                    // lo spingiamo in fuori usando la direzione della parete.
+                    if (hit.distance < frontOffset + bumperBuffer) {
+                        const penetration = (frontOffset + bumperBuffer) - hit.distance;
+                        model.root.position.addScaledVector(_worldNormal, penetration);
+                    }
 
                     return true;
                 }
@@ -220,6 +232,7 @@ export function createSteerControl(model, trackMeshes = []) {
         return false;
     }
 
+    //E' ciò che tiene attaccata l'auto alla pista
     function clampToGround(dt) {
         if (!model.root || trackMeshes.length === 0) return;
 
@@ -257,39 +270,16 @@ export function createSteerControl(model, trackMeshes = []) {
         },
 
         update: (dt) => {
-            // Input
+            // ----------------------------------------------------
+            // 1. GESTIONE DELL'ACCELERATORE (Rampa Graduale)
+            // ----------------------------------------------------
             let nextThrottle = 0;
             if (activeKeys.has('ArrowUp'))   nextThrottle += 1;
             if (activeKeys.has('ArrowDown')) nextThrottle -= 1;
 
-            let nextSteer = 0;
-            if (activeKeys.has('ArrowLeft'))  nextSteer += 1;
-            if (activeKeys.has('ArrowRight')) nextSteer -= 1;
-
-            throttleController.setInput(nextThrottle);
-            model.state.steer = nextSteer;
-            throttleController.update(dt);
-
-            // FIX: rampa graduale dell'acceleratore. Prima la forza motore
-            // passava da 0 a maxEngineForce (9500N) istantaneamente al primo
-            // frame in cui ArrowUp risultava premuto, causando uno scatto di
-            // accelerazione innaturale. Ora smoothedThrottleInput sale/scende
-            // gradualmente verso il target (-1..1), come già fatto per lo
-            // sterzo (steerAngleRadians) e per pitch/roll della carrozzeria.
-            //
-            // FIX 2: la rampa è ASIMMETRICA. Con una singola velocità di
-            // rampa in entrambi i sensi, al rilascio del tasto
-            // smoothedThrottleInput restava per qualche frame sopra la soglia
-            // "isAccelerating", applicando una spinta motore residua anche
-            // se il tasto non era più premuto: l'auto "strisciava" in avanti,
-            // poi la frenata motore la tirava indietro non appena la soglia
-            // veniva superata → oscillazione avanti/indietro da fermo. Ora,
-            // quando il target è 0 (o inverte segno rispetto al valore
-            // attuale), usiamo una rampa molto più rapida, eliminando la
-            // spinta fantasma dopo il rilascio.
-            const throttleRampUpSpeed = 3;    // 1/s — salita: più basso = partenza più morbida
+            const throttleRampUpSpeed = 1;    // 1/s — salita: più basso = partenza più morbida
             const throttleReleaseSpeed = 15;  // 1/s — rilascio/inversione: alto per fermare la spinta quasi subito
-            const targetThrottleInput = nextThrottle; // già calcolato sopra: +1 ArrowUp, -1 ArrowDown
+            const targetThrottleInput = nextThrottle;
 
             const isReleasingOrReversing =
                 targetThrottleInput === 0 ||
@@ -299,13 +289,44 @@ export function createSteerControl(model, trackMeshes = []) {
             const throttleRampSpeed = isReleasingOrReversing ? throttleReleaseSpeed : throttleRampUpSpeed;
             smoothedThrottleInput += (targetThrottleInput - smoothedThrottleInput) * Math.min(1, throttleRampSpeed * dt);
 
-            // Evita una coda asintotica infinitesima che non tocca mai lo zero
+            // Evita una coda asintotica infinitesima
             if (Math.abs(smoothedThrottleInput) < 0.01) smoothedThrottleInput = 0;
+
+            throttleController.setInput(smoothedThrottleInput);
+            throttleController.update(dt);
 
             const isAccelerating = smoothedThrottleInput > 0.02;
             const isBraking      = smoothedThrottleInput < -0.02;
 
-            // Calcolo forze
+            // ----------------------------------------------------
+            // 2. GESTIONE DELLO STERZO (Joystick Virtuale / Ritorno al Centro)
+            // ----------------------------------------------------
+            let targetSteer = 0;
+            if (activeKeys.has('ArrowLeft'))  targetSteer += 1;
+            if (activeKeys.has('ArrowRight')) targetSteer -= 1;
+
+            const steerSpeed = 0.8;       // Velocità di sterzata
+            const centerReturnSpeed = 2.5; // Velocità di ritorno al centro quando lasci i tasti
+
+            if (targetSteer !== 0) {
+                // Il giocatore sta premendo la freccia
+                model.state.steer += targetSteer * steerSpeed * dt;
+            } else {
+                // Il giocatore ha RILASCIATO i tasti: Ritorno automatico al centro
+                if (model.state.steer > 0) {
+                    model.state.steer = Math.max(0, model.state.steer - centerReturnSpeed * dt);
+                } else if (model.state.steer < 0) {
+                    model.state.steer = Math.min(0, model.state.steer + centerReturnSpeed * dt);
+                }
+            }
+
+            // Assicuriamoci che il valore non superi mai i limiti -1 e 1
+            model.state.steer = THREE.MathUtils.clamp(model.state.steer, -1, 1);
+
+
+            // ----------------------------------------------------
+            // 3. CALCOLO FORZE E VELOCITÀ (Fisica Lineare)
+            // ----------------------------------------------------
             let propulsionForce = 0;
             let brakeForce = 0;
 
@@ -313,7 +334,6 @@ export function createSteerControl(model, trackMeshes = []) {
                 if (carLinearSpeed >= -0.1) propulsionForce = maxEngineForce * smoothedThrottleInput;
                 else brakeForce = maxBrakeForce;
             } else if (isBraking) {
-                // smoothedThrottleInput è già negativo qui, quindi il segno risulta corretto (spinta in retromarcia)
                 if (carLinearSpeed <= 0.1) propulsionForce = maxEngineForce * 0.5 * smoothedThrottleInput;
                 else brakeForce = maxBrakeForce;
             }
@@ -348,9 +368,11 @@ export function createSteerControl(model, trackMeshes = []) {
             wheelSpinSpeedRadians  = carLinearSpeed / wheelRadius;
             wheelSpinAngleRadians += wheelSpinSpeedRadians * dt;
 
+            // ----------------------------------------------------
+            // 4. AGGIORNAMENTO GRAFICO E COLLISIONI
+            // ----------------------------------------------------
             updateSteerPose(dt);
 
-            // FIX: collisioni controllate in entrambe le direzioni (non solo avanti)
             if (Math.abs(carLinearSpeed) > 0.05) {
                 checkWallCollisions(dt);
             }
@@ -370,10 +392,6 @@ export function createSteerControl(model, trackMeshes = []) {
         // Espone la velocità per HUD, cronometro, ecc.
         getSpeed: () => carLinearSpeed,
 
-        // FIX: rimuove i listener globali. Chiamare SEMPRE questo metodo
-        // prima di distruggere/ricreare il controllo (es. cambio scena,
-        // remount del componente, hot-reload) per evitare istanze
-        // "fantasma" che continuano a muovere model.root in parallelo.
         dispose: () => {
             window.removeEventListener('keydown', onKeyDown);
             window.removeEventListener('keyup', onKeyUp);
