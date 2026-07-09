@@ -1,9 +1,8 @@
 import { getMaterialProperty, setMaterialColor, setMaterialProperty } from './color.js';
-import { goToCameraView, toggleCameraMode } from './camera.js';
 import { toggleCarLight, startBlink, stopBlink } from './lights.js';
 import { toggleAnimationCallback, toggleAnimation, animatePartToState, setSwitchAngle } from './animations.js';
 import { playSfx, stopStartupSound } from './audio.js';
-import { setDriverView } from './camera.js';
+import { goToCameraView, toggleCameraMode, setDriverView, setTopDownView } from './camera.js';
 import { updateTimeOfDay } from './lights.js';
 
 const materialBindings = [
@@ -55,6 +54,12 @@ export function initCameraUI(camera, carModel, scene, onTimeChange) {
     if (btnViewDriver) {
         btnViewDriver.addEventListener('click', () => {
             setDriverView(camera, carModel, 'onboard_camera'); 
+        });
+    }
+    const btnViewTopDown = document.getElementById('btnViewTopDown');
+    if (btnViewTopDown) {
+        btnViewTopDown.addEventListener('click', () => {
+            setTopDownView(camera); 
         });
     }
 

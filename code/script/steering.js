@@ -326,45 +326,54 @@ export function createSteerControl(model, trackMeshes = []) {
 
             // ----------------------------------------------------
             // 3. CALCOLO FORZE E VELOCITÀ (Fisica Lineare)
-            // ----------------------------------------------------
-            let propulsionForce = 0;
-            let brakeForce = 0;
+            // ---------------------------------------------------
+            let tractionForce = 0;
+            let appliedBrake = 0;
 
-            if (isAccelerating) {
-                if (carLinearSpeed >= -0.1) propulsionForce = maxEngineForce * smoothedThrottleInput;
-                else brakeForce = maxBrakeForce;
-            } else if (isBraking) {
-                if (carLinearSpeed <= 0.1) propulsionForce = maxEngineForce * 0.5 * smoothedThrottleInput;
-                else brakeForce = maxBrakeForce;
+            // A. Identifichiamo l'intento in modo netto (ignoriamo i micro-valori per evitare auto che partono da sole)
+            const isPressingGas = smoothedThrottleInput > 0.05;
+            const isPressingReverse = smoothedThrottleInput < -0.05;
+
+            if (isPressingGas) {
+                if (carLinearSpeed >= -0.1) tractionForce = maxEngineForce * smoothedThrottleInput;
+                else appliedBrake = maxBrakeForce; // Stai andando indietro e premi su: frena!
+            } else if (isPressingReverse) {
+                if (carLinearSpeed <= 0.1) tractionForce = maxEngineForce * 0.5 * smoothedThrottleInput; // Throttle è negativo qui, spinge indietro
+                else appliedBrake = maxBrakeForce; // Stai andando avanti e premi giù: frena!
+            } else {
+                appliedBrake = 5500; // Freno a motore se non tocchi i pedali
             }
 
-            const dragForce    = aeroDragCoeff * carLinearSpeed * carLinearSpeed * Math.sign(carLinearSpeed);
-            const rollingForce = rollingResistance * Math.sign(carLinearSpeed);
-            let totalForce     = propulsionForce - dragForce;
+            // B. Forze ambientali (L'attrito volvente ORA è lineare: scala a zero dolcemente, non inverte la marcia)
+            const dragForce = aeroDragCoeff * carLinearSpeed * Math.abs(carLinearSpeed);
+            const rollForce = rollingResistance * carLinearSpeed; 
 
-            if (!isAccelerating && !isBraking) {
-                const engineBrakeForce = 5500;
-                if      (carLinearSpeed >  0.1) totalForce -= (engineBrakeForce + rollingForce);
-                else if (carLinearSpeed < -0.1) totalForce += (engineBrakeForce + rollingForce);
-                else totalForce = 0;
-            } else if (carLinearSpeed > 0) {
-                totalForce -= (brakeForce + rollingForce);
-            } else if (carLinearSpeed < 0) {
-                totalForce += (brakeForce - rollingForce);
-            }
+            // C. Calcoliamo la velocità data solo da motore e ambiente
+            let totalForce = tractionForce - dragForce - rollForce;
+            let acceleration = totalForce / mass;
+            let nextSpeed = carLinearSpeed + acceleration * dt;
 
-            currentAcceleration = totalForce / mass;
-            carLinearSpeed += currentAcceleration * dt;
-
-            // Dead-stop: evita micro-oscillazioni attorno a zero
-            if (Math.abs(carLinearSpeed) < 0.15) {
-                if (brakeForce > 0 || (!isAccelerating && !isBraking)) {
-                    carLinearSpeed = 0;
-                    currentAcceleration = 0;
+            // D. Applicazione dei Freni a prova di bomba (Agiscono direttamente sulla velocità togliendo energia)
+            if (appliedBrake > 0) {
+                const brakeSpeedDelta = (appliedBrake / mass) * dt;
+                
+                if (nextSpeed > 0) {
+                    nextSpeed -= brakeSpeedDelta;
+                    if (nextSpeed < 0) nextSpeed = 0; // Se la frentata ti manda sotto zero, ti inchioda a zero.
+                } else if (nextSpeed < 0) {
+                    nextSpeed += brakeSpeedDelta;
+                    if (nextSpeed > 0) nextSpeed = 0; // Stessa cosa in retromarcia.
                 }
             }
 
-            carLinearSpeed = THREE.MathUtils.clamp(carLinearSpeed, -14, 81.5);
+            // E. Arresto completo di sicurezza (Dead-Stop assoluto)
+            // Se sei quasi fermo e non stai premendo i pedali, blocca l'auto.
+            if (Math.abs(nextSpeed) < 0.1 && !isPressingGas && !isPressingReverse) {
+                nextSpeed = 0;
+            }
+
+            // Salviamo il risultato
+            carLinearSpeed = THREE.MathUtils.clamp(nextSpeed, -14, 81.5);
             wheelSpinSpeedRadians  = carLinearSpeed / wheelRadius;
             wheelSpinAngleRadians += wheelSpinSpeedRadians * dt;
 

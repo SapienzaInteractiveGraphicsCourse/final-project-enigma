@@ -76,7 +76,8 @@ function animate(scene, camera, renderer, steerControl, car_model, reflectionCon
     steerControl.update(dt);
     
     // 2. DOPO aggiorna la telecamera basandoti sulla posizione appena calcolata!
-    updateCameraMovement(camera, car_model); 
+    // FIX: Passa 'dt' come terzo parametro
+    updateCameraMovement(camera, car_model, dt); 
     
     TWEEN.update();
 
@@ -90,7 +91,6 @@ function animate(scene, camera, renderer, steerControl, car_model, reflectionCon
         reflectionController.camera.userData.forceUpdate = false; 
         reflectionFrameCounter = 0; 
     }
-    
     renderer.render(scene, camera);
 }
 
@@ -105,6 +105,8 @@ window.onload = async () => {
     ]);
 
     car_model.root.rotation.y = THREE.MathUtils.degToRad(-110);
+   // car_model.root.traverse((child) => console.log("Oggetto trovato:", child.name));
+    
 
     // 2. Estraiamo tutte le mesh dall'ambiente per passarle ai sensori (Raycaster)
     const trackMeshes = [];
