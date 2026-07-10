@@ -17,15 +17,39 @@ export function CubeMapReflections(car, scene, renderer) {
         magFilter: THREE.LinearFilter
     });
     
-    const cubeCamera = new THREE.CubeCamera(0.1, 1000, cubeRenderTarget);
+    const cubeCamera = new THREE.CubeCamera(0.5, 1000, cubeRenderTarget);
     scene.add(cubeCamera);
     
     const worldPosition = new THREE.Vector3(); 
+    const tempObjPos = new THREE.Vector3();
+    const hiddenObjects = [];
+    const maxReflectionDistanceSq = 150 * 150; 
 
     const performUpdate = () => {
         carRoot.visible = false;
+        
+        scene.traverse((child) => {
+            if (child.isMesh && child.visible && child !== carRoot) {
+                tempObjPos.setFromMatrixPosition(child.matrixWorld);
+                if (tempObjPos.distanceToSquared(worldPosition) > maxReflectionDistanceSq) {
+                    child.visible = false;
+                    hiddenObjects.push(child);
+                }
+            }
+        });
+
+        const oldShadowMap = renderer.shadowMap.enabled;
+        renderer.shadowMap.enabled = false;
+        
         cubeCamera.update(renderer, scene);
+        
+        renderer.shadowMap.enabled = oldShadowMap;
         carRoot.visible = true;
+
+        for (let i = 0; i < hiddenObjects.length; i++) {
+            hiddenObjects[i].visible = true;
+        }
+        hiddenObjects.length = 0;
     };
 
     requestAnimationFrame(() => {
