@@ -11,11 +11,6 @@ import { Settings } from './settings.js';
 import { CubeMapReflections } from './reflections.js';
 import { ensureAudioContextResumed, loadEngineSamples, createEngineSoundSystem } from './audio.js';
 import { loadEnvironment, updateSkyTexture } from './environment.js';
-import { updateSunShadow } from './lights.js';
-
-let frameCount = 0;
-let lastTime = performance.now();
-const fpsDisplay = document.getElementById('fpsCounter');
 
 const clock = new THREE.Clock();
 
@@ -27,7 +22,7 @@ document.getElementById('btnCompassModeToggle').addEventListener('click', () => 
     snapFreeCameraToCar(camera, carModel);
 });
 
-async function prewarmScene(scene, camera, renderer, model, reflectionController) {
+async function prewarmScene(scene, camera, renderer, model) {
     const lowBeams = model.lowBeams ?? [];
     const highBeams = model.highBeams ?? [];
     const ambientLights = model.ambientLights ?? [];
@@ -37,10 +32,10 @@ async function prewarmScene(scene, camera, renderer, model, reflectionController
     const forceLightsState = (isOn) => {
         [...lowBeams, ...highBeams, ...ambientLights, ...turnLeft, ...turnRight].forEach(item => {
             if (!item) return;
-
+            
             if (item.light) {
                 item.light.visible = true;
-                item.light.intensity = isOn ? 5.0 : 0.0;
+                item.light.intensity = isOn ? 5.0 : 0.0; 
             }
             if (item.mesh && item.mesh.material) {
                 item.mesh.material.emissiveIntensity = isOn ? 4.0 : 0.0;
@@ -53,12 +48,11 @@ async function prewarmScene(scene, camera, renderer, model, reflectionController
     updateSkyTexture(scene, true);
     renderer.compile(scene, camera);
     renderer.render(scene, camera);
-
+    
     updateSkyTexture(scene, false);
 
     renderer.compile(scene, camera);
     for (let i = 0; i < 3; i++) {
-        if (reflectionController) reflectionController.update();
         renderer.render(scene, camera);
         await new Promise((resolve) => requestAnimationFrame(resolve));
     }
@@ -76,7 +70,6 @@ async function prewarmScene(scene, camera, renderer, model, reflectionController
     dummyRaycaster.set(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0));
     dummyRaycaster.intersectObject(model.root, true);
     
-    if (reflectionController) reflectionController.update();
     renderer.render(scene, camera);
     await new Promise((resolve) => requestAnimationFrame(resolve));
 
@@ -86,14 +79,6 @@ async function prewarmScene(scene, camera, renderer, model, reflectionController
 let reflectionFrameCounter = 0;
 
 function animate(scene, camera, renderer, steerControl, car_model, reflectionController, engineAudioSystem) {
-    frameCount++;
-    const currentTime = performance.now();
-    if (currentTime - lastTime >= 1000) {
-        if (fpsDisplay) fpsDisplay.textContent = `FPS: ${frameCount}`;
-        frameCount = 0;
-        lastTime = currentTime;
-    }
-
     const dt = clock.getDelta();
     requestAnimationFrame(() => animate(scene, camera, renderer, steerControl, car_model, reflectionController, engineAudioSystem));
 
@@ -101,46 +86,35 @@ function animate(scene, camera, renderer, steerControl, car_model, reflectionCon
     if (steerControl.engine) {
         updateTelemetryUI(steerControl.engine);
         if (engineAudioSystem) {
-            const isRunning = steerControl.engine.isRunning();
+        const isRunning = steerControl.engine.isRunning();
+        
+        if (isRunning) {
+            const currentRpm = steerControl.engine.getRpm();
+            // Recuperiamo il valore istantaneo del gas (0.0 o 1.0)
+            const gasPedal = steerControl.getGasPedal ? steerControl.getGasPedal() : 0.0;
             
-            if (isRunning) {
-                const currentRpm = steerControl.engine.getRpm();
-                const gasPedal = steerControl.getGasPedal ? steerControl.getGasPedal() : 0.0;
-                engineAudioSystem.start(); 
-                engineAudioSystem.update(currentRpm, gasPedal);
-            } else {
-                engineAudioSystem.stop();
-            }
+            engineAudioSystem.start(); 
+            // Passiamo sia i giri che l'intensità dell'acceleratore
+            engineAudioSystem.update(currentRpm, gasPedal);
+        } else {
+            engineAudioSystem.stop();
         }
     }
-    
-    if (car_model && car_model.root) {
-        const carPos = new THREE.Vector3();
-        car_model.root.getWorldPosition(carPos);
-        updateSunShadow(carPos);
     }
-
+    
     updateCameraMovement(camera, car_model, dt); 
     
     TWEEN.update();
 
-    if (reflectionController) {
-        reflectionController.update();
-    }
-    
-    updateCameraMovement(camera, car_model, dt);
-
-    TWEEN.update();
-
     reflectionFrameCounter++;
-
-    if (reflectionController.camera.userData.forceUpdate) {
+    
+    if (reflectionController.camera.userData.forceUpdate) { 
         car_model.root.visible = false;
         reflectionController.camera.update(renderer, scene);
         car_model.root.visible = true;
-
-        reflectionController.camera.userData.forceUpdate = false;
-        reflectionFrameCounter = 0;
+        
+        reflectionController.camera.userData.forceUpdate = false; 
+        reflectionFrameCounter = 0; 
     }
     renderer.render(scene, camera);
 }
@@ -155,7 +129,7 @@ window.onload = async () => {
     ]);
 
     // car_model.root.rotation.y = THREE.MathUtils.degToRad(-110);
-
+    
     const carPhysicsNode = new THREE.Group();
     scene.add(carPhysicsNode);
     car_model.root.position.set(0, -0.60, 0);
@@ -171,7 +145,7 @@ window.onload = async () => {
     }
 
     syncMaterialControls();
-
+    
     const steerControl = createCarPhysics(car_model, trackMeshes);
     setupGearSelectorCallback(steerControl.engine);
     setupButtonsCallback(car_model);
@@ -180,19 +154,11 @@ window.onload = async () => {
     setupDoorLightCallbacks(car_model);
     setupEngineCallback(car_model, steerControl);
     const reflectionController = CubeMapReflections(car_model.root, scene, renderer);
-    
-    const checkStaticReflections = document.getElementById('checkStaticReflections');
-    if (checkStaticReflections) {
-        checkStaticReflections.addEventListener('change', (e) => {
-            reflectionController.setStaticMode(e.target.checked);
-        });
-    }
-
     enableClickToAnimate(scene, camera, renderer, car_model);
 
     let engineAudioSystem = null;
     try {
-        const sampleMap = await loadEngineSamples();
+        const sampleMap = await loadEngineSamples(); 
         engineAudioSystem = createEngineSoundSystem(sampleMap);
     } catch (e) {
         console.warn("Impossibile caricare i sample del motore", e);
@@ -203,7 +169,7 @@ window.onload = async () => {
         reflectionController.updateIntensity(dayFactor);
     });
 
-    await prewarmScene(scene, camera, renderer, car_model, reflectionController);
+    await prewarmScene(scene, camera, renderer, car_model);
     setLoadingOverlayHidden();
 
     animate(scene, camera, renderer, steerControl, car_model, reflectionController, engineAudioSystem);

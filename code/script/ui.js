@@ -342,33 +342,41 @@ export function setupDoorLightCallbacks(model) {
 export function setupEngineCallback(model, physicsController = null) {
     const engineBtn = document.getElementById('btnEnginePower');
     const statusText = document.getElementById('engineStatusText');
+    const runningLightsSwitch = document.getElementById('checkRunningLights');
 
     const applyEngineLogic = (isRunning) => {
         model.state.ignitionOn = isRunning;
+
+        // Notifica il controller fisico (trasmissione + motore)
         if (physicsController?.setEngineRunning) {
             physicsController.setEngineRunning(isRunning);
         }
 
         if (isRunning) {
-            setTimeout(() => playSfx('startup'), 50);
+            playSfx('startup');
             if (engineBtn) engineBtn.classList.add('engine-on');
             if (statusText) statusText.textContent = 'STOP';
         } else {
             stopStartupSound();
             if (engineBtn) engineBtn.classList.remove('engine-on');
             if (statusText) statusText.textContent = 'START';
+
+            if (model.runningLights) {
+                model.state.runningLights = false;
+                toggleCarLight(model.runningLights, false);
+                if (runningLightsSwitch) runningLightsSwitch.checked = false;
+            }
         }
     };
 
     applyEngineLogic(model.state.ignitionOn || false);
 
     if (engineBtn) {
-        engineBtn.onclick = null;
-        
+        // Il click alterna lo stato ignitionOn e aziona l'animazione chiave
         engineBtn.addEventListener('click', () => {
             const next = !model.state.ignitionOn;
             applyEngineLogic(next);
-            animatePartToState(model, 'key', next);
+            toggleAnimation(model, 'key');
         });
     }
 }
@@ -382,6 +390,7 @@ export function setupGearSelectorCallback(engine) {
         R: document.getElementById('gearBtnR') 
     };
 
+    // Imposta lo stato iniziale sulla UI leggendolo dal motore
     const initialMode = engine.getMode();
     Object.entries(buttons).forEach(([mode, btn]) => {
         if (!btn) return;
@@ -389,9 +398,10 @@ export function setupGearSelectorCallback(engine) {
         if (mode === initialMode) btn.classList.add('active');
 
         btn.addEventListener('click', () => {
-
+            // Comunica il cambio al motore
             engine.setMode(mode);
-
+            
+            // Aggiorna la grafica dei bottoni
             Object.values(buttons).forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
         });
@@ -418,19 +428,24 @@ export function updateTelemetryUI(engine) {
     const mode = engine.getMode();
     const currentGear = engine.getGear();
     const redline = engine.getRedline();
+
+    // Aggiorna testo RPM
     hudRpm.textContent = currentRpm;
 
+    // Aggiorna testo Marcia (mostra N, R, o il numero della marcia se sei in D)
     if (mode === 'D') {
         hudGear.textContent = currentGear;
     } else {
         hudGear.textContent = mode;
     }
 
+    // Calcola percentuale Rev Bar
     let rpmPercent = (currentRpm / redline) * 100;
-    rpmPercent = Math.max(0, Math.min(100, rpmPercent));
+    rpmPercent = Math.max(0, Math.min(100, rpmPercent)); // Clampa tra 0 e 100
     
     revBarFill.style.width = `${rpmPercent}%`;
 
+    // Effetto visivo per il limitatore (lampeggio rosso se superi il 95%)
     if (rpmPercent > 95) {
         revBarFill.style.background = (Date.now() % 200 < 100) ? '#ff2a3b' : '#ffffff';
     } else {

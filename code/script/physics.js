@@ -39,10 +39,6 @@ export function createCarPhysics(model, trackMeshes = []) {
 
     const chassisShape = new CANNON.Box(new CANNON.Vec3(0.85, 0.25, 2.1));
     const chassisBody = new CANNON.Body({ mass: 1505 });
-    const roofSphere = new CANNON.Sphere(0.4);
-    chassisBody.addShape(roofSphere, new CANNON.Vec3(0, 0.4, 1.5));
-    chassisBody.addShape(roofSphere, new CANNON.Vec3(0, 0.4, -1.5));
-    chassisBody.addShape(roofSphere, new CANNON.Vec3(0, 0.4, 0));
 
     const COM_HEIGHT_OFFSET = 0.18; // was 0.45
     chassisBody.addShape(chassisShape, new CANNON.Vec3(0, COM_HEIGHT_OFFSET, 0));
@@ -66,9 +62,9 @@ export function createCarPhysics(model, trackMeshes = []) {
     const baseWheelOptions = {
         directionLocal: new CANNON.Vec3(0, -1, 0),
         axleLocal: new CANNON.Vec3(-1, 0, 0),
-        suspensionRestLength: 0.3,
+        suspensionRestLength: 0.15,
         maxSuspensionForce: 100000,
-        maxSuspensionTravel: 0.3,
+        maxSuspensionTravel: 0.12,
     };
 
     const frontWheelOptions = {
@@ -78,7 +74,7 @@ export function createCarPhysics(model, trackMeshes = []) {
         suspensionDampingRelaxation: 3.2,
         suspensionDampingCompression: 4.8,
         rollInfluence: 0.03,
-        frictionSlip: 3.2,
+        frictionSlip: 3.2,       // was 1.5
     };
 
     const rearWheelOptions = {
@@ -124,6 +120,8 @@ export function createCarPhysics(model, trackMeshes = []) {
     const activeKeys = new Set();
     window.addEventListener('keydown', (e) => activeKeys.add(e.code));
     window.addEventListener('keyup', (e) => activeKeys.delete(e.code));
+
+    // ── Trasmissione realistica ───────────────────────────────────────────
     const engine = createEngine();
 
     const ENGINE_FORCE_SCALE = 0.35;
@@ -148,20 +146,6 @@ export function createCarPhysics(model, trackMeshes = []) {
 
     return {
         update: (dt) => {
-            const localUp = new CANNON.Vec3(0, 1, 0);
-            const worldUp = chassisBody.quaternion.vmult(localUp);
-
-            if (worldUp.y < -0.2) {
-                chassisBody.position.y += 2.5;
-
-                const euler = new CANNON.Vec3();
-                chassisBody.quaternion.toEuler(euler);
-                chassisBody.quaternion.setFromEuler(0, euler.y, 0);
-
-                chassisBody.velocity.set(0, 0, 0);
-                chassisBody.angularVelocity.set(0, 0, 0);
-            }
-
             const fixedDt = Math.min(dt, 0.03);
 
             let targetSteer = 0;
@@ -202,7 +186,7 @@ export function createCarPhysics(model, trackMeshes = []) {
 
             const engineOff = !engine.isRunning?.() && engine.isRunning !== undefined
                 ? !engine.isRunning()
-                : false;
+                : false; // if engine doesn't expose isRunning(), this just no-ops safely
 
             let effectiveBrake = totalBrake;
             let forceOverride = wheelForce;
@@ -224,7 +208,7 @@ export function createCarPhysics(model, trackMeshes = []) {
 
             for (let i = 0; i < 4; i++) vehicle.setBrake(effectiveBrake, i);
 
-            world.step(1 / 120, dt, 3);
+            world.step(1 / 60, dt, 3);
 
             if (model.root && model.root.parent) {
                 model.root.parent.position.copy(chassisBody.position);

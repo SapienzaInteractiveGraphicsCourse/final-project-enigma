@@ -718,6 +718,9 @@ canvas {
 #gearBtnD.active { background: rgba(50, 210, 90, 0.20); border-color: #32d25a; color: #32d25a; }
 #gearBtnR.active { background: rgba(230, 130, 30, 0.22); border-color: #e6821e; color: #e6821e; }
 
+/* -------------------------------------
+    TELEMETRY HUD (Tachimetro)
+-------------------------------------- */
 .telemetry-dashboard {
     position: absolute;
     bottom: 30px;
@@ -781,22 +784,4 @@ canvas {
     border-radius: 999px;
     transition: width 0.05s linear, background-color 0.1s;
     box-shadow: 0 0 10px rgba(255, 42, 59, 0.4);
-}
-
-.fps-counter {
-    position: absolute;
-    top: 24px;
-    left: 24px;
-    background: rgba(14, 14, 18, 0.85);
-    color: #32d25a; /* Verde in stile con il resto della UI */
-    padding: 6px 10px;
-    border-radius: 6px;
-    border: 1px solid rgba(50, 210, 90, 0.2);
-    font-family: 'SF Mono', Consolas, monospace;
-    font-size: 0.75rem;
-    font-weight: 700;
-    z-index: 100;
-    pointer-events: none;
-    backdrop-filter: blur(8px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }
