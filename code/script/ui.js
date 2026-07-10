@@ -407,3 +407,48 @@ export function setupGearSelectorCallback(engine) {
         });
     });
 }
+
+export function updateTelemetryUI(engine) {
+    if (!engine) return;
+
+    const hudGear = document.getElementById('hudGear');
+    const hudRpm = document.getElementById('hudRpm');
+    const revBarFill = document.getElementById('revBarFill');
+
+    if (!hudGear || !hudRpm || !revBarFill) return;
+
+    if (!engine.isRunning()) {
+        hudRpm.textContent = '0';
+        hudGear.textContent = engine.getMode();
+        revBarFill.style.width = '0%';
+        return;
+    }
+
+    const currentRpm = engine.getRpm();
+    const mode = engine.getMode();
+    const currentGear = engine.getGear();
+    const redline = engine.getRedline();
+
+    // Aggiorna testo RPM
+    hudRpm.textContent = currentRpm;
+
+    // Aggiorna testo Marcia (mostra N, R, o il numero della marcia se sei in D)
+    if (mode === 'D') {
+        hudGear.textContent = currentGear;
+    } else {
+        hudGear.textContent = mode;
+    }
+
+    // Calcola percentuale Rev Bar
+    let rpmPercent = (currentRpm / redline) * 100;
+    rpmPercent = Math.max(0, Math.min(100, rpmPercent)); // Clampa tra 0 e 100
+    
+    revBarFill.style.width = `${rpmPercent}%`;
+
+    // Effetto visivo per il limitatore (lampeggio rosso se superi il 95%)
+    if (rpmPercent > 95) {
+        revBarFill.style.background = (Date.now() % 200 < 100) ? '#ff2a3b' : '#ffffff';
+    } else {
+        revBarFill.style.background = 'linear-gradient(90deg, #32d25a 0%, #e6821e 70%, #ff2a3b 100%)';
+    }
+}

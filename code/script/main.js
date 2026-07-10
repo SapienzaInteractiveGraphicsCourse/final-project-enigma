@@ -6,7 +6,7 @@ import { updateCameraMovement, snapFreeCameraToCar } from './camera.js';
 import { enableClickToAnimate } from './animations.js'
 import { createScene } from './scene.js';
 import { createCarPhysics } from './physics.js'
-import { initCameraUI, syncMaterialControls, setupLightCallbacks, setupButtonsCallback, setupTurnSignalCallbacks, setupDoorLightCallbacks, setupEngineCallback, setupGearSelectorCallback } from './ui.js';
+import { initCameraUI, syncMaterialControls, setupLightCallbacks, setupButtonsCallback, setupTurnSignalCallbacks, setupDoorLightCallbacks, setupEngineCallback, setupGearSelectorCallback, updateTelemetryUI } from './ui.js';
 import { Settings } from './settings.js';
 import { CubeMapReflections } from './reflections.js';
 import { ensureAudioContextResumed } from './audio.js';
@@ -83,6 +83,9 @@ function animate(scene, camera, renderer, steerControl, car_model, reflectionCon
     requestAnimationFrame(() => animate(scene, camera, renderer, steerControl, car_model, reflectionController));
 
     steerControl.update(dt);
+    if (steerControl.engine) {
+        updateTelemetryUI(steerControl.engine);
+    }
     
     updateCameraMovement(camera, car_model, dt); 
     
