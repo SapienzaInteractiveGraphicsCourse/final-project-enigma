@@ -1,22 +1,22 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
-import { createEngine, GEAR_MODE } from './engine.js';
+import { createEngine } from './engine.js';
 
 export function createCarPhysics(model, trackMeshes = []) {
     const world = new CANNON.World();
     world.gravity.set(0, -9.82, 0);
-    world.solver.iterations = 10;
+    world.solver.iterations = 12;
 
     trackMeshes.forEach((mesh) => {
         mesh.updateMatrixWorld(true);
-        
+
         if (!mesh.geometry || !mesh.geometry.attributes.position) return;
 
         const geometry = mesh.geometry.clone();
         geometry.applyMatrix4(mesh.matrixWorld);
 
         const vertices = geometry.attributes.position.array;
-        
+
         let indices;
         if (geometry.index) {
             indices = Array.from(geometry.index.array);
@@ -30,18 +30,26 @@ export function createCarPhysics(model, trackMeshes = []) {
         const trimeshShape = new CANNON.Trimesh(vertices, indices);
         const trimeshBody = new CANNON.Body({ mass: 0 });
         trimeshBody.addShape(trimeshShape);
-        
+
         trimeshBody.position.set(0, 0, 0);
         trimeshBody.quaternion.set(0, 0, 0, 1);
-        
+
         world.addBody(trimeshBody);
     });
 
-    const chassisShape = new CANNON.Box(new CANNON.Vec3(0.85, 0.25, 2.1)); 
+    const chassisShape = new CANNON.Box(new CANNON.Vec3(0.85, 0.25, 2.1));
     const chassisBody = new CANNON.Body({ mass: 1505 });
-    
-    chassisBody.addShape(chassisShape, new CANNON.Vec3(0, 0.45, 0));
+
+    const COM_HEIGHT_OFFSET = 0.18; // was 0.45
+    chassisBody.addShape(chassisShape, new CANNON.Vec3(0, COM_HEIGHT_OFFSET, 0));
     chassisBody.position.set(0, 1.5, 0);
+
+    chassisBody.allowSleep = true;
+    chassisBody.sleepSpeedLimit = 0.15;
+    chassisBody.sleepTimeLimit = 0.5;
+    chassisBody.linearDamping = 0.05;
+    chassisBody.angularDamping = 0.05;
+
     world.addBody(chassisBody);
 
     const vehicle = new CANNON.RaycastVehicle({
@@ -54,23 +62,29 @@ export function createCarPhysics(model, trackMeshes = []) {
     const baseWheelOptions = {
         directionLocal: new CANNON.Vec3(0, -1, 0),
         axleLocal: new CANNON.Vec3(-1, 0, 0),
-        suspensionRestLength: 0.15, 
-        suspensionStiffness: 60,
-        suspensionDampingRelaxation: 4.5,
-        suspensionDampingCompression: 8.5,
+        suspensionRestLength: 0.15,
         maxSuspensionForce: 100000,
-        rollInfluence: 0.05,
-        frictionSlip: 1.5
+        maxSuspensionTravel: 0.12,
     };
 
     const frontWheelOptions = {
         ...baseWheelOptions,
-        radius: 0.338
+        radius: 0.338,
+        suspensionStiffness: 45,
+        suspensionDampingRelaxation: 3.2,
+        suspensionDampingCompression: 4.8,
+        rollInfluence: 0.03,
+        frictionSlip: 3.2,       // was 1.5
     };
 
     const rearWheelOptions = {
         ...baseWheelOptions,
-        radius: 0.3445
+        radius: 0.3445,
+        suspensionStiffness: 32,
+        suspensionDampingRelaxation: 2.8,
+        suspensionDampingCompression: 4.2,
+        rollInfluence: 0.06,
+        frictionSlip: 2.4,
     };
 
     const anim = model.animations;
@@ -79,25 +93,25 @@ export function createCarPhysics(model, trackMeshes = []) {
     const frontWheelY = -0.15;
     const rearWheelY = -0.15;
 
-    vehicle.addWheel({ 
-        ...frontWheelOptions, 
+    vehicle.addWheel({
+        ...frontWheelOptions,
         chassisConnectionPointLocal: new CANNON.Vec3(halfWidth, frontWheelY, 1.4),
         isFrontWheel: true
     });
-    vehicle.addWheel({ 
-        ...frontWheelOptions, 
+    vehicle.addWheel({
+        ...frontWheelOptions,
         chassisConnectionPointLocal: new CANNON.Vec3(-halfWidth, frontWheelY, 1.4),
         isFrontWheel: true
     });
 
-    vehicle.addWheel({ 
-        ...rearWheelOptions, 
+    vehicle.addWheel({
+        ...rearWheelOptions,
         chassisConnectionPointLocal: new CANNON.Vec3(halfWidth, rearWheelY, -1.2),
         isFrontWheel: false
     });
-    vehicle.addWheel({ 
-        ...rearWheelOptions, 
-        chassisConnectionPointLocal: new CANNON.Vec3(-halfWidth, rearWheelY, -1.2), 
+    vehicle.addWheel({
+        ...rearWheelOptions,
+        chassisConnectionPointLocal: new CANNON.Vec3(-halfWidth, rearWheelY, -1.2),
         isFrontWheel: false
     });
 
@@ -110,10 +124,17 @@ export function createCarPhysics(model, trackMeshes = []) {
     // ── Trasmissione realistica ───────────────────────────────────────────
     const engine = createEngine();
 
-    const maxBrakeForce  = 1000;
-    const maxSteerAngle  = THREE.MathUtils.degToRad(30);
+    const ENGINE_FORCE_SCALE = 0.35;
+    const BRAKE_FORCE_SCALE = 0.35;
+
+    const LOW_SPEED_LOCK_KMH = 0.8;
+
+    const maxSteerAngle = THREE.MathUtils.degToRad(38);
+    const steerSpeed = 5.5;
 
     let currentSteerAngle = 0;
+    let smoothGas = 0;
+    let smoothBrake = 0;
 
     const meshLF = anim["wheel_LF"]?.part;
     const meshRF = anim["wheel_RF"]?.part;
@@ -132,7 +153,7 @@ export function createCarPhysics(model, trackMeshes = []) {
             if (activeKeys.has('ArrowRight')) targetSteer -= 1;
 
             if (targetSteer !== 0) {
-                currentSteerAngle += targetSteer * 4.0 * fixedDt;
+                currentSteerAngle += targetSteer * steerSpeed * fixedDt;
             } else {
                 currentSteerAngle += (0 - currentSteerAngle) * 6.0 * fixedDt;
             }
@@ -141,12 +162,16 @@ export function createCarPhysics(model, trackMeshes = []) {
             vehicle.setSteeringValue(currentSteerAngle, 0);
             vehicle.setSteeringValue(currentSteerAngle, 1);
 
-            // ── Lettura Pedali ────────────────────────────────────────────────
-            // Freccia Su = Pedale del gas (0..1)
-            const gasPedal = activeKeys.has('ArrowUp') ? 1.0 : 0.0;
-            
-            // Freccia Giù o Spazio = Pedale del freno (0..1)
-            const brakePedal = (activeKeys.has('ArrowDown') || activeKeys.has('Space')) ? 1.0 : 0.0;
+            const rawGas = activeKeys.has('ArrowUp') ? 1.0 : 0.0;
+            const rawBrake = (activeKeys.has('ArrowDown') || activeKeys.has('Space')) ? 1.0 : 0.0;
+            const gasSpeed = rawGas > 0 ? 4.0 : 10.0;
+            const brakeSpeed = rawBrake > 0 ? 6.0 : 15.0;
+            smoothGas += (rawGas - smoothGas) * gasSpeed * fixedDt;
+            smoothBrake += (rawBrake - smoothBrake) * brakeSpeed * fixedDt;
+            if (smoothGas < 0.01) smoothGas = 0;
+            if (smoothBrake < 0.01) smoothBrake = 0;
+            smoothGas = THREE.MathUtils.clamp(smoothGas, 0, 1);
+            smoothBrake = THREE.MathUtils.clamp(smoothBrake, 0, 1);
 
             const speedKmh = (() => {
                 const vel = chassisBody.velocity;
@@ -154,20 +179,34 @@ export function createCarPhysics(model, trackMeshes = []) {
                 return vel.dot(dir) * 3.6;
             })();
 
-            // ── Passiamo i pedali crudi al motore, fa tutto lui ───────────────
-            engine.update(fixedDt, gasPedal, brakePedal, speedKmh);
+            engine.update(fixedDt, smoothGas, smoothBrake, speedKmh);
 
-            const wheelForce = engine.getWheelForce();   
-            const totalBrake = engine.getBrakeForce();  
+            const wheelForce = engine.getWheelForce() * ENGINE_FORCE_SCALE;
+            const totalBrake = engine.getBrakeForce() * BRAKE_FORCE_SCALE;
 
-            // Trasmissione posteriore (RWD): forza solo alle ruote 2 e 3
-            vehicle.applyEngineForce(wheelForce, 2);
-            vehicle.applyEngineForce(wheelForce, 3);
-            vehicle.applyEngineForce(0, 0); // Anteriori scollegate dal motore
+            const engineOff = !engine.isRunning?.() && engine.isRunning !== undefined
+                ? !engine.isRunning()
+                : false; // if engine doesn't expose isRunning(), this just no-ops safely
+
+            let effectiveBrake = totalBrake;
+            let forceOverride = wheelForce;
+
+            if (engineOff && Math.abs(speedKmh) < 2) {
+                effectiveBrake = Math.max(effectiveBrake, 400);
+                forceOverride = 0;
+            }
+
+            if (Math.abs(speedKmh) < LOW_SPEED_LOCK_KMH && (smoothBrake > 0.05 || (engineOff && Math.abs(speedKmh) < 2))) {
+                chassisBody.velocity.set(0, chassisBody.velocity.y, 0);
+                chassisBody.angularVelocity.set(0, 0, 0);
+            }
+
+            vehicle.applyEngineForce(forceOverride, 2);
+            vehicle.applyEngineForce(forceOverride, 3);
+            vehicle.applyEngineForce(0, 0);
             vehicle.applyEngineForce(0, 1);
 
-            // Applichiamo la pinza freno su tutte e 4 le ruote
-            for (let i = 0; i < 4; i++) vehicle.setBrake(totalBrake, i);
+            for (let i = 0; i < 4; i++) vehicle.setBrake(effectiveBrake, i);
 
             world.step(1 / 60, dt, 3);
 
@@ -179,7 +218,7 @@ export function createCarPhysics(model, trackMeshes = []) {
             for (let i = 0; i < vehicle.wheelInfos.length; i++) {
                 vehicle.updateWheelTransform(i);
                 const wheelInfo = vehicle.wheelInfos[i];
-                
+
                 if (i === 0 && meshLF) {
                     const localTurn = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), currentSteerAngle);
                     meshLF.quaternion.copy(anim["wheel_LF"].restQuaternion).multiply(localTurn);
@@ -197,8 +236,8 @@ export function createCarPhysics(model, trackMeshes = []) {
 
                 if (targetSpinMesh) {
                     const rollQuat = new THREE.Quaternion().setFromAxisAngle(
-                        new THREE.Vector3(1, 0, 0), 
-                        -wheelInfo.rotation 
+                        new THREE.Vector3(1, 0, 0),
+                        -wheelInfo.rotation
                     );
                     targetSpinMesh.quaternion.copy(anim[targetSpinMesh.name].restQuaternion).multiply(rollQuat);
                 }
