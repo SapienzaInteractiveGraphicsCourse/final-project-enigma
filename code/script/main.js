@@ -32,10 +32,10 @@ async function prewarmScene(scene, camera, renderer, model) {
     const forceLightsState = (isOn) => {
         [...lowBeams, ...highBeams, ...ambientLights, ...turnLeft, ...turnRight].forEach(item => {
             if (!item) return;
-            
+
             if (item.light) {
                 item.light.visible = true;
-                item.light.intensity = isOn ? 5.0 : 0.0; 
+                item.light.intensity = isOn ? 5.0 : 0.0;
             }
             if (item.mesh && item.mesh.material) {
                 item.mesh.material.emissiveIntensity = isOn ? 4.0 : 0.0;
@@ -48,7 +48,7 @@ async function prewarmScene(scene, camera, renderer, model) {
     updateSkyTexture(scene, true);
     renderer.compile(scene, camera);
     renderer.render(scene, camera);
-    
+
     updateSkyTexture(scene, false);
 
     renderer.compile(scene, camera);
@@ -69,7 +69,7 @@ async function prewarmScene(scene, camera, renderer, model) {
     const dummyRaycaster = new THREE.Raycaster();
     dummyRaycaster.set(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0));
     dummyRaycaster.intersectObject(model.root, true);
-    
+
     renderer.render(scene, camera);
     await new Promise((resolve) => requestAnimationFrame(resolve));
 
@@ -86,35 +86,35 @@ function animate(scene, camera, renderer, steerControl, car_model, reflectionCon
     if (steerControl.engine) {
         updateTelemetryUI(steerControl.engine);
         if (engineAudioSystem) {
-        const isRunning = steerControl.engine.isRunning();
-        
-        if (isRunning) {
-            const currentRpm = steerControl.engine.getRpm();
-            // Recuperiamo il valore istantaneo del gas (0.0 o 1.0)
-            const gasPedal = steerControl.getGasPedal ? steerControl.getGasPedal() : 0.0;
-            
-            engineAudioSystem.start(); 
-            // Passiamo sia i giri che l'intensità dell'acceleratore
-            engineAudioSystem.update(currentRpm, gasPedal);
-        } else {
-            engineAudioSystem.stop();
+            const isRunning = steerControl.engine.isRunning();
+
+            if (isRunning) {
+                const currentRpm = steerControl.engine.getRpm();
+                // Recuperiamo il valore istantaneo del gas (0.0 o 1.0)
+                const gasPedal = steerControl.getGasPedal ? steerControl.getGasPedal() : 0.0;
+
+                engineAudioSystem.start();
+                // Passiamo sia i giri che l'intensità dell'acceleratore
+                engineAudioSystem.update(currentRpm, gasPedal);
+            } else {
+                engineAudioSystem.stop();
+            }
         }
     }
-    }
-    
-    updateCameraMovement(camera, car_model, dt); 
-    
+
+    updateCameraMovement(camera, car_model, dt);
+
     TWEEN.update();
 
     reflectionFrameCounter++;
-    
-    if (reflectionController.camera.userData.forceUpdate) { 
+
+    if (reflectionController.camera.userData.forceUpdate) {
         car_model.root.visible = false;
         reflectionController.camera.update(renderer, scene);
         car_model.root.visible = true;
-        
-        reflectionController.camera.userData.forceUpdate = false; 
-        reflectionFrameCounter = 0; 
+
+        reflectionController.camera.userData.forceUpdate = false;
+        reflectionFrameCounter = 0;
     }
     renderer.render(scene, camera);
 }
@@ -129,7 +129,7 @@ window.onload = async () => {
     ]);
 
     // car_model.root.rotation.y = THREE.MathUtils.degToRad(-110);
-    
+
     const carPhysicsNode = new THREE.Group();
     scene.add(carPhysicsNode);
     car_model.root.position.set(0, -0.60, 0);
@@ -145,7 +145,7 @@ window.onload = async () => {
     }
 
     syncMaterialControls();
-    
+
     const steerControl = createCarPhysics(car_model, trackMeshes);
     setupGearSelectorCallback(steerControl.engine);
     setupButtonsCallback(car_model);
@@ -158,7 +158,7 @@ window.onload = async () => {
 
     let engineAudioSystem = null;
     try {
-        const sampleMap = await loadEngineSamples(); 
+        const sampleMap = await loadEngineSamples();
         engineAudioSystem = createEngineSoundSystem(sampleMap);
     } catch (e) {
         console.warn("Impossibile caricare i sample del motore", e);
