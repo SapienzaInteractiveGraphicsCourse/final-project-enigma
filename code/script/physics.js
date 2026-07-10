@@ -215,6 +215,10 @@ export function createCarPhysics(model, trackMeshes = []) {
             return velocity.dot(direction) * 3.6;
         },
 
+        getGasPedal: () => {
+            return activeKeys.has('ArrowUp') ? 1.0 : 0.0;
+        },
+
         setEngineRunning: (v) => engine.setRunning(v),
         engine,
     };

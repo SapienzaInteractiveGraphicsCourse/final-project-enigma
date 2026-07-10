@@ -9,7 +9,7 @@ import { createCarPhysics } from './physics.js'
 import { initCameraUI, syncMaterialControls, setupLightCallbacks, setupButtonsCallback, setupTurnSignalCallbacks, setupDoorLightCallbacks, setupEngineCallback, setupGearSelectorCallback, updateTelemetryUI } from './ui.js';
 import { Settings } from './settings.js';
 import { CubeMapReflections } from './reflections.js';
-import { ensureAudioContextResumed } from './audio.js';
+import { ensureAudioContextResumed, loadEngineSamples, createEngineSoundSystem } from './audio.js';
 import { loadEnvironment, updateSkyTexture } from './environment.js';
 
 const clock = new THREE.Clock();
@@ -78,13 +78,28 @@ async function prewarmScene(scene, camera, renderer, model) {
 
 let reflectionFrameCounter = 0;
 
-function animate(scene, camera, renderer, steerControl, car_model, reflectionController) {
+function animate(scene, camera, renderer, steerControl, car_model, reflectionController, engineAudioSystem) {
     const dt = clock.getDelta();
-    requestAnimationFrame(() => animate(scene, camera, renderer, steerControl, car_model, reflectionController));
+    requestAnimationFrame(() => animate(scene, camera, renderer, steerControl, car_model, reflectionController, engineAudioSystem));
 
     steerControl.update(dt);
     if (steerControl.engine) {
         updateTelemetryUI(steerControl.engine);
+        if (engineAudioSystem) {
+        const isRunning = steerControl.engine.isRunning();
+        
+        if (isRunning) {
+            const currentRpm = steerControl.engine.getRpm();
+            // Recuperiamo il valore istantaneo del gas (0.0 o 1.0)
+            const gasPedal = steerControl.getGasPedal ? steerControl.getGasPedal() : 0.0;
+            
+            engineAudioSystem.start(); 
+            // Passiamo sia i giri che l'intensità dell'acceleratore
+            engineAudioSystem.update(currentRpm, gasPedal);
+        } else {
+            engineAudioSystem.stop();
+        }
+    }
     }
     
     updateCameraMovement(camera, car_model, dt); 
@@ -141,6 +156,14 @@ window.onload = async () => {
     const reflectionController = CubeMapReflections(car_model.root, scene, renderer);
     enableClickToAnimate(scene, camera, renderer, car_model);
 
+    let engineAudioSystem = null;
+    try {
+        const sampleMap = await loadEngineSamples(); 
+        engineAudioSystem = createEngineSoundSystem(sampleMap);
+    } catch (e) {
+        console.warn("Impossibile caricare i sample del motore", e);
+    }
+
     initCameraUI(camera, car_model, scene, (dayFactor) => {
         reflectionController.camera.userData.forceUpdate = true;
         reflectionController.updateIntensity(dayFactor);
@@ -149,7 +172,7 @@ window.onload = async () => {
     await prewarmScene(scene, camera, renderer, car_model);
     setLoadingOverlayHidden();
 
-    animate(scene, camera, renderer, steerControl, car_model, reflectionController);
+    animate(scene, camera, renderer, steerControl, car_model, reflectionController, engineAudioSystem);
 };
 
 window.addEventListener('pointerdown', () => {
