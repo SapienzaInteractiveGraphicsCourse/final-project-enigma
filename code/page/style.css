@@ -687,3 +687,33 @@ canvas {
     background-color: #8f1924;
     border-color: #8f1924;
 }
+.gear-selector {
+    position: absolute;
+    bottom: 24px;
+    right: 125px; /* Spostato a sinistra del bottone engine */
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    z-index: 20;
+}
+
+.gear-selector.disabled {
+    opacity: 0.35;
+    pointer-events: none;
+}
+
+.gear-btn {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.25);
+    background: rgba(20, 20, 20, 0.75);
+    color: rgba(255,255,255,0.6);
+    font-weight: 700; cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.gear-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+#gearBtnN.active { background: rgba(180, 180, 180, 0.25); border-color: #b0b0b0; color: #e0e0e0; }
+#gearBtnD.active { background: rgba(50, 210, 90, 0.20); border-color: #32d25a; color: #32d25a; }
+#gearBtnR.active { background: rgba(230, 130, 30, 0.22); border-color: #e6821e; color: #e6821e; }

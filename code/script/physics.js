@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
+import { createEngine, GEAR_MODE } from './engine.js';
 
 export function createCarPhysics(model, trackMeshes = []) {
     const world = new CANNON.World();
@@ -74,30 +75,30 @@ export function createCarPhysics(model, trackMeshes = []) {
 
     const anim = model.animations;
 
-   const halfWidth = 0.85;
-    const frontWheelY = -0.15; 
+    const halfWidth = 0.85;
+    const frontWheelY = -0.15;
     const rearWheelY = -0.15;
 
     vehicle.addWheel({ 
         ...frontWheelOptions, 
-        chassisConnectionPointLocal: new CANNON.Vec3(halfWidth, frontWheelY, 1.4), 
-        isFrontWheel: true 
+        chassisConnectionPointLocal: new CANNON.Vec3(halfWidth, frontWheelY, 1.4),
+        isFrontWheel: true
     });
     vehicle.addWheel({ 
         ...frontWheelOptions, 
-        chassisConnectionPointLocal: new CANNON.Vec3(-halfWidth, frontWheelY, 1.4), 
-        isFrontWheel: true 
+        chassisConnectionPointLocal: new CANNON.Vec3(-halfWidth, frontWheelY, 1.4),
+        isFrontWheel: true
     });
 
     vehicle.addWheel({ 
         ...rearWheelOptions, 
-        chassisConnectionPointLocal: new CANNON.Vec3(halfWidth, rearWheelY, -1.2), 
-        isFrontWheel: false 
+        chassisConnectionPointLocal: new CANNON.Vec3(halfWidth, rearWheelY, -1.2),
+        isFrontWheel: false
     });
     vehicle.addWheel({ 
         ...rearWheelOptions, 
         chassisConnectionPointLocal: new CANNON.Vec3(-halfWidth, rearWheelY, -1.2), 
-        isFrontWheel: false 
+        isFrontWheel: false
     });
 
     vehicle.addToWorld(world);
@@ -106,9 +107,11 @@ export function createCarPhysics(model, trackMeshes = []) {
     window.addEventListener('keydown', (e) => activeKeys.add(e.code));
     window.addEventListener('keyup', (e) => activeKeys.delete(e.code));
 
-    const maxEngineForce = 3000;
-    const maxBrakeForce = 1000;
-    const maxSteerAngle = THREE.MathUtils.degToRad(30);
+    // ── Trasmissione realistica ───────────────────────────────────────────
+    const engine = createEngine();
+
+    const maxBrakeForce  = 1000;
+    const maxSteerAngle  = THREE.MathUtils.degToRad(30);
 
     let currentSteerAngle = 0;
 
@@ -138,20 +141,40 @@ export function createCarPhysics(model, trackMeshes = []) {
             vehicle.setSteeringValue(currentSteerAngle, 0);
             vehicle.setSteeringValue(currentSteerAngle, 1);
 
-            let force = 0;
-            let brake = 0;
+            // ── Throttle / freno dal controller motore ────────────────────
+            const speedKmh = (() => {
+                const vel = chassisBody.velocity;
+                const dir = chassisBody.quaternion.vmult(new CANNON.Vec3(0, 0, 1));
+                return vel.dot(dir) * 3.6;
+            })();
 
-            if (activeKeys.has('ArrowUp')) {
-                force = -maxEngineForce;
-            } else if (activeKeys.has('ArrowDown')) {
-                force = maxEngineForce * 0.5;
-            } else {
-                brake = 15;
+            const isForward  = activeKeys.has('ArrowUp');
+            const isReverse  = activeKeys.has('ArrowDown');
+            const isBraking  = activeKeys.has('Space');
+
+            // Throttle: 0..1 — solo quando il motore gira e la marcia è coerente
+            const mode = engine.getMode();
+            let throttle = 0;
+            if (engine.isRunning()) {
+                if (isForward && mode === GEAR_MODE.D) throttle = 1.0;
+                if (isReverse && mode === GEAR_MODE.R) throttle = 1.0;
             }
 
-            vehicle.applyEngineForce(force, 2);
-            vehicle.applyEngineForce(force, 3);
-            for (let i = 0; i < 4; i++) vehicle.setBrake(brake, i);
+            engine.update(fixedDt, throttle, speedKmh);
+
+            const wheelForce = engine.getWheelForce();   // N, firmato
+            const engineBrake = engine.getBrakeForce();  // N, positivo = freno
+
+            // Trasmissione posteriore (RWD): forza solo alle ruote 2 e 3
+            vehicle.applyEngineForce(wheelForce, 2);
+            vehicle.applyEngineForce(wheelForce, 3);
+            vehicle.applyEngineForce(0, 0);
+            vehicle.applyEngineForce(0, 1);
+
+            // Freno: freno motore + freno a pedale (Space)
+            const brakePedal = isBraking ? maxBrakeForce : 0;
+            const totalBrake = brakePedal + engineBrake * 0.15; // scala engineBrake a forza Cannon
+            for (let i = 0; i < 4; i++) vehicle.setBrake(totalBrake, i);
 
             world.step(1 / 60, dt, 3);
 
@@ -197,6 +220,9 @@ export function createCarPhysics(model, trackMeshes = []) {
             const velocity = chassisBody.velocity;
             const direction = chassisBody.quaternion.vmult(new CANNON.Vec3(0, 0, 1));
             return velocity.dot(direction) * 3.6;
-        }
+        },
+
+        setEngineRunning: (v) => engine.setRunning(v),
+        engine,
     };
 }

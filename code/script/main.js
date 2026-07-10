@@ -6,7 +6,7 @@ import { updateCameraMovement, snapFreeCameraToCar } from './camera.js';
 import { enableClickToAnimate } from './animations.js'
 import { createScene } from './scene.js';
 import { createCarPhysics } from './physics.js'
-import { initCameraUI, syncMaterialControls, setupLightCallbacks, setupButtonsCallback, setupTurnSignalCallbacks, setupDoorLightCallbacks, setupEngineCallback } from './ui.js';
+import { initCameraUI, syncMaterialControls, setupLightCallbacks, setupButtonsCallback, setupTurnSignalCallbacks, setupDoorLightCallbacks, setupEngineCallback, setupGearSelectorCallback } from './ui.js';
 import { Settings } from './settings.js';
 import { CubeMapReflections } from './reflections.js';
 import { ensureAudioContextResumed } from './audio.js';
@@ -129,12 +129,12 @@ window.onload = async () => {
     syncMaterialControls();
     
     const steerControl = createCarPhysics(car_model, trackMeshes);
-    
+    setupGearSelectorCallback(steerControl.engine);
     setupButtonsCallback(car_model);
     setupLightCallbacks(car_model);
     setupTurnSignalCallbacks(car_model);
     setupDoorLightCallbacks(car_model);
-    setupEngineCallback(car_model);
+    setupEngineCallback(car_model, steerControl);
     const reflectionController = CubeMapReflections(car_model.root, scene, renderer);
     enableClickToAnimate(scene, camera, renderer, car_model);
 

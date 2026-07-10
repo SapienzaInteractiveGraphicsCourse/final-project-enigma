@@ -339,12 +339,19 @@ export function setupDoorLightCallbacks(model) {
     if (rightDoorSwitch) rightDoorSwitch.addEventListener('change', handleDoorChange);
 }
 
-export function setupEngineCallback(model) {
+export function setupEngineCallback(model, physicsController = null) {
     const engineBtn = document.getElementById('btnEnginePower');
     const statusText = document.getElementById('engineStatusText');
     const runningLightsSwitch = document.getElementById('checkRunningLights');
 
     const applyEngineLogic = (isRunning) => {
+        model.state.ignitionOn = isRunning;
+
+        // Notifica il controller fisico (trasmissione + motore)
+        if (physicsController?.setEngineRunning) {
+            physicsController.setEngineRunning(isRunning);
+        }
+
         if (isRunning) {
             playSfx('startup');
             if (engineBtn) engineBtn.classList.add('engine-on');
@@ -353,7 +360,7 @@ export function setupEngineCallback(model) {
             stopStartupSound();
             if (engineBtn) engineBtn.classList.remove('engine-on');
             if (statusText) statusText.textContent = 'START';
-            
+
             if (model.runningLights) {
                 model.state.runningLights = false;
                 toggleCarLight(model.runningLights, false);
@@ -365,15 +372,38 @@ export function setupEngineCallback(model) {
     applyEngineLogic(model.state.ignitionOn || false);
 
     if (engineBtn) {
-
-        engineBtn.addEventListener('change', () => {
-            applyEngineLogic(model.state.ignitionOn || false);
-        });
-
+        // Il click alterna lo stato ignitionOn e aziona l'animazione chiave
         engineBtn.addEventListener('click', () => {
-            if (typeof toggleAnimation === 'function') {
-                toggleAnimation(model, 'Key');
-            }
+            const next = !model.state.ignitionOn;
+            applyEngineLogic(next);
+            toggleAnimation(model, 'key');
         });
     }
+}
+
+export function setupGearSelectorCallback(engine) {
+    if (!engine) return;
+
+    const buttons = { 
+        N: document.getElementById('gearBtnN'), 
+        D: document.getElementById('gearBtnD'), 
+        R: document.getElementById('gearBtnR') 
+    };
+
+    // Imposta lo stato iniziale sulla UI leggendolo dal motore
+    const initialMode = engine.getMode();
+    Object.entries(buttons).forEach(([mode, btn]) => {
+        if (!btn) return;
+        
+        if (mode === initialMode) btn.classList.add('active');
+
+        btn.addEventListener('click', () => {
+            // Comunica il cambio al motore
+            engine.setMode(mode);
+            
+            // Aggiorna la grafica dei bottoni
+            Object.values(buttons).forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
 }
