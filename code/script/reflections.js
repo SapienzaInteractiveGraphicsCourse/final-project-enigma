@@ -6,35 +6,38 @@ export function CubeMapReflections(car, scene, renderer) {
         carRoot = car.scene ? car.scene : car;
     }
 
-    if (!carRoot) {
+    if (!carRoot || !carRoot.position) {
+
+        scene.children.forEach((child) => {
+            if (child.isGroup && !child.name.toLowerCase().includes('env') && !child.name.toLowerCase().includes('garage')) {
+                carRoot = child;
+            }
+        });
+    }
+
+    if (!carRoot || !carRoot.position) {
         return;
     }
 
-    const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(64, { 
+    const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256, { 
         format: THREE.RGBAFormat, 
-        generateMipmaps: false,
-        minFilter: THREE.LinearFilter,
-        magFilter: THREE.LinearFilter
+        generateMipmaps: true,
+        minFilter: THREE.LinearMipmapLinearFilter 
     });
     
     const cubeCamera = new THREE.CubeCamera(0.1, 1000, cubeRenderTarget);
-    scene.add(cubeCamera);
     
-    const worldPosition = new THREE.Vector3(); 
+    cubeCamera.position.copy(carRoot.position);
+    cubeCamera.position.y += 0.8;
+    scene.add(cubeCamera);
 
-    const performUpdate = () => {
+    scene.updateMatrixWorld(true);
+
+    requestAnimationFrame(() => {
         carRoot.visible = false;
         cubeCamera.update(renderer, scene);
         carRoot.visible = true;
-    };
 
-    requestAnimationFrame(() => {
-        carRoot.getWorldPosition(worldPosition);
-        cubeCamera.position.copy(worldPosition);
-        cubeCamera.position.y += 0.8;
-        
-        performUpdate();
-        
         carRoot.traverse((child) => {
             if (child.isMesh && child.material) {
                 if (child.material.isMeshStandardMaterial || child.material.isMeshPhysicalMaterial) {
@@ -53,16 +56,12 @@ export function CubeMapReflections(car, scene, renderer) {
             if (!carRoot) return;
             carRoot.traverse((child) => {
                 if (child.isMesh && child.material && child.material.userData.baseEnvIntensity !== undefined) {
+                    
                     const minIntensity = 0.5; 
+                    
                     child.material.envMapIntensity = minIntensity + (child.material.userData.baseEnvIntensity - minIntensity) * factor;
                 }
             });
-        },
-        update: () => {
-            carRoot.getWorldPosition(worldPosition);
-            cubeCamera.position.copy(worldPosition);
-            cubeCamera.position.y += 0.8;
-            performUpdate();
         }
     };
 }
