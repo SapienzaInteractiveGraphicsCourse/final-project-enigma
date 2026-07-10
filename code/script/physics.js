@@ -180,7 +180,10 @@ export function createCarPhysics(model, trackMeshes = []) {
                 if (i === 3) targetSpinMesh = spinRR;
 
                 if (targetSpinMesh) {
-                    const rollQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), wheelInfo.rotation);
+                    const rollQuat = new THREE.Quaternion().setFromAxisAngle(
+                        new THREE.Vector3(1, 0, 0), 
+                        -wheelInfo.rotation 
+                    );
                     targetSpinMesh.quaternion.copy(anim[targetSpinMesh.name].restQuaternion).multiply(rollQuat);
                 }
             }
