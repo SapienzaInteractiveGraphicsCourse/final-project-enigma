@@ -3,7 +3,6 @@ import { gltfLoader } from './loaders.js';
 import { setupMaterials } from './color.js';
 import { setupLowBeams, setupHighBeams, setupTurnSignals, setupAmbientLights, setupRunningLights, setupTailLights } from './lights.js'; 
 
-
 export async function loadModel(modelDescription, scene) {
     const path = modelDescription.path;
     const state = modelDescription.state;
@@ -20,22 +19,6 @@ export async function loadModel(modelDescription, scene) {
             (gltf) => {
                 const gltf_model = gltf.scene;
                 model.root = gltf_model;
-
-               const SHADOW_CASTERS = ['body', 'hood', 'door', 'wheel', 'bumper'];
-
-               gltf_model.traverse((child) => {
-                    if (child.isMesh) {
-                        const nameLower = child.name.toLowerCase();
-                        const shouldCastShadow = SHADOW_CASTERS.some(keyword => nameLower.includes(keyword));
-                        child.castShadow = shouldCastShadow;
-                        child.receiveShadow = true;
-                    }
-                    if (child.name === 'glass') {
-                        child.castShadow = false;
-                        child.receiveShadow = false;
-                    }
-                });
-                    
 
                 gltf_model.scale.set(1, 1, 1);
                 gltf_model.position.set(0, 0, 0);
@@ -66,6 +49,25 @@ export async function loadModel(modelDescription, scene) {
                         ]
                     ),
                 };
+
+                gltf_model.traverse((child) => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                        
+                        if (child.material) {
+                            const materials = Array.isArray(child.material) ? child.material : [child.material];
+                            materials.forEach(mat => {
+                                mat.shadowSide = THREE.DoubleSide;
+                            });
+                        }
+                        
+                        if (child.name === 'glass') {
+                            child.castShadow = false;
+                            child.receiveShadow = false;
+                        }
+                    }
+                });
 
                 Object.keys(animationsDescription).forEach((animKey) => {
                     const description = animationsDescription[animKey];

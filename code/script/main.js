@@ -11,6 +11,11 @@ import { Settings } from './settings.js';
 import { CubeMapReflections } from './reflections.js';
 import { ensureAudioContextResumed, loadEngineSamples, createEngineSoundSystem } from './audio.js';
 import { loadEnvironment, updateSkyTexture } from './environment.js';
+import { updateSunShadow } from './lights.js';
+
+let frameCount = 0;
+let lastTime = performance.now();
+const fpsDisplay = document.getElementById('fpsCounter');
 
 const clock = new THREE.Clock();
 
@@ -22,7 +27,7 @@ document.getElementById('btnCompassModeToggle').addEventListener('click', () => 
     snapFreeCameraToCar(camera, carModel);
 });
 
-async function prewarmScene(scene, camera, renderer, model) {
+async function prewarmScene(scene, camera, renderer, model, reflectionController) {
     const lowBeams = model.lowBeams ?? [];
     const highBeams = model.highBeams ?? [];
     const ambientLights = model.ambientLights ?? [];
@@ -53,6 +58,7 @@ async function prewarmScene(scene, camera, renderer, model) {
 
     renderer.compile(scene, camera);
     for (let i = 0; i < 3; i++) {
+        if (reflectionController) reflectionController.update();
         renderer.render(scene, camera);
         await new Promise((resolve) => requestAnimationFrame(resolve));
     }
@@ -69,7 +75,8 @@ async function prewarmScene(scene, camera, renderer, model) {
     const dummyRaycaster = new THREE.Raycaster();
     dummyRaycaster.set(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0));
     dummyRaycaster.intersectObject(model.root, true);
-
+    
+    if (reflectionController) reflectionController.update();
     renderer.render(scene, camera);
     await new Promise((resolve) => requestAnimationFrame(resolve));
 
@@ -79,6 +86,14 @@ async function prewarmScene(scene, camera, renderer, model) {
 let reflectionFrameCounter = 0;
 
 function animate(scene, camera, renderer, steerControl, car_model, reflectionController, engineAudioSystem) {
+    frameCount++;
+    const currentTime = performance.now();
+    if (currentTime - lastTime >= 1000) {
+        if (fpsDisplay) fpsDisplay.textContent = `FPS: ${frameCount}`;
+        frameCount = 0;
+        lastTime = currentTime;
+    }
+
     const dt = clock.getDelta();
     requestAnimationFrame(() => animate(scene, camera, renderer, steerControl, car_model, reflectionController, engineAudioSystem));
 
@@ -86,18 +101,32 @@ function animate(scene, camera, renderer, steerControl, car_model, reflectionCon
     if (steerControl.engine) {
         updateTelemetryUI(steerControl.engine);
         if (engineAudioSystem) {
-        const isRunning = steerControl.engine.isRunning();
-        
-        if (isRunning) {
-            const currentRpm = steerControl.engine.getRpm();
-            const gasPedal = steerControl.getGasPedal ? steerControl.getGasPedal() : 0.0;
-            engineAudioSystem.start(); 
-            engineAudioSystem.update(currentRpm, gasPedal);
-        } else {
-            engineAudioSystem.stop();
+            const isRunning = steerControl.engine.isRunning();
+            if (isRunning) {
+                const currentRpm = steerControl.engine.getRpm();
+                const gasPedal = steerControl.getGasPedal ? steerControl.getGasPedal() : 0.0;
+                engineAudioSystem.start(); 
+                engineAudioSystem.update(currentRpm, gasPedal);
+            } else {
+                engineAudioSystem.stop();
+            }
         }
     }
+    
+    if (car_model && car_model.root) {
+        const carPos = new THREE.Vector3();
+        car_model.root.getWorldPosition(carPos);
+        updateSunShadow(carPos);
+    }
 
+    updateCameraMovement(camera, car_model, dt); 
+    
+    TWEEN.update();
+
+    if (reflectionController) {
+        reflectionController.update();
+    }
+    
     updateCameraMovement(camera, car_model, dt);
 
     TWEEN.update();
@@ -150,6 +179,14 @@ window.onload = async () => {
     setupDoorLightCallbacks(car_model);
     setupEngineCallback(car_model, steerControl);
     const reflectionController = CubeMapReflections(car_model.root, scene, renderer);
+    
+    const checkStaticReflections = document.getElementById('checkStaticReflections');
+    if (checkStaticReflections) {
+        checkStaticReflections.addEventListener('change', (e) => {
+            reflectionController.setStaticMode(e.target.checked);
+        });
+    }
+
     enableClickToAnimate(scene, camera, renderer, car_model);
 
     let engineAudioSystem = null;
@@ -165,7 +202,7 @@ window.onload = async () => {
         reflectionController.updateIntensity(dayFactor);
     });
 
-    await prewarmScene(scene, camera, renderer, car_model);
+    await prewarmScene(scene, camera, renderer, car_model, reflectionController);
     setLoadingOverlayHidden();
 
     animate(scene, camera, renderer, steerControl, car_model, reflectionController, engineAudioSystem);
