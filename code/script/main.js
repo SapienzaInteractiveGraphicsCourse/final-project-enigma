@@ -110,7 +110,7 @@ window.onload = async () => {
     
     const carPhysicsNode = new THREE.Group();
     scene.add(carPhysicsNode);
-    car_model.root.position.set(0, -0.615, 0);
+    car_model.root.position.set(0, -0.60, 0);
     carPhysicsNode.add(car_model.root);
 
     const trackMeshes = [];

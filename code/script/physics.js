@@ -40,7 +40,7 @@ export function createCarPhysics(model, trackMeshes = []) {
     const chassisBody = new CANNON.Body({ mass: 1505 });
     
     chassisBody.addShape(chassisShape, new CANNON.Vec3(0, 0.45, 0));
-    chassisBody.position.set(0, 0.56, 0);
+    chassisBody.position.set(0, 1.5, 0);
     world.addBody(chassisBody);
 
     const vehicle = new CANNON.RaycastVehicle({
@@ -50,26 +50,55 @@ export function createCarPhysics(model, trackMeshes = []) {
         indexForwardAxis: 2
     });
 
-    const wheelOptions = {
-        radius: 0.357,
+    const baseWheelOptions = {
         directionLocal: new CANNON.Vec3(0, -1, 0),
         axleLocal: new CANNON.Vec3(-1, 0, 0),
-        suspensionRestLength: 0.20, 
-        suspensionStiffness: 60, 
-        suspensionDampingCompression: 8.5, 
+        suspensionRestLength: 0.15, 
+        suspensionStiffness: 60,
         suspensionDampingRelaxation: 4.5,
+        suspensionDampingCompression: 8.5,
         maxSuspensionForce: 100000,
         rollInfluence: 0.05,
         frictionSlip: 1.5
     };
 
-    const halfWidth = 0.85;
-    const wheelY = -0.1;
-    
-    vehicle.addWheel({ ...wheelOptions, chassisConnectionPointLocal: new CANNON.Vec3(halfWidth, wheelY, 1.4), isFrontWheel: true });
-    vehicle.addWheel({ ...wheelOptions, chassisConnectionPointLocal: new CANNON.Vec3(-halfWidth, wheelY, 1.4), isFrontWheel: true });
-    vehicle.addWheel({ ...wheelOptions, chassisConnectionPointLocal: new CANNON.Vec3(halfWidth, wheelY, -1.2), isFrontWheel: false });
-    vehicle.addWheel({ ...wheelOptions, chassisConnectionPointLocal: new CANNON.Vec3(-halfWidth, wheelY, -1.2), isFrontWheel: false });
+    const frontWheelOptions = {
+        ...baseWheelOptions,
+        radius: 0.338
+    };
+
+    const rearWheelOptions = {
+        ...baseWheelOptions,
+        radius: 0.3445
+    };
+
+    const anim = model.animations;
+
+   const halfWidth = 0.85;
+    const frontWheelY = -0.15; 
+    const rearWheelY = -0.15;
+
+    vehicle.addWheel({ 
+        ...frontWheelOptions, 
+        chassisConnectionPointLocal: new CANNON.Vec3(halfWidth, frontWheelY, 1.4), 
+        isFrontWheel: true 
+    });
+    vehicle.addWheel({ 
+        ...frontWheelOptions, 
+        chassisConnectionPointLocal: new CANNON.Vec3(-halfWidth, frontWheelY, 1.4), 
+        isFrontWheel: true 
+    });
+
+    vehicle.addWheel({ 
+        ...rearWheelOptions, 
+        chassisConnectionPointLocal: new CANNON.Vec3(halfWidth, rearWheelY, -1.2), 
+        isFrontWheel: false 
+    });
+    vehicle.addWheel({ 
+        ...rearWheelOptions, 
+        chassisConnectionPointLocal: new CANNON.Vec3(-halfWidth, rearWheelY, -1.2), 
+        isFrontWheel: false 
+    });
 
     vehicle.addToWorld(world);
 
@@ -83,7 +112,6 @@ export function createCarPhysics(model, trackMeshes = []) {
 
     let currentSteerAngle = 0;
 
-    const anim = model.animations;
     const meshLF = anim["wheel_LF"]?.part;
     const meshRF = anim["wheel_RF"]?.part;
     const spinLF = anim["Moving_wheel_LF"]?.part;
