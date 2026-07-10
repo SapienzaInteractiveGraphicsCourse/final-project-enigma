@@ -3,7 +3,6 @@ import { gltfLoader } from './loaders.js';
 import { setupMaterials } from './color.js';
 import { setupLowBeams, setupHighBeams, setupTurnSignals, setupAmbientLights, setupRunningLights, setupTailLights } from './lights.js'; 
 
-
 export async function loadModel(modelDescription, scene) {
     const path = modelDescription.path;
     const state = modelDescription.state;
@@ -21,19 +20,6 @@ export async function loadModel(modelDescription, scene) {
                 const gltf_model = gltf.scene;
                 model.root = gltf_model;
 
-                gltf_model.traverse((child) => {
-                    if (child.isMesh) {
-                        child.castShadow = true;
-                        child.receiveShadow = true;
-                        
-                        const nameLower = child.name.toLowerCase();
-                        if (nameLower.includes('glass') || nameLower.includes('window')) {
-                            child.castShadow = false;
-                            child.receiveShadow = false;
-                        }
-                    }
-                });
-                    
                 gltf_model.scale.set(1, 1, 1);
                 gltf_model.position.set(0, 0, 0);
 
@@ -63,6 +49,25 @@ export async function loadModel(modelDescription, scene) {
                         ]
                     ),
                 };
+
+                gltf_model.traverse((child) => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                        
+                        if (child.material) {
+                            const materials = Array.isArray(child.material) ? child.material : [child.material];
+                            materials.forEach(mat => {
+                                mat.shadowSide = THREE.DoubleSide;
+                            });
+                        }
+                        
+                        if (child.name === 'glass') {
+                            child.castShadow = false;
+                            child.receiveShadow = false;
+                        }
+                    }
+                });
 
                 Object.keys(animationsDescription).forEach((animKey) => {
                     const description = animationsDescription[animKey];
