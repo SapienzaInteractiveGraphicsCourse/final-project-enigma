@@ -15,9 +15,6 @@ body {
     user-select: none;
 }
 
-/* -------------------------------------
-    LOADING OVERLAY (Stile Garage High-Tech)
--------------------------------------- */
 .loading-overlay {
     position: fixed;
     inset: 0;
@@ -94,9 +91,6 @@ body {
     100% { transform: translateX(210%); }
 }
 
-/* -------------------------------------
-    APP LAYOUT & SIDEBAR (Paddock Cockpit)
--------------------------------------- */
 .app-container {
     display: flex;
     width: 100vw;
@@ -157,9 +151,6 @@ body {
     margin-top: auto;
 }
 
-/* -------------------------------------
-    COLLAPSIBLE SECTIONS (Moduli Tuning)
--------------------------------------- */
 .collapsible-section {
     background-color: rgba(30, 30, 38, 0.6);
     border-radius: 10px;
@@ -248,9 +239,6 @@ body {
     border-color: #ff2a3b;
 }
 
-/* -------------------------------------
-    CONTROLS & INPUTS (Interfaccia Dashboard)
--------------------------------------- */
 .material-top {
     padding: 12px 14px 4px;
     display: flex;
@@ -382,9 +370,6 @@ button:active {
     transform: scale(0.97);
 }
 
-/* -------------------------------------
-    TOGGLE SWITCH (Stile Switch Aviazione/Tuning)
--------------------------------------- */
 .toggle-switch {
     display: flex;
     justify-content: space-between;
@@ -448,9 +433,6 @@ canvas {
     height: 100% !important;
 }
 
-/* -------------------------------------
-    CAMERA COMPASS (Giroscopio HUD)
--------------------------------------- */
 .camera-compass {
     position: absolute;
     top: 24px;
@@ -498,39 +480,6 @@ canvas {
 #btnViewRight { grid-column: 3; grid-row: 2; }
 #btnViewFront { grid-column: 2; grid-row: 3; }
 
-.compass-mode-btn-long {
-    position: absolute;
-    top: 195px;
-    right: 32px;
-    width: 138px;
-    height: 36px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 6px;
-    background-color: rgba(20, 20, 25, 0.9);
-    color: #ffffff;
-    cursor: pointer;
-    font-size: 0.8rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: all 0.2s ease;
-    backdrop-filter: blur(8px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-    z-index: 100;
-}
-
-.compass-mode-btn-long:hover {
-    border-color: #ff2a3b;
-    background-color: #ff2a3b;
-    box-shadow: 0 0 15px rgba(255, 42, 59, 0.4);
-}
-
-/* -------------------------------------
-    ENGINE START BUTTON (Ignition Button)
--------------------------------------- */
 .engine-power-btn {
     position: absolute;
     bottom: 30px;
@@ -617,9 +566,6 @@ canvas {
     opacity: 0.9;
 }
 
-/* -------------------------------------
-    TIME SLIDER CONTAINER (Quadro Strumenti)
--------------------------------------- */
 .time-slider-container {
     position: absolute;
     bottom: 30px;
@@ -698,4 +644,46 @@ canvas {
 #timeSlider::-moz-range-thumb:hover {
     transform: scale(1.25);
     background: #ff5564;
+}
+
+.compass-mode-btn-long {
+    position: absolute;
+    top: 195px;
+    right: 32px;
+    width: 138px;
+    height: 36px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    background-color: rgba(20, 20, 25, 0.9);
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    z-index: 100;
+}
+
+.compass-mode-btn-long:hover {
+    border-color: #ff2a3b;
+    background-color: #ff2a3b;
+    box-shadow: 0 0 15px rgba(255, 42, 59, 0.4);
+}
+
+.compass-mode-btn-long.is-active {
+    background-color: #7a151e; 
+    border-color: #7a151e;
+    color: #490e0e; 
+    transform: scale(0.98); 
+}
+
+.compass-mode-btn-long.is-active:hover {
+    background-color: #8f1924;
+    border-color: #8f1924;
 }

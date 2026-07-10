@@ -116,6 +116,7 @@ export function goToCameraView(camera, carModel, viewName) {
     isDriverViewActive = false;
     isTopDownViewActive = false; 
     updateDriverButtonVisual();
+    updateTopDownButtonVisual();
 
     if (currentCameraMode !== 'orbit') {
         currentCameraMode = 'orbit';
@@ -233,28 +234,44 @@ export function toggleCameraMode() {
     if (currentCameraMode === 'orbit') {
         currentCameraMode = 'firstPerson';
         orbitControls.enabled = false;
+        updateTopDownButtonVisual();
     } else {
         currentCameraMode = 'orbit';
         orbitControls.enabled = true;
+        updateTopDownButtonVisual();
     }
 
     if (isDriverViewActive) {
         isDriverViewActive = false;
         updateDriverButtonVisual();
+        updateTopDownButtonVisual();
     }
 
     return currentCameraMode;
+}
+
+function updateTopDownButtonVisual() {
+    const btn = document.getElementById('btnViewTopDown');
+    if (btn) {
+        if (isTopDownViewActive) {
+            btn.classList.add('is-active');
+        } else {
+            btn.classList.remove('is-active');
+        }
+    }
 }
 
 export function setTopDownView(camera) {
     if (isTopDownViewActive) {
         isTopDownViewActive = false;
         orbitControls.enabled = true;
+        updateTopDownButtonVisual();
         return;
     }
 
     isTopDownViewActive = true;
     orbitControls.enabled = false; 
+    updateTopDownButtonVisual();
 
     if (isDriverViewActive) {
         isDriverViewActive = false;
@@ -271,12 +288,13 @@ export function updateCameraMovement(camera, carModel, delta = 0.016) {
 
         const currentCarPos = new THREE.Vector3();
         const currentCarQuat = new THREE.Quaternion();
+        
         carModel.root.getWorldPosition(currentCarPos);
-        carModel.root.getWorldQuaternion(currentCarQuat);
+        carModel.root.getWorldQuaternion(currentCarQuat); 
 
         if (!isTrackingInitialized) {
             previousCarPosition.copy(currentCarPos);
-            previousCarQuaternion.copy(currentCarQuat);
+            previousCarQuaternion.copy(currentCarQuat); 
             orbitControls.target.copy(currentCarPos);
             isTrackingInitialized = true;
         }
@@ -285,12 +303,22 @@ export function updateCameraMovement(camera, carModel, delta = 0.016) {
             const targetPos = new THREE.Vector3(currentCarPos.x, currentCarPos.y + 15, currentCarPos.z);
             const lerpFactor = Math.min(10.0 * delta, 1.0);
             camera.position.lerp(targetPos, lerpFactor);
-            camera.rotation.set(-Math.PI / 2, 0, 0, 'YXZ');
+
+            const carForward = new THREE.Vector3(0, 0, 1).applyQuaternion(currentCarQuat).normalize();
+
+            camera.up.copy(carForward);
+            
+            camera.lookAt(currentCarPos);
+
             orbitControls.target.copy(currentCarPos);
 
             previousCarPosition.copy(currentCarPos);
             previousCarQuaternion.copy(currentCarQuat);
             return;
+        } else {
+            if (camera.up.y !== 1) {
+                camera.up.set(0, 1, 0);
+            }
         }
 
         if (isDriverViewActive && activeDriverCam) {
@@ -328,7 +356,6 @@ export function updateCameraMovement(camera, carModel, delta = 0.016) {
             const offset = camera.position.clone().sub(previousCarPosition);
             
             offset.applyQuaternion(deltaQuat);
-            
             camera.position.copy(currentCarPos).add(offset);
             
             orbitControls.target.copy(currentCarPos); 
@@ -344,13 +371,9 @@ export function updateCameraMovement(camera, carModel, delta = 0.016) {
             return;
         }
 
-    const deltaPos = currentCarPos.clone().sub(previousCarPosition);
-    camera.position.add(deltaPos);
-
-    previousCarPosition.copy(currentCarPos);
-    previousCarQuaternion.copy(currentCarQuat);
-
-}
+        previousCarPosition.copy(currentCarPos);
+        previousCarQuaternion.copy(currentCarQuat);
+    }
 
     if (isDriverViewActive || isTopDownViewActive) return;
 
@@ -375,11 +398,12 @@ export function updateCameraMovement(camera, carModel, delta = 0.016) {
     cameraVelocity.multiplyScalar(Math.max(0, 1 - moveFriction * delta));
     camera.position.addScaledVector(cameraVelocity, delta);
 
-    camera.position.y = Math.max(0.5, Math.min(30.0, camera.position.y));
+    camera.position.y = Math.max(0.5, camera.position.y);
 }
 
 export function setDriverView(camera, carModel, blenderCameraName) {
     isTopDownViewActive = false;
+    updateTopDownButtonVisual();
 
     if (isDriverViewActive) {
         isDriverViewActive = false;
@@ -428,5 +452,21 @@ export function setDriverView(camera, carModel, blenderCameraName) {
     if (currentCameraMode === 'orbit') {
         currentCameraMode = 'firstPerson';
         orbitControls.enabled = false;
+    }
+}
+
+export function snapFreeCameraToCar(camera, carModel) {
+    if (!carModel || !carModel.root) return;
+
+    const carPos = new THREE.Vector3();
+    carModel.root.getWorldPosition(carPos);
+
+    camera.position.set(carPos.x, carPos.y + 3, carPos.z + 6);
+    
+    camera.lookAt(carPos);
+
+    if (orbitControls) {
+        orbitControls.target.copy(carPos);
+        orbitControls.update();
     }
 }

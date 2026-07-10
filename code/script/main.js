@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import * as TWEEN from '@tweenjs/tween.js';
 import { loadModel } from './model.js';
 import { CAR_MODEL } from './car_model.js';
-import { updateCameraMovement } from './camera.js';
+import { updateCameraMovement, snapFreeCameraToCar } from './camera.js';
 import { enableClickToAnimate } from './animations.js'
 import { createScene } from './scene.js';
 import { createCarPhysics } from './physics.js'
@@ -17,6 +17,10 @@ const clock = new THREE.Clock();
 function setLoadingOverlayHidden() {
     document.getElementById('loadingOverlay')?.classList.add('is-hidden');
 }
+
+document.getElementById('btnCompassModeToggle').addEventListener('click', () => {
+    snapFreeCameraToCar(camera, carModel);
+});
 
 async function prewarmScene(scene, camera, renderer, model) {
     const lowBeams = model.lowBeams ?? [];
