@@ -11,6 +11,7 @@ import { Settings } from './settings.js';
 import { CubeMapReflections } from './reflections.js';
 import { ensureAudioContextResumed } from './audio.js';
 import { loadEnvironment, updateSkyTexture } from './environment.js';
+import { updateSunShadow } from './lights.js';
 
 let frameCount = 0;
 let lastTime = performance.now();
@@ -26,7 +27,7 @@ document.getElementById('btnCompassModeToggle').addEventListener('click', () => 
     snapFreeCameraToCar(camera, carModel);
 });
 
-async function prewarmScene(scene, camera, renderer, model) {
+async function prewarmScene(scene, camera, renderer, model, reflectionController) {
     const lowBeams = model.lowBeams ?? [];
     const highBeams = model.highBeams ?? [];
     const ambientLights = model.ambientLights ?? [];
@@ -57,6 +58,7 @@ async function prewarmScene(scene, camera, renderer, model) {
 
     renderer.compile(scene, camera);
     for (let i = 0; i < 3; i++) {
+        if (reflectionController) reflectionController.update();
         renderer.render(scene, camera);
         await new Promise((resolve) => requestAnimationFrame(resolve));
     }
@@ -74,6 +76,7 @@ async function prewarmScene(scene, camera, renderer, model) {
     dummyRaycaster.set(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0));
     dummyRaycaster.intersectObject(model.root, true);
     
+    if (reflectionController) reflectionController.update();
     renderer.render(scene, camera);
     await new Promise((resolve) => requestAnimationFrame(resolve));
 
@@ -99,6 +102,12 @@ function animate(scene, camera, renderer, steerControl, car_model, reflectionCon
         updateTelemetryUI(steerControl.engine);
     }
     
+    if (car_model && car_model.root) {
+        const carPos = new THREE.Vector3();
+        car_model.root.getWorldPosition(carPos);
+        updateSunShadow(carPos);
+    }
+
     updateCameraMovement(camera, car_model, dt); 
     
     TWEEN.update();
@@ -125,8 +134,6 @@ window.onload = async () => {
         loadEnvironment(scene),
         loadModel(CAR_MODEL, scene)
     ]);
-
-    // car_model.root.rotation.y = THREE.MathUtils.degToRad(-110);
     
     const carPhysicsNode = new THREE.Group();
     scene.add(carPhysicsNode);
@@ -159,6 +166,7 @@ window.onload = async () => {
             reflectionController.setStaticMode(e.target.checked);
         });
     }
+
     enableClickToAnimate(scene, camera, renderer, car_model);
 
     initCameraUI(camera, car_model, scene, (dayFactor) => {
@@ -166,7 +174,7 @@ window.onload = async () => {
         reflectionController.updateIntensity(dayFactor);
     });
 
-    await prewarmScene(scene, camera, renderer, car_model);
+    await prewarmScene(scene, camera, renderer, car_model, reflectionController);
     setLoadingOverlayHidden();
 
     animate(scene, camera, renderer, steerControl, car_model, reflectionController);

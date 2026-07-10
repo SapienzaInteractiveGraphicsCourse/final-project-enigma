@@ -11,21 +11,30 @@ export function setupEnvironmentLights(scene) {
     scene.add(hemiLight);
 
     sunLight = new THREE.DirectionalLight(0xfff8e7, 8.5);
-    sunLight.position.set(100, 150, 50);
+    sunLight.position.set(40, 60, 20);
     sunLight.castShadow = true;
 
-    const d = 120;
+    const d = 12; 
     sunLight.shadow.camera.left = -d;
     sunLight.shadow.camera.right = d;
     sunLight.shadow.camera.top = d;
     sunLight.shadow.camera.bottom = -d;
     sunLight.shadow.camera.near = 0.5;
-    sunLight.shadow.camera.far = 500;
+    sunLight.shadow.camera.far = 400;
     sunLight.shadow.mapSize.width = 1024;
     sunLight.shadow.mapSize.height = 1024;
     sunLight.shadow.bias = -0.0005;
     sunLight.shadow.normalBias = 0.05;
+    
     scene.add(sunLight);
+    scene.add(sunLight.target);
+}
+
+export function updateSunShadow(carPosition) {
+    if (!sunLight) return;
+    
+    sunLight.position.copy(carPosition).add(new THREE.Vector3(40, 60, 20));
+    sunLight.target.position.copy(carPosition);
 }
 
 function upgradeToEmissiveMaterial(mesh, emissiveHex) {

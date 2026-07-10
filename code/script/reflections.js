@@ -22,17 +22,15 @@ export function CubeMapReflections(car, scene, renderer) {
     let isStatic = false;
     let forceNextFrame = false;
 
-    requestAnimationFrame(() => {
-        carRoot.traverse((child) => {
-            if (child.isMesh && child.material) {
-                if (child.material.isMeshStandardMaterial || child.material.isMeshPhysicalMaterial) {
-                    child.material.envMap = cubeRenderTarget.texture;
-                    child.material.userData.baseEnvIntensity = 2.0; 
-                    child.material.envMapIntensity = 2.0; 
-                    child.material.needsUpdate = true;
-                }
+    carRoot.traverse((child) => {
+        if (child.isMesh && child.material) {
+            if (child.material.isMeshStandardMaterial || child.material.isMeshPhysicalMaterial) {
+                child.material.envMap = cubeRenderTarget.texture;
+                child.material.userData.baseEnvIntensity = 2.0; 
+                child.material.envMapIntensity = 2.0; 
+                child.material.needsUpdate = true;
             }
-        });
+        }
     });
 
     const renderCubeMap = () => {
