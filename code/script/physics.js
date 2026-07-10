@@ -141,39 +141,32 @@ export function createCarPhysics(model, trackMeshes = []) {
             vehicle.setSteeringValue(currentSteerAngle, 0);
             vehicle.setSteeringValue(currentSteerAngle, 1);
 
-            // ── Throttle / freno dal controller motore ────────────────────
+            // ── Lettura Pedali ────────────────────────────────────────────────
+            // Freccia Su = Pedale del gas (0..1)
+            const gasPedal = activeKeys.has('ArrowUp') ? 1.0 : 0.0;
+            
+            // Freccia Giù o Spazio = Pedale del freno (0..1)
+            const brakePedal = (activeKeys.has('ArrowDown') || activeKeys.has('Space')) ? 1.0 : 0.0;
+
             const speedKmh = (() => {
                 const vel = chassisBody.velocity;
                 const dir = chassisBody.quaternion.vmult(new CANNON.Vec3(0, 0, 1));
                 return vel.dot(dir) * 3.6;
             })();
 
-            const isForward  = activeKeys.has('ArrowUp');
-            const isReverse  = activeKeys.has('ArrowDown');
-            const isBraking  = activeKeys.has('Space');
+            // ── Passiamo i pedali crudi al motore, fa tutto lui ───────────────
+            engine.update(fixedDt, gasPedal, brakePedal, speedKmh);
 
-            // Throttle: 0..1 — solo quando il motore gira e la marcia è coerente
-            const mode = engine.getMode();
-            let throttle = 0;
-            if (engine.isRunning()) {
-                if (isForward && mode === GEAR_MODE.D) throttle = 1.0;
-                if (isReverse && mode === GEAR_MODE.R) throttle = 1.0;
-            }
-
-            engine.update(fixedDt, throttle, speedKmh);
-
-            const wheelForce = engine.getWheelForce();   // N, firmato
-            const engineBrake = engine.getBrakeForce();  // N, positivo = freno
+            const wheelForce = engine.getWheelForce();   
+            const totalBrake = engine.getBrakeForce();  
 
             // Trasmissione posteriore (RWD): forza solo alle ruote 2 e 3
             vehicle.applyEngineForce(wheelForce, 2);
             vehicle.applyEngineForce(wheelForce, 3);
-            vehicle.applyEngineForce(0, 0);
+            vehicle.applyEngineForce(0, 0); // Anteriori scollegate dal motore
             vehicle.applyEngineForce(0, 1);
 
-            // Freno: freno motore + freno a pedale (Space)
-            const brakePedal = isBraking ? maxBrakeForce : 0;
-            const totalBrake = brakePedal + engineBrake * 0.15; // scala engineBrake a forza Cannon
+            // Applichiamo la pinza freno su tutte e 4 le ruote
             for (let i = 0; i < 4; i++) vehicle.setBrake(totalBrake, i);
 
             world.step(1 / 60, dt, 3);

@@ -105,45 +105,62 @@ export function createEngine() {
         return 0;
     }
 
-    function autoShift(speedKmh, throttle) {
+    function autoShift(speedKmh, gasPedal) {
         if (mode !== GEAR_MODE.D) return;
-        if (gear < GEAR_RATIOS.length && throttle > 0.2 && speedKmh > UPSHIFT_KMH[gear - 1]) gear++;
+        if (gear < GEAR_RATIOS.length && gasPedal > 0.2 && speedKmh > UPSHIFT_KMH[gear - 1]) gear++;
         if (gear > 1) {
-            const kickdown = throttle > 0.85 && speedKmh < UPSHIFT_KMH[gear - 2] * 0.9;
+            const kickdown = gasPedal > 0.85 && speedKmh < UPSHIFT_KMH[gear - 2] * 0.9;
             const tooSlow  = speedKmh < DOWNSHIFT_KMH[gear - 2];
             if (kickdown || tooSlow) gear--;
         }
     }
 
-    function update(dt, throttle, speedKmh) {
-        if (!running) { _wheelForce = 0; _brakeForce = 0; rpm = 0; return; }
+    // NUOVA FUNZIONE UPDATE: Riceve i pedali grezzi e gestisce tutta la meccanica
+    function update(dt, gasPedal, brakePedal, speedKmh) {
+        if (!running) { 
+            _wheelForce = 0; 
+            _brakeForce = brakePedal * 1500; // Puoi frenare anche a motore spento
+            rpm = 0; 
+            return; 
+        }
+
         const speedMs = speedKmh / 3.6;
         const absSpeed = Math.abs(speedKmh);
-        autoShift(absSpeed, throttle);
+        autoShift(absSpeed, gasPedal);
         const totalRatio = activeTotalRatio();
 
+        // 1. Calcolo RPM: Dipende dalla marcia
         if (mode === GEAR_MODE.N) {
-            const targetRpm = IDLE_RPM + throttle * (REDLINE_RPM - IDLE_RPM) * 0.6;
-            rpm += (targetRpm - rpm) * Math.min(1, dt * 4);
+            // In folle il motore sale di giri liberamente in base all'acceleratore
+            const targetRpm = IDLE_RPM + gasPedal * (REDLINE_RPM - IDLE_RPM);
+            // Salita rapida (15), discesa un po' più lenta (5)
+            const response = gasPedal > 0.1 ? 15 : 5; 
+            rpm += (targetRpm - rpm) * Math.min(1, dt * response);
+            _wheelForce = 0;
         } else {
+            // Con marcia inserita, i giri sono legati alle ruote (trasmissione in presa)
             const drivenRpm = rpmFromSpeed(Math.abs(speedMs), totalRatio);
-            rpm = Math.max(IDLE_RPM, Math.min(REDLINE_RPM, drivedRpm(drivenRpm, throttle, rpm, dt)));
+            rpm = Math.max(IDLE_RPM, Math.min(REDLINE_RPM, drivedRpm(drivenRpm, gasPedal, rpm, dt)));
+            
+            // Calcolo coppia alle ruote
+            const torqueNm = getTorqueAtRpm(rpm) * gasPedal;
+            const wheelTorque = torqueNm * totalRatio * TRANSMISSION_EFF;
+            
+            // Inverti la forza se sei in retromarcia
+            _wheelForce = (mode === GEAR_MODE.D ? -1 : 1) * (wheelTorque / WHEEL_RADIUS);
         }
 
-        if (mode === GEAR_MODE.N) { _wheelForce = 0; _brakeForce = 0; return; }
-
-        const torqueNm     = getTorqueAtRpm(rpm) * throttle;
-        const wheelTorque  = torqueNm * totalRatio * TRANSMISSION_EFF;
-        _wheelForce = (mode === GEAR_MODE.D ? -1 : 1) * (wheelTorque / WHEEL_RADIUS);
-
-        if (throttle < 0.05 && absSpeed > 2) {
-            _brakeForce = (ENGINE_BRAKE_TORQUE_NM * (rpm / REDLINE_RPM) * totalRatio * TRANSMISSION_EFF) / WHEEL_RADIUS;
-        } else {
-            _brakeForce = 0;
+        // 2. Calcolo Freno: Freno a pedale + Freno Motore (se non sei in folle)
+        let engineBrake = 0;
+        if (gasPedal < 0.05 && absSpeed > 2 && mode !== GEAR_MODE.N) {
+            engineBrake = (ENGINE_BRAKE_TORQUE_NM * (rpm / REDLINE_RPM) * totalRatio * TRANSMISSION_EFF) / WHEEL_RADIUS;
         }
+        
+        // Freno meccanico totale (es: 1500N di pinza freno)
+        _brakeForce = (brakePedal * 1500) + engineBrake;
     }
 
-    function drivedRpm(driven, throttle, current, dt) {
+    function drivedRpm(driven, gasPedal, current, dt) {
         const lag = driven > current ? 3.0 : 6.0;
         return current + (driven - current) * Math.min(1, lag * dt);
     }
