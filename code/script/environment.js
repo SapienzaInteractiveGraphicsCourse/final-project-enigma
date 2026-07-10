@@ -1,14 +1,40 @@
 import * as THREE from 'three';
 import { gltfLoader } from './loaders.js';
 
+let dayTexture = null;
+let nightTexture = null;
+
+export function updateSkyTexture(scene, isNight) {
+    if (isNight && nightTexture) {
+        scene.background = nightTexture;
+        scene.environment = nightTexture;
+    } else if (!isNight && dayTexture) {
+        scene.background = dayTexture;
+        scene.environment = dayTexture;
+    }
+}
+
 export async function loadEnvironment(scene) {
     const textureLoader = new THREE.TextureLoader();
-    textureLoader.load('../../src/textures/panoramic-view-sea.jpg', (texture) => {
-        texture.mapping = THREE.EquirectangularReflectionMapping;
-        texture.colorSpace = THREE.SRGBColorSpace;
-        scene.background = texture;
-        scene.environment = texture;
+
+    const loadTex = (url) => new Promise((resolve) => {
+        textureLoader.load(url, (texture) => {
+            texture.mapping = THREE.EquirectangularReflectionMapping;
+            texture.colorSpace = THREE.SRGBColorSpace;
+            resolve(texture);
+        });
     });
+
+    const [day, night] = await Promise.all([
+        loadTex('../../src/textures/day_sky.jpg'),
+        loadTex('../../src/textures/night_sky.jpg')
+    ]);
+
+    dayTexture = day;
+    nightTexture = night;
+
+    scene.background = dayTexture;
+    scene.environment = dayTexture;
 
     return new Promise((resolve, reject) => {
         gltfLoader.load(

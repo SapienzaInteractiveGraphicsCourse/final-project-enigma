@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import * as TWEEN from '@tweenjs/tween.js';
 import { loadModel } from './model.js';
 import { CAR_MODEL } from './car_model.js';
-import { loadEnvironment } from './environment.js';
 import { updateCameraMovement } from './camera.js';
 import { enableClickToAnimate } from './animations.js'
 import { createScene } from './scene.js';
@@ -11,6 +10,7 @@ import { initCameraUI, syncMaterialControls, setupLightCallbacks, setupButtonsCa
 import { Settings } from './settings.js';
 import { CubeMapReflections } from './reflections.js';
 import { ensureAudioContextResumed } from './audio.js';
+import { loadEnvironment, updateSkyTexture } from './environment.js';
 
 const clock = new THREE.Clock();
 
@@ -40,6 +40,12 @@ async function prewarmScene(scene, camera, renderer, model) {
     };
 
     forceLightsState(true);
+
+    updateSkyTexture(scene, true);
+    renderer.compile(scene, camera);
+    renderer.render(scene, camera);
+    
+    updateSkyTexture(scene, false);
 
     renderer.compile(scene, camera);
     for (let i = 0; i < 3; i++) {

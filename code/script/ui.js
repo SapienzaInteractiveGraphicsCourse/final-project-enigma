@@ -4,6 +4,8 @@ import { toggleAnimationCallback, toggleAnimation, animatePartToState, setSwitch
 import { playSfx, stopStartupSound } from './audio.js';
 import { goToCameraView, toggleCameraMode, setDriverView, setTopDownView } from './camera.js';
 import { updateTimeOfDay } from './lights.js';
+import * as TWEEN from '@tweenjs/tween.js';
+import { updateSkyTexture } from './environment.js';
 
 const materialBindings = [
     { prefix: 'body', materialName: 'body_paint' },
@@ -56,6 +58,7 @@ export function initCameraUI(camera, carModel, scene, onTimeChange) {
             setDriverView(camera, carModel, 'onboard_camera'); 
         });
     }
+    
     const btnViewTopDown = document.getElementById('btnViewTopDown');
     if (btnViewTopDown) {
         btnViewTopDown.addEventListener('click', () => {
@@ -63,21 +66,33 @@ export function initCameraUI(camera, carModel, scene, onTimeChange) {
         });
     }
 
-    const timeSlider = document.getElementById('timeSlider');
-    const timeDisplay = document.getElementById('timeDisplay');
+    const checkNightMode = document.getElementById('checkNightMode');
+    let timeTween = null;
+    let currentTime = { val: 12 };
+    let isNightTextureSet = false;
 
-    if (timeSlider && timeDisplay) {
-        timeSlider.addEventListener('input', (e) => {
-            const timeValue = Number.parseFloat(e.target.value);
-            
-            const hours = Math.floor(timeValue);
-            const minutes = Math.floor((timeValue - hours) * 60);
-            timeDisplay.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-            
-            updateTimeOfDay(timeValue, scene);
-            
-            const currentDayFactor = updateTimeOfDay(timeValue, scene);
-            if (onTimeChange) onTimeChange(currentDayFactor);
+    if (checkNightMode) {
+        checkNightMode.addEventListener('change', (e) => {
+            const isNight = e.target.checked;
+            const targetTime = isNight ? 0 : 12;
+
+            if (timeTween) timeTween.stop();
+
+            timeTween = new TWEEN.Tween(currentTime)
+                .to({ val: targetTime }, 2000)
+                .easing(TWEEN.Easing.Quadratic.InOut)
+                .onUpdate(() => {
+                    const isDarkEnoughToSwap = currentTime.val < 6;
+                    
+                    if (isDarkEnoughToSwap !== isNightTextureSet) {
+                        updateSkyTexture(scene, isDarkEnoughToSwap);
+                        isNightTextureSet = isDarkEnoughToSwap;
+                    }
+
+                    const currentDayFactor = updateTimeOfDay(currentTime.val, scene);
+                    if (onTimeChange) onTimeChange(currentDayFactor);
+                })
+                .start();
         });
     }
 }
