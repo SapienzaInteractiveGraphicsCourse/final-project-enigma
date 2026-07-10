@@ -14,19 +14,20 @@ export function setupEnvironmentLights(scene) {
     sunLight.position.set(40, 60, 20);
     sunLight.castShadow = true;
 
-    const d = 20; 
+    const d = 30;
     sunLight.shadow.camera.left = -d;
     sunLight.shadow.camera.right = d;
     sunLight.shadow.camera.top = d;
     sunLight.shadow.camera.bottom = -d;
     
-    sunLight.shadow.camera.near = 0.5;
+    sunLight.shadow.camera.near = 1;
+    sunLight.shadow.camera.far = 200;
 
-    sunLight.shadow.camera.far = 400;
     sunLight.shadow.mapSize.width = 4096;
     sunLight.shadow.mapSize.height = 4096;
-    sunLight.shadow.bias = -0.0005;
-    sunLight.shadow.normalBias = 0.02;
+    
+    sunLight.shadow.bias = -0.0001; 
+    sunLight.shadow.normalBias = 0.005; 
     
     scene.add(sunLight);
     scene.add(sunLight.target);
