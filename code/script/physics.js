@@ -40,14 +40,14 @@ export function createCarPhysics(model, trackMeshes = []) {
     const chassisShape = new CANNON.Box(new CANNON.Vec3(0.85, 0.25, 2.1));
     const chassisBody = new CANNON.Body({ mass: 1505 });
 
-    const COM_HEIGHT_OFFSET = 0.18; // was 0.45
+    const COM_HEIGHT_OFFSET = 0.05; 
     chassisBody.addShape(chassisShape, new CANNON.Vec3(0, COM_HEIGHT_OFFSET, 0));
     chassisBody.position.set(0, 1.5, 0);
 
     chassisBody.allowSleep = true;
     chassisBody.sleepSpeedLimit = 0.15;
     chassisBody.sleepTimeLimit = 0.5;
-    chassisBody.linearDamping = 0.05;
+    chassisBody.linearDamping = 0.015;
     chassisBody.angularDamping = 0.05;
 
     world.addBody(chassisBody);
@@ -74,7 +74,7 @@ export function createCarPhysics(model, trackMeshes = []) {
         suspensionDampingRelaxation: 3.2,
         suspensionDampingCompression: 4.8,
         rollInfluence: 0.03,
-        frictionSlip: 3.2,       // was 1.5
+        frictionSlip: 4.5,       
     };
 
     const rearWheelOptions = {
@@ -84,7 +84,7 @@ export function createCarPhysics(model, trackMeshes = []) {
         suspensionDampingRelaxation: 2.8,
         suspensionDampingCompression: 4.2,
         rollInfluence: 0.06,
-        frictionSlip: 2.4,
+        frictionSlip: 5.5,
     };
 
     const anim = model.animations;
@@ -121,12 +121,10 @@ export function createCarPhysics(model, trackMeshes = []) {
     window.addEventListener('keydown', (e) => activeKeys.add(e.code));
     window.addEventListener('keyup', (e) => activeKeys.delete(e.code));
 
-    // ── Trasmissione realistica ───────────────────────────────────────────
     const engine = createEngine();
 
-    const ENGINE_FORCE_SCALE = 0.35;
+    const ENGINE_FORCE_SCALE = 0.45;
     const BRAKE_FORCE_SCALE = 0.35;
-
     const LOW_SPEED_LOCK_KMH = 0.8;
 
     const maxSteerAngle = THREE.MathUtils.degToRad(38);
@@ -186,7 +184,7 @@ export function createCarPhysics(model, trackMeshes = []) {
 
             const engineOff = !engine.isRunning?.() && engine.isRunning !== undefined
                 ? !engine.isRunning()
-                : false; // if engine doesn't expose isRunning(), this just no-ops safely
+                : false;
 
             let effectiveBrake = totalBrake;
             let forceOverride = wheelForce;

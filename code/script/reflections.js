@@ -15,6 +15,7 @@ export function CubeMapReflections(car, scene, renderer) {
     });
     
     const cubeCamera = new THREE.CubeCamera(0.5, 40, cubeRenderTarget);
+    cubeCamera.layers.set(1);
     scene.add(cubeCamera);
     
     const worldPosition = new THREE.Vector3(); 

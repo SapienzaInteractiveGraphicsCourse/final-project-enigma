@@ -49,6 +49,7 @@ export async function loadEnvironment(scene) {
 
                 environment.traverse((child) => {
                     if (child.isMesh) {
+                        child.layers.enable(1);
                         const nameLower = child.name.toLowerCase();
 
                         if (/\b(tree|albero)\b/.test(nameLower)) {
