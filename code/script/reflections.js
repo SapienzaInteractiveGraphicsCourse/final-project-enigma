@@ -6,62 +6,75 @@ export function CubeMapReflections(car, scene, renderer) {
         carRoot = car.scene ? car.scene : car;
     }
 
-    if (!carRoot || !carRoot.position) {
+    if (!carRoot) return;
 
-        scene.children.forEach((child) => {
-            if (child.isGroup && !child.name.toLowerCase().includes('env') && !child.name.toLowerCase().includes('garage')) {
-                carRoot = child;
-            }
-        });
-    }
-
-    if (!carRoot || !carRoot.position) {
-        return;
-    }
-
-    const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256, { 
+    const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(64, { 
         format: THREE.RGBAFormat, 
         generateMipmaps: true,
-        minFilter: THREE.LinearMipmapLinearFilter 
+        minFilter: THREE.LinearMipmapLinearFilter,
     });
     
-    const cubeCamera = new THREE.CubeCamera(0.1, 1000, cubeRenderTarget);
-    
-    cubeCamera.position.copy(carRoot.position);
-    cubeCamera.position.y += 0.8;
+    const cubeCamera = new THREE.CubeCamera(0.5, 40, cubeRenderTarget);
     scene.add(cubeCamera);
+    
+    const worldPosition = new THREE.Vector3(); 
+    let frameCounter = 0;
+    let isStatic = false;
+    let forceNextFrame = false;
 
-    scene.updateMatrixWorld(true);
-
-    requestAnimationFrame(() => {
-        carRoot.visible = false;
-        cubeCamera.update(renderer, scene);
-        carRoot.visible = true;
-
-        carRoot.traverse((child) => {
-            if (child.isMesh && child.material) {
-                if (child.material.isMeshStandardMaterial || child.material.isMeshPhysicalMaterial) {
-                    child.material.envMap = cubeRenderTarget.texture;
-                    child.material.userData.baseEnvIntensity = 2.0; 
-                    child.material.envMapIntensity = 2.0; 
-                    child.material.needsUpdate = true;
-                }
+    carRoot.traverse((child) => {
+        if (child.isMesh && child.material) {
+            if (child.material.isMeshStandardMaterial || child.material.isMeshPhysicalMaterial) {
+                child.material.envMap = cubeRenderTarget.texture;
+                child.material.userData.baseEnvIntensity = 2.0; 
+                child.material.envMapIntensity = 2.0; 
+                child.material.needsUpdate = true;
             }
-        });
+        }
     });
+
+    const renderCubeMap = () => {
+        carRoot.getWorldPosition(worldPosition);
+        cubeCamera.position.copy(worldPosition);
+        cubeCamera.position.y += 0.8;
+        
+        carRoot.visible = false;
+        
+        const oldShadowMap = renderer.shadowMap.enabled;
+        renderer.shadowMap.enabled = false;
+        
+        cubeCamera.update(renderer, scene);
+        
+        renderer.shadowMap.enabled = oldShadowMap;
+        carRoot.visible = true;
+    };
 
     return {
         camera: cubeCamera,
+        setStaticMode: (staticState) => {
+            isStatic = staticState;
+            if (isStatic) {
+                forceNextFrame = true;
+            }
+        },
         updateIntensity: (factor) => {
             if (!carRoot) return;
             carRoot.traverse((child) => {
                 if (child.isMesh && child.material && child.material.userData.baseEnvIntensity !== undefined) {
-                    
                     const minIntensity = 0.5; 
-                    
                     child.material.envMapIntensity = minIntensity + (child.material.userData.baseEnvIntensity - minIntensity) * factor;
                 }
             });
+        },
+        update: () => {
+            if (isStatic && !forceNextFrame) return;
+
+            frameCounter++;
+        
+            if (forceNextFrame || frameCounter % 3 === 0) {
+                renderCubeMap();
+                forceNextFrame = false;
+            }
         }
     };
 }

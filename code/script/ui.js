@@ -342,7 +342,6 @@ export function setupDoorLightCallbacks(model) {
 export function setupEngineCallback(model, physicsController = null) {
     const engineBtn = document.getElementById('btnEnginePower');
     const statusText = document.getElementById('engineStatusText');
-    const runningLightsSwitch = document.getElementById('checkRunningLights');
 
     let isCranking = false;
 
@@ -360,12 +359,6 @@ export function setupEngineCallback(model, physicsController = null) {
             stopStartupSound();
             if (engineBtn) engineBtn.classList.remove('engine-on');
             if (statusText) statusText.textContent = 'START';
-
-            if (model.runningLights) {
-                model.state.runningLights = false;
-                toggleCarLight(model.runningLights, false);
-                if (runningLightsSwitch) runningLightsSwitch.checked = false;
-            }
         }
     };
 
