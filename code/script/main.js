@@ -102,6 +102,7 @@ function animate(scene, camera, renderer, steerControl, car_model, reflectionCon
         updateTelemetryUI(steerControl.engine);
         if (engineAudioSystem) {
             const isRunning = steerControl.engine.isRunning();
+            
             if (isRunning) {
                 const currentRpm = steerControl.engine.getRpm();
                 const gasPedal = steerControl.getGasPedal ? steerControl.getGasPedal() : 0.0;
