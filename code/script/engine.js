@@ -115,12 +115,10 @@ export function createEngine() {
         }
     }
 
-    // NUOVA FUNZIONE UPDATE: Riceve i pedali grezzi e gestisce tutta la meccanica
-    // NUOVA FUNZIONE UPDATE: Riceve i pedali grezzi e gestisce tutta la meccanica
     function update(dt, gasPedal, brakePedal, speedKmh) {
         if (!running) {
             _wheelForce = 0;
-            _brakeForce = brakePedal * 1500; // Puoi frenare anche a motore spento
+            _brakeForce = brakePedal * 1500;
             rpm = 0;
             return;
         }
@@ -130,7 +128,6 @@ export function createEngine() {
         autoShift(absSpeed, gasPedal);
         const totalRatio = activeTotalRatio();
 
-        // 1. Calcolo RPM: Dipende dalla marcia
         if (mode === GEAR_MODE.N) {
             // In folle il motore sale di giri liberamente in base all'acceleratore
             const targetRpm = IDLE_RPM + gasPedal * (REDLINE_RPM - IDLE_RPM);

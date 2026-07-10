@@ -64,6 +64,8 @@ export function playSfx(soundName) {
     if (soundName === 'startup') {
         currentStartupSource = source;
     }
+
+    return source;
 }
 
 export function stopStartupSound() {
@@ -83,13 +85,10 @@ export function setTurnSignalVolume(volumeLevel) {
 export function createEngineSoundSystem(sampleMap) {
     let nodes = [];
     let isPlaying = false;
-    
-    // Master globale del motore
+
     const masterGain = audioCtx.createGain();
     masterGain.connect(audioCtx.destination);
-    masterGain.gain.value = 0.5; // Configura il volume massimo desiderato
-
-    // I due canali paralleli per la gestione del carico (FMOD Style)
+    masterGain.gain.value = 0.5;
     let onThrottleGroup;
     let offThrottleGroup;
 
