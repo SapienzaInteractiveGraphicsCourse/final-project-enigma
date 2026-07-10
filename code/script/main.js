@@ -91,16 +91,17 @@ function animate(scene, camera, renderer, steerControl, car_model, reflectionCon
     
     TWEEN.update();
 
-    reflectionFrameCounter++;
-    
-    if (reflectionController.camera.userData.forceUpdate) { 
-        car_model.root.visible = false;
-        reflectionController.camera.update(renderer, scene);
-        car_model.root.visible = true;
+    if (reflectionController) {
+        reflectionController.update();
         
-        reflectionController.camera.userData.forceUpdate = false; 
-        reflectionFrameCounter = 0; 
+        if (reflectionController.camera.userData.forceUpdate) {
+            car_model.root.visible = false;
+            reflectionController.camera.update(renderer, scene);
+            car_model.root.visible = true;
+            reflectionController.camera.userData.forceUpdate = false;
+        }
     }
+
     renderer.render(scene, camera);
 }
 
