@@ -494,7 +494,7 @@ canvas {
 
 #btnViewBack { grid-column: 2; grid-row: 1; }
 #btnViewLeft { grid-column: 1; grid-row: 2; }
-#btnViewTop { grid-column: 2; grid-row: 2; background-color: #272733; color: #ff2a3b; }
+#btnViewTop { grid-column: 2; grid-row: 2; background-color: #272733; color: #ffffff; border: 2px solid #ff2a3b; }
 #btnViewRight { grid-column: 3; grid-row: 2; }
 #btnViewFront { grid-column: 2; grid-row: 3; }
 
@@ -553,9 +553,25 @@ canvas {
 }
 
 .engine-power-btn:hover {
+    /* FIX: la regola generica "button:hover" più sotto in cascata imposta
+       un background rosso acceso su TUTTI i bottoni. Questa regola non
+       ridefiniva "background", quindi quella generica prendeva comunque il
+       sopravvento (per una proprietà, vince la regola più specifica che la
+       DICHIARA, non semplicemente quella con più specificità in generale):
+       il testo rosso finiva su uno sfondo quasi dello stesso rosso,
+       illeggibile. Ridichiariamo qui il background scuro originale
+       (leggermente più chiaro per dare comunque un feedback all'hover). */
+    background: radial-gradient(circle at 35% 35%, #34343f 0%, #131318 100%);
     transform: scale(1.06);
     border-color: #32323f;
     box-shadow: 0 12px 30px rgba(0,0,0,0.8);
+}
+
+/* FIX: stesso problema si presenterebbe passando il mouse mentre il motore
+   è già acceso (.engine-on) — senza questa regola, l'hover generico
+   sovrascriverebbe anche il gradiente rosso scuro di ".engine-on". */
+.engine-power-btn.engine-on:hover {
+    background: radial-gradient(circle at 35% 35%, #4a171b 0%, #1f0608 100%);
 }
 
 .engine-power-btn:active {
