@@ -122,8 +122,8 @@ function animate(scene, camera, renderer, steerControl, car_model, reflectionCon
             reflectionController.camera.userData.forceUpdate = false;
         }
     }
-
     renderer.render(scene, camera);
+   
 }
 
 window.onload = async () => {
