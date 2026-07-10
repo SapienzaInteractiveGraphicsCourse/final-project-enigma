@@ -6,7 +6,7 @@ import { loadEnvironment } from './environment.js';
 import { updateCameraMovement } from './camera.js';
 import { enableClickToAnimate } from './animations.js'
 import { createScene } from './scene.js';
-import { createSteerControl } from './steering.js'
+import { createCarPhysics } from './physics.js'
 import { initCameraUI, syncMaterialControls, setupLightCallbacks, setupButtonsCallback, setupTurnSignalCallbacks, setupDoorLightCallbacks, setupEngineCallback } from './ui.js';
 import { Settings } from './settings.js';
 import { CubeMapReflections } from './reflections.js';
@@ -72,11 +72,8 @@ function animate(scene, camera, renderer, steerControl, car_model, reflectionCon
     const dt = clock.getDelta();
     requestAnimationFrame(() => animate(scene, camera, renderer, steerControl, car_model, reflectionController));
 
-    // 1. PRIMA muovi l'auto e calcola la nuova posizione fisica
     steerControl.update(dt);
     
-    // 2. DOPO aggiorna la telecamera basandoti sulla posizione appena calcolata!
-    // FIX: Passa 'dt' come terzo parametro
     updateCameraMovement(camera, car_model, dt); 
     
     TWEEN.update();
@@ -98,30 +95,22 @@ window.onload = async () => {
     Settings.init();
     const { scene, camera, renderer } = createScene();
 
-    // 1. Salviamo il risultato di loadEnvironment nella variabile 'env_model'
     const [env_model, car_model] = await Promise.all([
         loadEnvironment(scene),
         loadModel(CAR_MODEL, scene)
     ]);
 
-    car_model.root.rotation.y = THREE.MathUtils.degToRad(-110);
-   // car_model.root.traverse((child) => console.log("Oggetto trovato:", child.name));
+    // car_model.root.rotation.y = THREE.MathUtils.degToRad(-110);
     
+    const carPhysicsNode = new THREE.Group();
+    scene.add(carPhysicsNode);
+    car_model.root.position.set(0, -0.615, 0);
+    carPhysicsNode.add(car_model.root);
 
-    // 2. Estraiamo tutte le mesh dall'ambiente per passarle ai sensori (Raycaster)
     const trackMeshes = [];
     if (env_model) {
-        // Presumendo che env_model sia la scena o il gruppo restituito dal GLTFLoader dell'ambiente
         env_model.traverse((child) => {
-            if (child.isMesh) {
-                trackMeshes.push(child);
-            }
-        });
-    } else {
-        // Se loadEnvironment non restituisce il modello direttamente, cerca nella scena
-        scene.traverse((child) => {
-            // Escludiamo la macchina stessa dalla lista degli ostacoli!
-            if (child.isMesh && !car_model.root.children.includes(child)) {
+            if (child.isMesh && child.userData.isPhysical) {
                 trackMeshes.push(child);
             }
         });
@@ -129,8 +118,7 @@ window.onload = async () => {
 
     syncMaterialControls();
     
-    // 3. Passiamo le mesh della pista al nostro sistema di sterzo e collisione!
-    const steerControl = createSteerControl(car_model, trackMeshes);
+    const steerControl = createCarPhysics(car_model, trackMeshes);
     
     setupButtonsCallback(car_model);
     setupLightCallbacks(car_model);

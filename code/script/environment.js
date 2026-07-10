@@ -25,7 +25,7 @@ export async function loadEnvironment(scene) {
                     if (child.isMesh) {
                         const nameLower = child.name.toLowerCase();
 
-                    if (/\b(tree|albero)\b/.test(nameLower)) {
+                        if (/\b(tree|albero)\b/.test(nameLower)) {
                             const baseName = child.name.split('.')[0];
                             
                             if (!treeGroups[baseName]) {
@@ -41,10 +41,12 @@ export async function loadEnvironment(scene) {
                             treesToRemove.push(child);
                             
                         } else {
+                            child.updateMatrixWorld(true);
                             child.matrixAutoUpdate = false;
                             child.updateMatrix();
                             child.receiveShadow = true;
                             child.castShadow = true; 
+                            child.userData.isPhysical = true;
                         }
                     }
                 });
