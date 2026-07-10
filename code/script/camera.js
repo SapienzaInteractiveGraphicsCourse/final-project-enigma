@@ -8,14 +8,14 @@ export let isTopDownViewActive = false;
 let previousCameraState = { position: new THREE.Vector3(), target: new THREE.Vector3(), mode: 'orbit' };
 let orbitControls;
 
-// Variabili per la visuale Pilota (testa)
 let driverLookYaw = 0; 
 let driverLookPitch = 0;
 let targetDriverLookYaw = 0; 
 let targetDriverLookPitch = 0;
-const lookSpeed = 10.0; // Velocità di rotazione morbida della testa
+const lookSpeed = 10.0;
 
 let previousCarPosition = new THREE.Vector3();
+let previousCarQuaternion = new THREE.Quaternion();
 let isTrackingInitialized = false;
 let activeDriverCam = null;
 
@@ -28,10 +28,9 @@ const rightVector = new THREE.Vector3();
 const downVector = new THREE.Vector3();
 const moveVector = new THREE.Vector3();
 
-// Variabili per il volo libero (Free Fly) fluido
 const cameraVelocity = new THREE.Vector3();
-const moveAcceleration = 50.0; // Accelerazione WASD
-const moveFriction = 10.0; // Attrito per frenata morbida
+const moveAcceleration = 50.0;
+const moveFriction = 10.0;
 
 window.addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
@@ -64,16 +63,20 @@ function updateDriverButtonVisual() {
     }
 }
 
-export function animateCameraTransition(camera, targetPosition) {
+export function animateCameraTransition(camera, targetPosition, targetLookAt) {
     if (currentCameraMode !== 'orbit') return; 
     
     let step = 0;
     const startPos = camera.position.clone();
     const startTarget = orbitControls.target.clone();
-    const endTarget = new THREE.Vector3(0, 0, 0); 
     
-    const startSpherical = new THREE.Spherical().setFromVector3(startPos);
-    const endSpherical = new THREE.Spherical().setFromVector3(targetPosition);
+    const endTarget = targetLookAt || new THREE.Vector3(0, 0, 0); 
+    
+    const startRelative = startPos.clone().sub(startTarget);
+    const endRelative = targetPosition.clone().sub(endTarget);
+
+    const startSpherical = new THREE.Spherical().setFromVector3(startRelative);
+    const endSpherical = new THREE.Spherical().setFromVector3(endRelative);
 
     let thetaDiff = endSpherical.theta - startSpherical.theta;
     while (thetaDiff > Math.PI) thetaDiff -= Math.PI * 2;
@@ -91,10 +94,14 @@ export function animateCameraTransition(camera, targetPosition) {
                 THREE.MathUtils.lerp(startSpherical.theta, endSpherical.theta, easeStep)
             );
 
-            camera.position.setFromSpherical(currentSpherical);
-            orbitControls.target.lerpVectors(startTarget, endTarget, easeStep);
+            const currentTarget = new THREE.Vector3().lerpVectors(startTarget, endTarget, easeStep);
             
+            const currentRelative = new THREE.Vector3().setFromSpherical(currentSpherical);
+            camera.position.copy(currentTarget).add(currentRelative);
+            
+            orbitControls.target.copy(currentTarget);
             orbitControls.update();
+            
             requestAnimationFrame(transition);
         } else {
             camera.position.copy(targetPosition);
@@ -103,6 +110,37 @@ export function animateCameraTransition(camera, targetPosition) {
         }
     }
     transition();
+}
+
+export function goToCameraView(camera, carModel, viewName) {
+    isDriverViewActive = false;
+    isTopDownViewActive = false; 
+    updateDriverButtonVisual();
+
+    if (currentCameraMode !== 'orbit') {
+        currentCameraMode = 'orbit';
+        orbitControls.enabled = true;
+    }
+
+    const localOffset = views[viewName];
+    if (!localOffset) return;
+
+    const targetPosition = localOffset.clone();
+    
+    if (carModel && carModel.root) {
+        const worldPos = new THREE.Vector3();
+        const worldQuat = new THREE.Quaternion();
+        
+        carModel.root.getWorldPosition(worldPos);
+        carModel.root.getWorldQuaternion(worldQuat);
+        
+        targetPosition.applyQuaternion(worldQuat);
+        targetPosition.add(worldPos);
+        
+        animateCameraTransition(camera, targetPosition, worldPos);
+    } else {
+        animateCameraTransition(camera, targetPosition, new THREE.Vector3(0, 0, 0));
+    }
 }
 
 export function setupCamera(camera, renderer) {
@@ -131,14 +169,12 @@ export function setupCamera(camera, renderer) {
         const sensitivity = 0.003;
 
         if (isDriverViewActive) {
-            // Aggiorna il TARGET di destinazione per lo sguardo
             targetDriverLookYaw -= deltaMove.x * sensitivity;
             targetDriverLookPitch -= deltaMove.y * sensitivity;
 
             targetDriverLookYaw = Math.max(-Math.PI / 1.5, Math.min(Math.PI / 1.5, targetDriverLookYaw));
             targetDriverLookPitch = Math.max(-Math.PI / 6, Math.min(Math.PI / 6, targetDriverLookPitch));
         } else {
-            // Se stiamo volando (Free Fly), ruota la telecamera normalmente
             euler.setFromQuaternion(camera.quaternion);
             euler.y -= deltaMove.x * sensitivity;
             euler.x -= deltaMove.y * sensitivity;
@@ -191,24 +227,8 @@ export function setupCamera(camera, renderer) {
     return orbitControls;
 }
 
-export function goToCameraView(camera, viewName) {
-    isDriverViewActive = false;
-    isTopDownViewActive = false; // 🟢 Spegne il drone se cambi vista
-    updateDriverButtonVisual();
-
-    if (currentCameraMode !== 'orbit') {
-        currentCameraMode = 'orbit';
-        orbitControls.enabled = true;
-    }
-
-    const targetPosition = views[viewName];
-    if (!targetPosition) return;
-
-    animateCameraTransition(camera, targetPosition);
-}
-
 export function toggleCameraMode() {
-    isTopDownViewActive = false; // 🟢 Spegne il drone se premi Free Cam
+    isTopDownViewActive = false; 
 
     if (currentCameraMode === 'orbit') {
         currentCameraMode = 'firstPerson';
@@ -227,18 +247,15 @@ export function toggleCameraMode() {
 }
 
 export function setTopDownView(camera) {
-    // Se è già attiva, torniamo alla visuale Orbit normale
     if (isTopDownViewActive) {
         isTopDownViewActive = false;
         orbitControls.enabled = true;
         return;
     }
 
-    // Attiviamo la modalità Top-Down
     isTopDownViewActive = true;
     orbitControls.enabled = false; 
 
-    // Se eravamo dentro l'abitacolo, usciamo e resettiamo la lente
     if (isDriverViewActive) {
         isDriverViewActive = false;
         activeDriverCam = null;
@@ -248,39 +265,34 @@ export function setTopDownView(camera) {
     }
 }
 
-// 🟢 FIX: RIORDINO DELLE PRIORITÀ
 export function updateCameraMovement(camera, carModel, delta = 0.016) { 
     if (carModel && carModel.root) {
-        const currentCarPos = carModel.root.position;
+        carModel.root.updateMatrixWorld(true);
 
-        // Inizializza il tracking la prima volta
+        const currentCarPos = new THREE.Vector3();
+        const currentCarQuat = new THREE.Quaternion();
+        carModel.root.getWorldPosition(currentCarPos);
+        carModel.root.getWorldQuaternion(currentCarQuat);
+
         if (!isTrackingInitialized) {
             previousCarPosition.copy(currentCarPos);
+            previousCarQuaternion.copy(currentCarQuat);
             orbitControls.target.copy(currentCarPos);
             isTrackingInitialized = true;
         }
 
-        // 1. PRIORITÀ MASSIMA: VISUALE DALL'ALTO (TOP DOWN)
         if (isTopDownViewActive) {
-            // Ci posizioniamo esattamente al centro dell'auto, 15 metri più in alto
             const targetPos = new THREE.Vector3(currentCarPos.x, currentCarPos.y + 15, currentCarPos.z);
-
-            // Lerp protetto per un movimento fluido che non sbanda
             const lerpFactor = Math.min(10.0 * delta, 1.0);
             camera.position.lerp(targetPos, lerpFactor);
-
-            // FIX GIMBAL LOCK: Niente più lookAt()! 
-            // Blocchiamo la rotazione in modo che guardi dritta in basso (Pitch a -90 gradi)
             camera.rotation.set(-Math.PI / 2, 0, 0, 'YXZ');
-
-            // Aggiorniamo di nascosto il bersaglio del mouse
-            // Così quando disattivi la vista drone, la telecamera non "salta" via!
             orbitControls.target.copy(currentCarPos);
 
-            return; // Ferma tutto il resto
+            previousCarPosition.copy(currentCarPos);
+            previousCarQuaternion.copy(currentCarQuat);
+            return;
         }
 
-        // 2. PRIORITÀ MEDIA: INSEGUIMENTO IN MODALITÀ DRIVER
         if (isDriverViewActive && activeDriverCam) {
             const worldPos = new THREE.Vector3();
             const worldQuat = new THREE.Quaternion();
@@ -291,7 +303,6 @@ export function updateCameraMovement(camera, carModel, delta = 0.016) {
             camera.position.copy(worldPos); 
             camera.quaternion.copy(worldQuat);
             
-            // Applica il lerp per ammorbidire il movimento della testa
             driverLookYaw = THREE.MathUtils.lerp(driverLookYaw, targetDriverLookYaw, lookSpeed * delta);
             driverLookPitch = THREE.MathUtils.lerp(driverLookPitch, targetDriverLookPitch, lookSpeed * delta);
             
@@ -307,19 +318,23 @@ export function updateCameraMovement(camera, carModel, delta = 0.016) {
                 targetDriverLookPitch = THREE.MathUtils.lerp(targetDriverLookPitch, 0, 5.0 * delta);
             }
             
-            return; // Ferma tutto il resto
+            previousCarPosition.copy(currentCarPos);
+            previousCarQuaternion.copy(currentCarQuat);
+            return;
         }
 
-        // 3. PRIORITÀ BASSA: INSEGUIMENTO IN MODALITÀ ORBIT
         if (currentCameraMode === 'orbit') {
-            const deltaPos = currentCarPos.clone().sub(previousCarPosition);
+            const deltaQuat = currentCarQuat.clone().multiply(previousCarQuaternion.clone().invert());
+            const offset = camera.position.clone().sub(previousCarPosition);
             
-            if (deltaPos.lengthSq() > 0) {
-                camera.position.add(deltaPos);
-                orbitControls.target.copy(currentCarPos); 
-            }
+            offset.applyQuaternion(deltaQuat);
+            
+            camera.position.copy(currentCarPos).add(offset);
+            
+            orbitControls.target.copy(currentCarPos); 
             
             previousCarPosition.copy(currentCarPos);
+            previousCarQuaternion.copy(currentCarQuat);
             
             const wasDamping = orbitControls.enableDamping;
             orbitControls.enableDamping = false;
@@ -328,9 +343,15 @@ export function updateCameraMovement(camera, carModel, delta = 0.016) {
             
             return;
         }
-    }
 
-    // 4. FREE FLY (Eseguito solo se nessuna delle visuali sopra è attiva)
+    const deltaPos = currentCarPos.clone().sub(previousCarPosition);
+    camera.position.add(deltaPos);
+
+    previousCarPosition.copy(currentCarPos);
+    previousCarQuaternion.copy(currentCarQuat);
+
+}
+
     if (isDriverViewActive || isTopDownViewActive) return;
 
     moveVector.set(0, 0, 0);
@@ -354,13 +375,11 @@ export function updateCameraMovement(camera, carModel, delta = 0.016) {
     cameraVelocity.multiplyScalar(Math.max(0, 1 - moveFriction * delta));
     camera.position.addScaledVector(cameraVelocity, delta);
 
-    camera.position.x = Math.max(-9.5, Math.min(9.5, camera.position.x));
-    camera.position.y = Math.max(0.5, Math.min(10.0, camera.position.y));
-    camera.position.z = Math.max(-9.5, Math.min(9.5, camera.position.z));
+    camera.position.y = Math.max(0.5, Math.min(30.0, camera.position.y));
 }
 
 export function setDriverView(camera, carModel, blenderCameraName) {
-    isTopDownViewActive = false; // 🟢 Spegne il drone se entri in macchina
+    isTopDownViewActive = false;
 
     if (isDriverViewActive) {
         isDriverViewActive = false;

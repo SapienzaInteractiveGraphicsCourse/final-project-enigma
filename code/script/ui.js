@@ -41,11 +41,11 @@ materialBindings.forEach(({ prefix, materialName }) => {
 });
 
 export function initCameraUI(camera, carModel, scene, onTimeChange) {
-    document.getElementById('btnViewFront')?.addEventListener('click', () => goToCameraView(camera, 'Front'));
-    document.getElementById('btnViewBack')?.addEventListener('click', () => goToCameraView(camera, 'Back'));
-    document.getElementById('btnViewLeft')?.addEventListener('click', () => goToCameraView(camera, 'Left'));
-    document.getElementById('btnViewRight')?.addEventListener('click', () => goToCameraView(camera, 'Right'));
-    document.getElementById('btnViewTop')?.addEventListener('click', () => goToCameraView(camera, 'Top'));
+    document.getElementById('btnViewFront')?.addEventListener('click', () => goToCameraView(camera, carModel, 'Front'));
+    document.getElementById('btnViewBack')?.addEventListener('click', () => goToCameraView(camera, carModel, 'Back'));
+    document.getElementById('btnViewLeft')?.addEventListener('click', () => goToCameraView(camera, carModel, 'Left'));
+    document.getElementById('btnViewRight')?.addEventListener('click', () => goToCameraView(camera, carModel, 'Right'));
+    document.getElementById('btnViewTop')?.addEventListener('click', () => goToCameraView(camera, carModel, 'Top'));
 
     document.getElementById('btnCompassModeToggle')?.addEventListener('click', (e) => {
         const newMode = toggleCameraMode();
