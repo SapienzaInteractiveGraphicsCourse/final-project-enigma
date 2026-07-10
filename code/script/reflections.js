@@ -19,6 +19,8 @@ export function CubeMapReflections(car, scene, renderer) {
     
     const worldPosition = new THREE.Vector3(); 
     let frameCounter = 0;
+    let isStatic = false;
+    let forceNextFrame = false;
 
     requestAnimationFrame(() => {
         carRoot.traverse((child) => {
@@ -33,8 +35,30 @@ export function CubeMapReflections(car, scene, renderer) {
         });
     });
 
+    const renderCubeMap = () => {
+        carRoot.getWorldPosition(worldPosition);
+        cubeCamera.position.copy(worldPosition);
+        cubeCamera.position.y += 0.8;
+        
+        carRoot.visible = false;
+        
+        const oldShadowMap = renderer.shadowMap.enabled;
+        renderer.shadowMap.enabled = false;
+        
+        cubeCamera.update(renderer, scene);
+        
+        renderer.shadowMap.enabled = oldShadowMap;
+        carRoot.visible = true;
+    };
+
     return {
         camera: cubeCamera,
+        setStaticMode: (staticState) => {
+            isStatic = staticState;
+            if (isStatic) {
+                forceNextFrame = true;
+            }
+        },
         updateIntensity: (factor) => {
             if (!carRoot) return;
             carRoot.traverse((child) => {
@@ -45,22 +69,13 @@ export function CubeMapReflections(car, scene, renderer) {
             });
         },
         update: () => {
+            if (isStatic && !forceNextFrame) return;
+
             frameCounter++;
         
-            if (frameCounter % 3 === 0) {
-                carRoot.getWorldPosition(worldPosition);
-                cubeCamera.position.copy(worldPosition);
-                cubeCamera.position.y += 0.8;
-                
-                carRoot.visible = false;
-                
-                const oldShadowMap = renderer.shadowMap.enabled;
-                renderer.shadowMap.enabled = false;
-                
-                cubeCamera.update(renderer, scene);
-                
-                renderer.shadowMap.enabled = oldShadowMap;
-                carRoot.visible = true;
+            if (forceNextFrame || frameCounter % 3 === 0) {
+                renderCubeMap();
+                forceNextFrame = false;
             }
         }
     };

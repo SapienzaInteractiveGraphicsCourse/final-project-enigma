@@ -152,6 +152,13 @@ window.onload = async () => {
     setupDoorLightCallbacks(car_model);
     setupEngineCallback(car_model, steerControl);
     const reflectionController = CubeMapReflections(car_model.root, scene, renderer);
+    
+    const checkStaticReflections = document.getElementById('checkStaticReflections');
+    if (checkStaticReflections) {
+        checkStaticReflections.addEventListener('change', (e) => {
+            reflectionController.setStaticMode(e.target.checked);
+        });
+    }
     enableClickToAnimate(scene, camera, renderer, car_model);
 
     initCameraUI(camera, car_model, scene, (dayFactor) => {
