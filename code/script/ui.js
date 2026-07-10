@@ -346,8 +346,6 @@ export function setupEngineCallback(model, physicsController = null) {
 
     const applyEngineLogic = (isRunning) => {
         model.state.ignitionOn = isRunning;
-
-        // Notifica il controller fisico (trasmissione + motore)
         if (physicsController?.setEngineRunning) {
             physicsController.setEngineRunning(isRunning);
         }
@@ -372,7 +370,6 @@ export function setupEngineCallback(model, physicsController = null) {
     applyEngineLogic(model.state.ignitionOn || false);
 
     if (engineBtn) {
-        // Il click alterna lo stato ignitionOn e aziona l'animazione chiave
         engineBtn.addEventListener('click', () => {
             const next = !model.state.ignitionOn;
             applyEngineLogic(next);
@@ -390,7 +387,6 @@ export function setupGearSelectorCallback(engine) {
         R: document.getElementById('gearBtnR') 
     };
 
-    // Imposta lo stato iniziale sulla UI leggendolo dal motore
     const initialMode = engine.getMode();
     Object.entries(buttons).forEach(([mode, btn]) => {
         if (!btn) return;
@@ -398,10 +394,9 @@ export function setupGearSelectorCallback(engine) {
         if (mode === initialMode) btn.classList.add('active');
 
         btn.addEventListener('click', () => {
-            // Comunica il cambio al motore
+
             engine.setMode(mode);
-            
-            // Aggiorna la grafica dei bottoni
+
             Object.values(buttons).forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
         });
@@ -428,24 +423,19 @@ export function updateTelemetryUI(engine) {
     const mode = engine.getMode();
     const currentGear = engine.getGear();
     const redline = engine.getRedline();
-
-    // Aggiorna testo RPM
     hudRpm.textContent = currentRpm;
 
-    // Aggiorna testo Marcia (mostra N, R, o il numero della marcia se sei in D)
     if (mode === 'D') {
         hudGear.textContent = currentGear;
     } else {
         hudGear.textContent = mode;
     }
 
-    // Calcola percentuale Rev Bar
     let rpmPercent = (currentRpm / redline) * 100;
-    rpmPercent = Math.max(0, Math.min(100, rpmPercent)); // Clampa tra 0 e 100
+    rpmPercent = Math.max(0, Math.min(100, rpmPercent));
     
     revBarFill.style.width = `${rpmPercent}%`;
 
-    // Effetto visivo per il limitatore (lampeggio rosso se superi il 95%)
     if (rpmPercent > 95) {
         revBarFill.style.background = (Date.now() % 200 < 100) ? '#ff2a3b' : '#ffffff';
     } else {

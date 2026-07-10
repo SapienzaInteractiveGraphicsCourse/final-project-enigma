@@ -157,9 +157,6 @@ function getRayHits(renderer, camera, mouse, raycaster, targetObjects, event) {
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-
-    // Passiamo direttamente l'array di bersagli pre-calcolati.
-    // Il 'true' serve perché le portiere potrebbero essere Gruppi contenenti la mesh vera e propria.
     return raycaster.intersectObjects(targetObjects, true);
 }
 

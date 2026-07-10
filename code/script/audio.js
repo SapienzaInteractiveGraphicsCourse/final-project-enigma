@@ -83,13 +83,11 @@ export function setTurnSignalVolume(volumeLevel) {
 export function createEngineSoundSystem(sampleMap) {
     let nodes = [];
     let isPlaying = false;
-    
-    // Master globale del motore
+
     const masterGain = audioCtx.createGain();
     masterGain.connect(audioCtx.destination);
-    masterGain.gain.value = 0.5; // Configura il volume massimo desiderato
+    masterGain.gain.value = 0.5;
 
-    // I due canali paralleli per la gestione del carico (FMOD Style)
     let onThrottleGroup;
     let offThrottleGroup;
 
@@ -105,13 +103,10 @@ export function createEngineSoundSystem(sampleMap) {
             source.buffer = sample.buffer;
             source.loop = true;
 
-            // Questo gain gestisce UNICAMENTE il crossfade dei giri (RPM)
             const rpmGainNode = audioCtx.createGain();
             rpmGainNode.gain.value = 0;
 
             source.connect(rpmGainNode);
-            
-            // MULTI-ROUTING: Sdoppiamo il segnale del campione su entrambi i canali di carico
             rpmGainNode.connect(onThrottleGroup);
             rpmGainNode.connect(offThrottleGroup);
 
@@ -147,20 +142,13 @@ export function createEngineSoundSystem(sampleMap) {
             if (!isPlaying || nodes.length === 0) return;
 
             const now = audioCtx.currentTime;
-            const rpmTimeConstant = 0.03;       // Smoothing crossfade giri
-            const throttleTimeConstant = 0.06;  // Smoothing transizione carico pedale
-
-            // ─── GESTIONE CARICO (On-Throttle / Off-Throttle) ───
-            // Canale di Accelerazione: segue linearmente il pedale (0..1)
+            const rpmTimeConstant = 0.03;
+            const throttleTimeConstant = 0.06;
             onThrottleGroup.gain.setTargetAtTime(gasPedal, now, throttleTimeConstant);
 
-            // Canale di Rilascio (Coast): si attiva quando rilasci il gas (1 - gasPedal)
-            // Moltiplichiamo per un coefficiente (es: 0.35) per renderlo marcatamente più basso
             const coastVolume = (1.0 - gasPedal) * 0.35; 
             offThrottleGroup.gain.setTargetAtTime(coastVolume, now, throttleTimeConstant);
 
-
-            // ─── LOGICA DI CROSSFADE REAALISTICA RPM ───
             let lower = nodes[0];
             let upper = nodes[nodes.length - 1];
 

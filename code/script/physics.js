@@ -40,7 +40,7 @@ export function createCarPhysics(model, trackMeshes = []) {
     const chassisShape = new CANNON.Box(new CANNON.Vec3(0.85, 0.25, 2.1));
     const chassisBody = new CANNON.Body({ mass: 1505 });
 
-    const COM_HEIGHT_OFFSET = 0.18; // was 0.45
+    const COM_HEIGHT_OFFSET = 0.18;
     chassisBody.addShape(chassisShape, new CANNON.Vec3(0, COM_HEIGHT_OFFSET, 0));
     chassisBody.position.set(0, 1.5, 0);
 
@@ -74,7 +74,7 @@ export function createCarPhysics(model, trackMeshes = []) {
         suspensionDampingRelaxation: 3.2,
         suspensionDampingCompression: 4.8,
         rollInfluence: 0.03,
-        frictionSlip: 3.2,       // was 1.5
+        frictionSlip: 3.2,
     };
 
     const rearWheelOptions = {
@@ -120,8 +120,6 @@ export function createCarPhysics(model, trackMeshes = []) {
     const activeKeys = new Set();
     window.addEventListener('keydown', (e) => activeKeys.add(e.code));
     window.addEventListener('keyup', (e) => activeKeys.delete(e.code));
-
-    // ── Trasmissione realistica ───────────────────────────────────────────
     const engine = createEngine();
 
     const ENGINE_FORCE_SCALE = 0.35;
@@ -186,7 +184,7 @@ export function createCarPhysics(model, trackMeshes = []) {
 
             const engineOff = !engine.isRunning?.() && engine.isRunning !== undefined
                 ? !engine.isRunning()
-                : false; // if engine doesn't expose isRunning(), this just no-ops safely
+                : false;
 
             let effectiveBrake = totalBrake;
             let forceOverride = wheelForce;
