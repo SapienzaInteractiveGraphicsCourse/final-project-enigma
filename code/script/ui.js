@@ -342,41 +342,34 @@ export function setupDoorLightCallbacks(model) {
 export function setupEngineCallback(model, physicsController = null) {
     const engineBtn = document.getElementById('btnEnginePower');
     const statusText = document.getElementById('engineStatusText');
-    const runningLightsSwitch = document.getElementById('checkRunningLights');
 
     const applyEngineLogic = (isRunning) => {
         model.state.ignitionOn = isRunning;
 
-        // Notifica il controller fisico (trasmissione + motore)
         if (physicsController?.setEngineRunning) {
             physicsController.setEngineRunning(isRunning);
         }
 
         if (isRunning) {
-            playSfx('startup');
+            setTimeout(() => playSfx('startup'), 50);
             if (engineBtn) engineBtn.classList.add('engine-on');
             if (statusText) statusText.textContent = 'STOP';
         } else {
             stopStartupSound();
             if (engineBtn) engineBtn.classList.remove('engine-on');
             if (statusText) statusText.textContent = 'START';
-
-            if (model.runningLights) {
-                model.state.runningLights = false;
-                toggleCarLight(model.runningLights, false);
-                if (runningLightsSwitch) runningLightsSwitch.checked = false;
-            }
         }
     };
 
     applyEngineLogic(model.state.ignitionOn || false);
 
     if (engineBtn) {
-        // Il click alterna lo stato ignitionOn e aziona l'animazione chiave
+        engineBtn.onclick = null;
+        
         engineBtn.addEventListener('click', () => {
             const next = !model.state.ignitionOn;
             applyEngineLogic(next);
-            toggleAnimation(model, 'key');
+            animatePartToState(model, 'key', next);
         });
     }
 }

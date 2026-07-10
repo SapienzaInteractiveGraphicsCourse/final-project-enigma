@@ -21,8 +21,8 @@ export function setupEnvironmentLights(scene) {
     sunLight.shadow.camera.bottom = -d;
     sunLight.shadow.camera.near = 0.5;
     sunLight.shadow.camera.far = 500;
-    sunLight.shadow.mapSize.width = 2048;
-    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.mapSize.width = 1024;
+    sunLight.shadow.mapSize.height = 1024;
     sunLight.shadow.bias = -0.0005;
     sunLight.shadow.normalBias = 0.05;
     scene.add(sunLight);

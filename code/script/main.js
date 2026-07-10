@@ -12,6 +12,10 @@ import { CubeMapReflections } from './reflections.js';
 import { ensureAudioContextResumed } from './audio.js';
 import { loadEnvironment, updateSkyTexture } from './environment.js';
 
+let frameCount = 0;
+let lastTime = performance.now();
+const fpsDisplay = document.getElementById('fpsCounter');
+
 const clock = new THREE.Clock();
 
 function setLoadingOverlayHidden() {
@@ -79,6 +83,14 @@ async function prewarmScene(scene, camera, renderer, model) {
 let reflectionFrameCounter = 0;
 
 function animate(scene, camera, renderer, steerControl, car_model, reflectionController) {
+    frameCount++;
+    const currentTime = performance.now();
+    if (currentTime - lastTime >= 1000) {
+        if (fpsDisplay) fpsDisplay.textContent = `FPS: ${frameCount}`;
+        frameCount = 0;
+        lastTime = currentTime;
+    }
+
     const dt = clock.getDelta();
     requestAnimationFrame(() => animate(scene, camera, renderer, steerControl, car_model, reflectionController));
 
