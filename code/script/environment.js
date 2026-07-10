@@ -24,8 +24,8 @@ export async function loadEnvironment(scene) {
                 environment.traverse((child) => {
                     if (child.isMesh) {
                         const nameLower = child.name.toLowerCase();
-                        
-                        if (nameLower.includes('tree') || nameLower.includes('albero')) {
+
+                    if (/\b(tree|albero)\b/.test(nameLower)) {
                             const baseName = child.name.split('.')[0];
                             
                             if (!treeGroups[baseName]) {
