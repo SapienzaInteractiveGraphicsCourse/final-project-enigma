@@ -6,7 +6,7 @@ import { updateCameraMovement, snapFreeCameraToCar } from './camera.js';
 import { enableClickToAnimate } from './animations.js'
 import { createScene } from './scene.js';
 import { createCarPhysics } from './physics.js'
-import { initCameraUI, syncMaterialControls, setupLightCallbacks, setupButtonsCallback, setupTurnSignalCallbacks, setupDoorLightCallbacks, setupEngineCallback, setupGearSelectorCallback, updateTelemetryUI } from './ui.js';
+import { initCameraUI, syncMaterialControls, setupLightCallbacks, setupButtonsCallback, setupTurnSignalCallbacks, setupDoorLightCallbacks, setupBrakeLightCallbacks, setupEngineCallback, setupGearSelectorCallback, updateTelemetryUI } from './ui.js';
 import { Settings } from './settings.js';
 import { CubeMapReflections } from './reflections.js';
 import { ensureAudioContextResumed, loadEngineSamples, createEngineSoundSystem } from './audio.js';
@@ -159,8 +159,6 @@ window.onload = async () => {
         loadModel(CAR_MODEL, scene)
     ]);
 
-    // car_model.root.rotation.y = THREE.MathUtils.degToRad(-110);
-
     const carPhysicsNode = new THREE.Group();
     scene.add(carPhysicsNode);
     carPhysicsNode.add(car_model.root);
@@ -182,6 +180,7 @@ window.onload = async () => {
     setupLightCallbacks(car_model);
     setupTurnSignalCallbacks(car_model);
     setupDoorLightCallbacks(car_model);
+    setupBrakeLightCallbacks(car_model);
     setupEngineCallback(car_model, steerControl);
     const reflectionController = CubeMapReflections(car_model.root, scene, renderer);
 

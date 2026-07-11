@@ -147,7 +147,7 @@ export function createCarPhysics(model, trackMeshes = []) {
     const BRAKE_FORCE_SCALE = 0.35;
     const LOW_SPEED_LOCK_KMH = 0.8;
 
-    const maxSteerAngle = THREE.MathUtils.degToRad(15);
+    const maxSteerAngle = THREE.MathUtils.degToRad(25);
     const steerSpeed = 5.5;
 
     let currentSteerAngle = 0;

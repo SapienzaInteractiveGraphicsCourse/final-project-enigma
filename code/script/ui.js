@@ -312,6 +312,32 @@ export function setupTurnSignalCallbacks(model) {
     }
 }
 
+
+export function setupBrakeLightCallbacks(model) {
+    let isBraking = false; 
+
+    const handleKeyDown = (event) => {
+        if (event.key === 'ArrowDown' || event.key.toLowerCase() === 's') {
+            if (!isBraking) {
+                isBraking = true;
+                toggleCarLight(model.brakeLights, true); 
+            }
+        }
+    };
+
+    const handleKeyUp = (event) => {
+        if (event.key === 'ArrowDown' || event.key.toLowerCase() === 's') {
+            if (isBraking) {
+                isBraking = false;
+                toggleCarLight(model.brakeLights, false); 
+            }
+        }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+}
+
 export function setupDoorLightCallbacks(model) {
     const leftDoorSwitch = document.getElementById('checkLeftDoor');
     const rightDoorSwitch = document.getElementById('checkRightDoor');

@@ -88,7 +88,7 @@ function setupTailLight(modelRoot, meshName) {
 
     upgradeToEmissiveMaterial(mesh, 0xff0000);
 
-    const light = new THREE.SpotLight(0xff0000, 0, 35.0, Math.PI / 2, 0.6, 2.2);
+    const light = new THREE.SpotLight(0xff0000, 0, 35.0, Math.PI / 4, 0.6, 2.2);
     const worldPos = new THREE.Vector3();
     mesh.getWorldPosition(worldPos);
     light.position.copy(worldPos);
@@ -96,7 +96,7 @@ function setupTailLight(modelRoot, meshName) {
     light.castShadow = false;
 
     const targetObj = new THREE.Object3D();
-    targetObj.position.copy(worldPos).add(new THREE.Vector3(0, 5, -40));
+    targetObj.position.copy(worldPos).add(new THREE.Vector3(0, -0.5, -28));
 
     modelRoot.add(light, targetObj);
     light.target = targetObj;
@@ -106,8 +106,20 @@ function setupTailLight(modelRoot, meshName) {
     return {
         mesh,
         light,
-        maxLightInt: 1.0,
-        maxEmissiveInt: 2.0
+        maxLightInt: 4.0,
+        maxEmissiveInt: 4.0
+    };
+}
+
+function setupBrakeLight(modelRoot, meshName) {
+    const mesh = modelRoot.getObjectByName(meshName);
+    if (!mesh) return null;
+
+    upgradeToEmissiveMaterial(mesh, 0xff0000);
+
+    return {
+        mesh,
+        maxEmissiveInt: 4.0
     };
 }
 
@@ -230,6 +242,17 @@ export function setupRunningLights(modelRoot, meshNames = ['Running_lights_RF', 
 
 export function setupTailLights(modelRoot, meshNames = ['Running_lights_RB', 'Running_lights_LB']) {
     return meshNames.map((name) => setupTailLight(modelRoot, name)).filter(Boolean);
+}
+
+export function setupBrakeLights(modelRoot, meshNames = ['Brake_light_C', 'Brake_light_L', 'Brake_light_R', 'Spoiler_brake_light']) {
+    return meshNames.map((name) => {
+        if (name === 'Brake_light_L' || name === 'Brake_light_R') {
+            return setupTailLight(modelRoot, name);
+        } 
+        else {
+            return setupBrakeLight(modelRoot, name);
+        }
+    }).filter(Boolean);
 }
 
 export function setupLowBeams(modelRoot, meshNames = ['Low_beam_RF', 'Low_beam_LF']) {
@@ -421,7 +444,7 @@ export function setupTrackLights(trackModel, scene) {
 
     const pool = [];
     for (let i = 0; i < POOL_SIZE; i++) {
-        const light = new THREE.SpotLight(0xd4e3ff, ACTIVE_INTENSITY, 0.0, Math.PI / 7, 0.6, 2.2);
+        const light = new THREE.SpotLight(0xd4e3ff, ACTIVE_INTENSITY, 0.0, Math.PI / 2, 0.6, 2.0);
         light.castShadow = false;
         light.intensity = 0;
 

@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { gltfLoader } from './loaders.js';
 import { setupMaterials } from './color.js';
-import { setupLowBeams, setupHighBeams, setupTurnSignals, setupAmbientLights, setupRunningLights, setupTailLights } from './lights.js'; 
+import { setupLowBeams, setupHighBeams, setupTurnSignals, setupAmbientLights, setupRunningLights, setupTailLights, setupBrakeLights } from './lights.js'; 
 
 export async function loadModel(modelDescription, scene) {
     const path = modelDescription.path;
@@ -30,6 +30,7 @@ export async function loadModel(modelDescription, scene) {
                 model.runningLights = setupRunningLights(gltf_model);
                 model.ambientLights = setupAmbientLights(gltf_model);
                 model.tailLights = setupTailLights(gltf_model);
+                model.brakeLights = setupBrakeLights(gltf_model);
 
                 model.turnSignals = {
                     right: setupTurnSignals(
