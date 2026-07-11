@@ -3,6 +3,7 @@ import * as CANNON from 'cannon-es';
 import { createEngine } from './engine.js';
 import { setAnimationState } from './animations.js';
 
+
 export function createCarPhysics(model, trackMeshes = []) {
     const world = new CANNON.World();
     world.gravity.set(0, -9.82, 0);
@@ -243,11 +244,17 @@ export function createCarPhysics(model, trackMeshes = []) {
                 return vel.dot(dir) * 3.6;
             })();
 
-            if (speedKmh > 80 && !model.state.wingOpen) {
-                setAnimationState(model, "Spoiler", true, true);
+            if (speedKmh > 80) {
+                if (!model.state.wingOpen && !model.state.manualSpoilerClosed) {
+                    setAnimationState(model, "Spoiler", true, true);
+                }
             } 
-            else if (speedKmh < 0.5 && model.state.wingOpen) {
-                setAnimationState(model, "Spoiler", false, true);
+            else if (speedKmh < 0.5) {
+                model.state.manualSpoilerClosed = false;
+
+                if (model.state.wingOpen && !model.state.manualSpoilerOpen) {
+                    setAnimationState(model, "Spoiler", false, true);
+                }
             }
 
             let targetSteer = 0;
