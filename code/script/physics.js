@@ -162,6 +162,8 @@ export function createCarPhysics(model, trackMeshes = []) {
     const spinLR = anim["Moving_wheel_LR"]?.part;
     const spinRR = anim["Moving_wheel_RR"]?.part;
     const steeringWheelMesh = anim["Steering_wheel"]?.part;
+    const rpmIndicatorMesh = anim["RPM_indicator"]?.part;
+    const speedIndicatorMesh = anim["SPEED_indicator"]?.part;
 
     const nodes = {
         RF: { pivot: model.root.getObjectByName('wheel_RF'), spin: model.root.getObjectByName('Moving_wheel_RF') },
@@ -334,6 +336,35 @@ export function createCarPhysics(model, trackMeshes = []) {
             if (steeringWheelMesh) {
                 const swRot = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -currentSteerAngle * 10);
                 steeringWheelMesh.quaternion.copy(anim["Steering_wheel"].restQuaternion).multiply(swRot);
+            }
+
+            if (rpmIndicatorMesh && engine) {
+                const currentRpm = engine.isRunning() ? engine.getRpm() : 0;
+                
+                let maxRpm = 8000.0;
+                let rpmPercent = Math.min(Math.max(currentRpm / maxRpm, 0.0), 1.0);
+                let maxAngleRad = THREE.MathUtils.degToRad(260);
+                
+                let rpmAngle = rpmPercent * maxAngleRad;
+
+                const rpmRot = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), rpmAngle);
+                
+                rpmIndicatorMesh.quaternion.copy(anim["RPM_indicator"].restQuaternion).multiply(rpmRot);
+            }
+
+            if (speedIndicatorMesh) {
+                const currentSpeed = Math.abs(speedKmh); 
+                
+                const maxSpeed = 330.0;
+                const speedPercent = Math.min(Math.max(currentSpeed / maxSpeed, 0.0), 1.0);
+                
+                const maxSpeedAngleRad = THREE.MathUtils.degToRad(170);
+                
+                const speedAngle = speedPercent * maxSpeedAngleRad;
+
+                const speedRot = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), speedAngle);
+                
+                speedIndicatorMesh.quaternion.copy(anim["SPEED_indicator"].restQuaternion).multiply(speedRot);
             }
         },
         getSpeed: () => {

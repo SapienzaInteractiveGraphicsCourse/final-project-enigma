@@ -174,6 +174,22 @@ export const CAR_MODEL = {
         },
         "Brake": {
             clickable: false,
+        },
+        "RPM_indicator":{
+            rotations: [
+                {
+                    axis: { x: 0, y: 0, z: 1 },
+                    angle: 0.0
+                }
+            ]
+        },
+        "SPEED_indicator": {
+            rotations: [
+                {
+                    axis: { x: 0, y: 0, z: 1 },
+                    angle: 0.0
+                }
+            ]
         }
     }
 }
