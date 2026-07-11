@@ -262,11 +262,15 @@ export function createCarPhysics(model, trackMeshes = []) {
             let forceOverride = wheelForce;
 
             if (engineOff || isNeutral) {
-                effectiveBrake = Math.max(effectiveBrake, 1500);
-                forceOverride = 0;
+                forceOverride = 0; 
             }
 
-            const shouldLock = (engineOff || isNeutral) || (smoothGas === 0 && smoothBrake > 0.05);
+            if (isNeutral) {
+                effectiveBrake = Math.max(effectiveBrake, 5);
+            }
+
+            const shouldLock = (smoothGas === 0 && smoothBrake > 0.05);
+
 
             if (Math.abs(speedKmh) < LOW_SPEED_LOCK_KMH && shouldLock) {
                 chassisBody.velocity.set(0, chassisBody.velocity.y, 0);
