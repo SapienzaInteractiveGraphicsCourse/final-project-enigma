@@ -55,14 +55,14 @@ export function initCameraUI(camera, carModel, scene, onTimeChange) {
     const btnViewDriver = document.getElementById('btnViewDriver');
     if (btnViewDriver) {
         btnViewDriver.addEventListener('click', () => {
-            setDriverView(camera, carModel, 'onboard_camera'); 
+            setDriverView(camera, carModel, 'onboard_camera');
         });
     }
-    
+
     const btnViewTopDown = document.getElementById('btnViewTopDown');
     if (btnViewTopDown) {
         btnViewTopDown.addEventListener('click', () => {
-            setTopDownView(camera); 
+            setTopDownView(camera);
         });
     }
 
@@ -83,14 +83,14 @@ export function initCameraUI(camera, carModel, scene, onTimeChange) {
                 .easing(TWEEN.Easing.Quadratic.InOut)
                 .onUpdate(() => {
                     const isDarkEnoughToSwap = currentTime.val < 6;
-                    
+
                     if (isDarkEnoughToSwap !== isNightTextureSet) {
                         updateSkyTexture(scene, isDarkEnoughToSwap);
                         isNightTextureSet = isDarkEnoughToSwap;
                     }
 
-                    const currentDayFactor = updateTimeOfDay(currentTime.val, scene);
-                    if (onTimeChange) onTimeChange(currentDayFactor);
+                    const time = updateTimeOfDay(currentTime.val, scene);
+                    if (onTimeChange) onTimeChange(time);
                 })
                 .start();
         });
@@ -265,7 +265,7 @@ export function setupLightCallbacks(model) {
 
 export function setupTurnSignalCallbacks(model) {
     const rightSwitch = document.getElementById('checkRightIndicator');
-    const leftSwitch  = document.getElementById('checkLeftIndicator');
+    const leftSwitch = document.getElementById('checkLeftIndicator');
     const hazardSwitch = document.getElementById('checkHazard');
 
     const allSignals = [...model.turnSignals.left, ...model.turnSignals.right];
@@ -274,7 +274,7 @@ export function setupTurnSignalCallbacks(model) {
         if (event.target.checked) {
             leftSwitch.checked = false;
             if (hazardSwitch) hazardSwitch.checked = false;
-            
+
             stopBlink(model.turnSignals.left, 'left');
             stopBlink(allSignals, 'hazard');
 
@@ -315,22 +315,22 @@ export function setupTurnSignalCallbacks(model) {
 export function setupDoorLightCallbacks(model) {
     const leftDoorSwitch = document.getElementById('checkLeftDoor');
     const rightDoorSwitch = document.getElementById('checkRightDoor');
-    const ambientSwitch = document.getElementById('checkAmbientLight'); 
-    
+    const ambientSwitch = document.getElementById('checkAmbientLight');
+
     let lightTimer = null;
 
     const handleDoorChange = () => {
-        const isAnyDoorOpen = (leftDoorSwitch && leftDoorSwitch.checked) || 
-                              (rightDoorSwitch && rightDoorSwitch.checked);
-        
+        const isAnyDoorOpen = (leftDoorSwitch && leftDoorSwitch.checked) ||
+            (rightDoorSwitch && rightDoorSwitch.checked);
+
         if (lightTimer) clearTimeout(lightTimer);
-        
+
         lightTimer = setTimeout(() => {
             toggleCarLight(model.ambientLights, isAnyDoorOpen);
-            model.state.ambientLight = isAnyDoorOpen; 
+            model.state.ambientLight = isAnyDoorOpen;
 
             if (ambientSwitch) {
-                ambientSwitch.checked = isAnyDoorOpen; 
+                ambientSwitch.checked = isAnyDoorOpen;
             }
         }, 200);
     };
@@ -369,7 +369,7 @@ export function setupEngineCallback(model, physicsController = null) {
     if (engineBtn) {
         engineBtn.addEventListener('click', (e) => {
             e.stopImmediatePropagation();
-            
+
             if (isCranking) {
                 isCranking = false;
                 stopStartupSound();
@@ -384,34 +384,34 @@ export function setupEngineCallback(model, physicsController = null) {
             if (next) {
                 isCranking = true;
                 if (statusText) statusText.textContent = 'CRANK';
-                
+
                 model.state.ignitionOn = true;
                 animatePartToState(model, 'key', true);
-                
+
                 const source = playSfx('startup');
-                
+
                 if (source && source.buffer) {
                     const durationMs = source.buffer.duration * 1000;
                     let hasFired = false;
-                    
+
                     const triggerEngineStart = () => {
                         if (hasFired) return;
                         hasFired = true;
-                        
-                        if (isCranking) { 
+
+                        if (isCranking) {
                             isCranking = false;
-                            applyEngineLogic(true); 
+                            applyEngineLogic(true);
                         }
                     };
 
                     source.onended = triggerEngineStart;
                     setTimeout(triggerEngineStart, durationMs + 50);
-                    
+
                 } else {
                     isCranking = false;
                     applyEngineLogic(true);
                 }
-            } 
+            }
             else {
                 applyEngineLogic(false);
                 animatePartToState(model, 'key', false);
@@ -423,16 +423,16 @@ export function setupEngineCallback(model, physicsController = null) {
 export function setupGearSelectorCallback(engine) {
     if (!engine) return;
 
-    const buttons = { 
-        N: document.getElementById('gearBtnN'), 
-        D: document.getElementById('gearBtnD'), 
-        R: document.getElementById('gearBtnR') 
+    const buttons = {
+        N: document.getElementById('gearBtnN'),
+        D: document.getElementById('gearBtnD'),
+        R: document.getElementById('gearBtnR')
     };
 
     const initialMode = engine.getMode();
     Object.entries(buttons).forEach(([mode, btn]) => {
         if (!btn) return;
-        
+
         if (mode === initialMode) btn.classList.add('active');
 
         btn.addEventListener('click', () => {
@@ -479,7 +479,7 @@ export function updateTelemetryUI(engine, speedKmh = 0) {
 
     let rpmPercent = (currentRpm / redline) * 100;
     rpmPercent = Math.max(0, Math.min(100, rpmPercent));
-    
+
     revBarFill.style.width = `${rpmPercent}%`;
 
     if (rpmPercent > 95) {
