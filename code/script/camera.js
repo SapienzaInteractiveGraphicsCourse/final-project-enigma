@@ -8,11 +8,18 @@ export let isTopDownViewActive = false;
 let previousCameraState = { position: new THREE.Vector3(), target: new THREE.Vector3(), mode: 'orbit' };
 let orbitControls;
 
-let driverLookYaw = 0; 
+let driverLookYaw = 0;
 let driverLookPitch = 0;
-let targetDriverLookYaw = 0; 
+let targetDriverLookYaw = 0;
 let targetDriverLookPitch = 0;
 const lookSpeed = 10.0;
+
+let freeLookYaw = 0;
+let freeLookPitch = 0;
+let targetFreeLookYaw = 0;
+let targetFreeLookPitch = 0;
+let freeLookSynced = false;
+const freeLookSpeed = 14.0;
 
 let previousCarPosition = new THREE.Vector3();
 let previousCarQuaternion = new THREE.Quaternion();
@@ -176,11 +183,9 @@ export function setupCamera(camera, renderer) {
             targetDriverLookYaw = Math.max(-Math.PI / 1.5, Math.min(Math.PI / 1.5, targetDriverLookYaw));
             targetDriverLookPitch = Math.max(-Math.PI / 6, Math.min(Math.PI / 6, targetDriverLookPitch));
         } else {
-            euler.setFromQuaternion(camera.quaternion);
-            euler.y -= deltaMove.x * sensitivity;
-            euler.x -= deltaMove.y * sensitivity;
-            euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.x));
-            camera.quaternion.setFromEuler(euler);
+            targetFreeLookYaw -= deltaMove.x * sensitivity;
+            targetFreeLookPitch -= deltaMove.y * sensitivity;
+            targetFreeLookPitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, targetFreeLookPitch));
         }
 
         previousMousePosition = { x: e.clientX, y: e.clientY };
@@ -211,11 +216,9 @@ export function setupCamera(camera, renderer) {
             targetDriverLookYaw = Math.max(-Math.PI / 1.5, Math.min(Math.PI / 1.5, targetDriverLookYaw));
             targetDriverLookPitch = Math.max(-Math.PI / 6, Math.min(Math.PI / 6, targetDriverLookPitch));
         } else {
-            euler.setFromQuaternion(camera.quaternion);
-            euler.y -= deltaMove.x * sensitivity;
-            euler.x -= deltaMove.y * sensitivity;
-            euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.x));
-            camera.quaternion.setFromEuler(euler);
+            targetFreeLookYaw -= deltaMove.x * sensitivity;
+            targetFreeLookPitch -= deltaMove.y * sensitivity;
+            targetFreeLookPitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, targetFreeLookPitch));
         }
 
         previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -300,6 +303,7 @@ export function updateCameraMovement(camera, carModel, delta = 0.016) {
         }
 
         if (isTopDownViewActive) {
+            freeLookSynced = false;
             const targetPos = new THREE.Vector3(currentCarPos.x, currentCarPos.y + 15, currentCarPos.z);
             const lerpFactor = Math.min(10.0 * delta, 1.0);
             camera.position.lerp(targetPos, lerpFactor);
@@ -322,6 +326,7 @@ export function updateCameraMovement(camera, carModel, delta = 0.016) {
         }
 
         if (isDriverViewActive && activeDriverCam) {
+            freeLookSynced = false;
             const worldPos = new THREE.Vector3();
             const worldQuat = new THREE.Quaternion();
             
@@ -352,6 +357,7 @@ export function updateCameraMovement(camera, carModel, delta = 0.016) {
         }
 
         if (currentCameraMode === 'orbit') {
+            freeLookSynced = false;
             const deltaQuat = currentCarQuat.clone().multiply(previousCarQuaternion.clone().invert());
             const offset = camera.position.clone().sub(previousCarPosition);
             
@@ -376,6 +382,20 @@ export function updateCameraMovement(camera, carModel, delta = 0.016) {
     }
 
     if (isDriverViewActive || isTopDownViewActive) return;
+
+    if (!freeLookSynced) {
+        euler.setFromQuaternion(camera.quaternion);
+        freeLookYaw = euler.y;
+        freeLookPitch = euler.x;
+        targetFreeLookYaw = freeLookYaw;
+        targetFreeLookPitch = freeLookPitch;
+        freeLookSynced = true;
+    }
+
+    const freeLookLerp = Math.min(freeLookSpeed * delta, 1.0);
+    freeLookYaw = THREE.MathUtils.lerp(freeLookYaw, targetFreeLookYaw, freeLookLerp);
+    freeLookPitch = THREE.MathUtils.lerp(freeLookPitch, targetFreeLookPitch, freeLookLerp);
+    camera.quaternion.setFromEuler(new THREE.Euler(freeLookPitch, freeLookYaw, 0, 'YXZ'));
 
     moveVector.set(0, 0, 0);
 

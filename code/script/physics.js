@@ -2,6 +2,62 @@ import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { createEngine } from './engine.js';
 
+const MAP_BOUNDARY_MARGIN = 15;
+const MAP_WALL_HEIGHT = 60;
+const MAP_WALL_THICKNESS = 3;
+
+function addStaticBox(world, halfExtents, position) {
+    const body = new CANNON.Body({ mass: 0 });
+    body.addShape(new CANNON.Box(new CANNON.Vec3(halfExtents.x, halfExtents.y, halfExtents.z)));
+    body.position.set(position.x, position.y, position.z);
+    world.addBody(body);
+    return body;
+}
+
+function addMapBoundary(world, trackMeshes) {
+    if (trackMeshes.length === 0) return;
+
+    const mapBox = new THREE.Box3();
+    trackMeshes.forEach((mesh) => {
+        mesh.updateMatrixWorld(true);
+        mapBox.expandByObject(mesh);
+    });
+
+    const minX = mapBox.min.x - MAP_BOUNDARY_MARGIN;
+    const maxX = mapBox.max.x + MAP_BOUNDARY_MARGIN;
+    const minZ = mapBox.min.z - MAP_BOUNDARY_MARGIN;
+    const maxZ = mapBox.max.z + MAP_BOUNDARY_MARGIN;
+    const groundY = mapBox.min.y;
+
+    const centerX = (minX + maxX) / 2;
+    const centerZ = (minZ + maxZ) / 2;
+    const wallCenterY = groundY + MAP_WALL_HEIGHT / 2;
+    const halfSpanX = (maxX - minX) / 2;
+    const halfSpanZ = (maxZ - minZ) / 2;
+
+    addStaticBox(world,
+        { x: halfSpanX + MAP_WALL_THICKNESS, y: MAP_WALL_HEIGHT / 2, z: MAP_WALL_THICKNESS },
+        { x: centerX, y: wallCenterY, z: minZ }
+    );
+    addStaticBox(world,
+        { x: halfSpanX + MAP_WALL_THICKNESS, y: MAP_WALL_HEIGHT / 2, z: MAP_WALL_THICKNESS },
+        { x: centerX, y: wallCenterY, z: maxZ }
+    );
+    addStaticBox(world,
+        { x: MAP_WALL_THICKNESS, y: MAP_WALL_HEIGHT / 2, z: halfSpanZ + MAP_WALL_THICKNESS },
+        { x: minX, y: wallCenterY, z: centerZ }
+    );
+    addStaticBox(world,
+        { x: MAP_WALL_THICKNESS, y: MAP_WALL_HEIGHT / 2, z: halfSpanZ + MAP_WALL_THICKNESS },
+        { x: maxX, y: wallCenterY, z: centerZ }
+    );
+
+    addStaticBox(world,
+        { x: halfSpanX + MAP_WALL_THICKNESS * 2, y: MAP_WALL_THICKNESS, z: halfSpanZ + MAP_WALL_THICKNESS * 2 },
+        { x: centerX, y: groundY - 10, z: centerZ }
+    );
+}
+
 export function createCarPhysics(model, trackMeshes = []) {
     const world = new CANNON.World();
     world.gravity.set(0, -9.82, 0);
@@ -36,6 +92,8 @@ export function createCarPhysics(model, trackMeshes = []) {
 
         world.addBody(trimeshBody);
     });
+
+    addMapBoundary(world, trackMeshes);
 
     const chassisShape = new CANNON.Box(new CANNON.Vec3(0.85, 0.25, 2.1));
     const chassisBody = new CANNON.Body({ mass: 1505 });
