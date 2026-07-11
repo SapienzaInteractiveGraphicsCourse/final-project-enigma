@@ -118,6 +118,36 @@ export async function loadEnvironment(scene) {
                 });
 
                 scene.add(environment);
+                const initialState = document.getElementById('checkDisableShadows')?.checked;
+                if (initialState) {
+                    environment.traverse((child) => {
+                        if (child.isMesh && child.userData.isPhysical) {
+                            child.castShadow = false;
+                            child.receiveShadow = false;
+                        }
+                    });
+                }
+
+                window.addEventListener('toggleTrackShadows', (e) => {
+                    const disableShadows = e.detail;
+                    environment.traverse((child) => {
+                        if (child.isMesh && child.userData.isPhysical) {
+                            child.castShadow = !disableShadows;
+                            
+                            if (child.receiveShadow !== !disableShadows) {
+                                child.receiveShadow = !disableShadows;
+                                
+                                if (child.material) {
+                                    if (Array.isArray(child.material)) {
+                                        child.material.forEach(mat => mat.needsUpdate = true);
+                                    } else {
+                                        child.material.needsUpdate = true;
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
                 resolve(environment);
             },
             (_xhr) => { },

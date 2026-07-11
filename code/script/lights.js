@@ -14,7 +14,7 @@ export function setupEnvironmentLights(scene) {
     sunLight.position.set(40, 60, 20);
     sunLight.castShadow = true;
 
-    const d = 30;
+    const d = 80;
     sunLight.shadow.camera.left = -d;
     sunLight.shadow.camera.right = d;
     sunLight.shadow.camera.top = d;
