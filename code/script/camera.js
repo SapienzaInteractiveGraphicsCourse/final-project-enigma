@@ -39,6 +39,14 @@ const cameraVelocity = new THREE.Vector3();
 const moveAcceleration = 50.0;
 const moveFriction = 10.0;
 
+// Filtro passa-basso sul delta grezzo del mouse/touch: assorbe i micro-scatti
+// del puntatore prima che diventino input per lo sguardo, per un drag più
+// morbido. 1.0 = nessun filtro (comportamento precedente), valori più bassi
+// = più smoothing ma anche più "inerzia" percepita nel movimento.
+const INPUT_SMOOTHING = 0.5;
+let smoothedDeltaX = 0;
+let smoothedDeltaY = 0;
+
 window.addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
     if (keys.hasOwnProperty(key)) keys[key] = true;
@@ -165,15 +173,20 @@ export function setupCamera(camera, renderer) {
         if (currentCameraMode !== 'firstPerson') return;
         isDragging = true;
         previousMousePosition = { x: e.clientX, y: e.clientY };
+        smoothedDeltaX = 0;
+        smoothedDeltaY = 0;
     });
 
     renderer.domElement.addEventListener('mousemove', (e) => {
         if (currentCameraMode !== 'firstPerson' || !isDragging) return;
 
-        const deltaMove = {
-            x: e.clientX - previousMousePosition.x,
-            y: e.clientY - previousMousePosition.y
-        };
+        const rawDeltaX = e.clientX - previousMousePosition.x;
+        const rawDeltaY = e.clientY - previousMousePosition.y;
+
+        smoothedDeltaX += (rawDeltaX - smoothedDeltaX) * INPUT_SMOOTHING;
+        smoothedDeltaY += (rawDeltaY - smoothedDeltaY) * INPUT_SMOOTHING;
+
+        const deltaMove = { x: smoothedDeltaX, y: smoothedDeltaY };
         const sensitivity = 0.003;
 
         if (isDriverViewActive) {
@@ -199,15 +212,20 @@ export function setupCamera(camera, renderer) {
         if (currentCameraMode !== 'firstPerson') return;
         isDragging = true;
         previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        smoothedDeltaX = 0;
+        smoothedDeltaY = 0;
     }, { passive: true });
 
     renderer.domElement.addEventListener('touchmove', (e) => {
         if (currentCameraMode !== 'firstPerson' || !isDragging) return;
 
-        const deltaMove = {
-            x: e.touches[0].clientX - previousMousePosition.x,
-            y: e.touches[0].clientY - previousMousePosition.y
-        };
+        const rawDeltaX = e.touches[0].clientX - previousMousePosition.x;
+        const rawDeltaY = e.touches[0].clientY - previousMousePosition.y;
+
+        smoothedDeltaX += (rawDeltaX - smoothedDeltaX) * INPUT_SMOOTHING;
+        smoothedDeltaY += (rawDeltaY - smoothedDeltaY) * INPUT_SMOOTHING;
+
+        const deltaMove = { x: smoothedDeltaX, y: smoothedDeltaY };
         const sensitivity = 0.004;
 
         if (isDriverViewActive) {
@@ -336,8 +354,9 @@ export function updateCameraMovement(camera, carModel, delta = 0.016) {
             camera.position.copy(worldPos); 
             camera.quaternion.copy(worldQuat);
             
-            driverLookYaw = THREE.MathUtils.lerp(driverLookYaw, targetDriverLookYaw, lookSpeed * delta);
-            driverLookPitch = THREE.MathUtils.lerp(driverLookPitch, targetDriverLookPitch, lookSpeed * delta);
+            const driverLookLerp = 1 - Math.exp(-lookSpeed * delta);
+            driverLookYaw = THREE.MathUtils.lerp(driverLookYaw, targetDriverLookYaw, driverLookLerp);
+            driverLookPitch = THREE.MathUtils.lerp(driverLookPitch, targetDriverLookPitch, driverLookLerp);
             
             if (driverLookYaw !== 0 || driverLookPitch !== 0) {
                 const headRotation = new THREE.Quaternion();
@@ -392,7 +411,7 @@ export function updateCameraMovement(camera, carModel, delta = 0.016) {
         freeLookSynced = true;
     }
 
-    const freeLookLerp = Math.min(freeLookSpeed * delta, 1.0);
+    const freeLookLerp = 1 - Math.exp(-freeLookSpeed * delta);
     freeLookYaw = THREE.MathUtils.lerp(freeLookYaw, targetFreeLookYaw, freeLookLerp);
     freeLookPitch = THREE.MathUtils.lerp(freeLookPitch, targetFreeLookPitch, freeLookLerp);
     camera.quaternion.setFromEuler(new THREE.Euler(freeLookPitch, freeLookYaw, 0, 'YXZ'));
