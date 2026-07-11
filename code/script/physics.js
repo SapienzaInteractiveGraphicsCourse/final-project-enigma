@@ -165,6 +165,27 @@ export function createCarPhysics(model, trackMeshes = []) {
     const rpmIndicatorMesh = anim["RPM_indicator"]?.part;
     const speedIndicatorMesh = anim["SPEED_indicator"]?.part;
 
+    const displayMesh = model.root ? model.root.getObjectByName('display') : null;
+    let displayMaterial = null;
+    const originalDisplayColor = new THREE.Color();
+    const originalEmissiveColor = new THREE.Color();
+    const blackColor = new THREE.Color(0x000000);
+
+    if (displayMesh && displayMesh.material) {
+        displayMesh.material = displayMesh.material.clone();
+        displayMaterial = displayMesh.material;
+
+        originalDisplayColor.copy(displayMaterial.color);
+        if (displayMaterial.emissive) {
+            originalEmissiveColor.copy(displayMaterial.emissive);
+        }
+
+        displayMaterial.color.copy(blackColor);
+        if (displayMaterial.emissive) {
+            displayMaterial.emissive.copy(blackColor);
+        }
+    }
+
     const nodes = {
         RF: { pivot: model.root.getObjectByName('wheel_RF'), spin: model.root.getObjectByName('Moving_wheel_RF') },
         LF: { pivot: model.root.getObjectByName('wheel_LF'), spin: model.root.getObjectByName('Moving_wheel_LF') },
@@ -199,6 +220,22 @@ export function createCarPhysics(model, trackMeshes = []) {
             }
 
             const fixedDt = Math.min(dt, 0.03);
+
+            const engineIsOn = engine.isRunning?.() && engine.isRunning !== undefined 
+                ? engine.isRunning() 
+                : false;
+
+            if (displayMaterial) {
+                const targetColor = engineIsOn ? originalDisplayColor : blackColor;
+                const targetEmissive = engineIsOn ? originalEmissiveColor : blackColor;
+
+                const transitionSpeed = 3.0 * fixedDt;
+
+                displayMaterial.color.lerp(targetColor, transitionSpeed);
+                if (displayMaterial.emissive) {
+                    displayMaterial.emissive.lerp(targetEmissive, transitionSpeed);
+                }
+            }
 
             const speedKmh = (() => {
                 const vel = chassisBody.velocity;
