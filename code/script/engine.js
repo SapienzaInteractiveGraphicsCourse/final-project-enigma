@@ -30,12 +30,12 @@ function getTorqueAtRpm(rpm) {
 }
 
 const GEAR_RATIOS = [
-    3.75,
-    2.38,
-    1.72,
-    1.34,
-    1.08,
-    0.88,
+    4.75,
+    3.08,
+    2.40,
+    2.04,
+    1.68,
+    1.18,
 ];
 const FINAL_DRIVE = 3.96;
 const REVERSE_RATIO = 2.80;
@@ -45,8 +45,7 @@ const IDLE_RPM = 800;
 const REDLINE_RPM = 9000;
 const WHEEL_RADIUS = 0.3445;
 
-const BASE_UPSHIFT_RPM = 8700;
-const ECO_UPSHIFT_RPM = 4500;
+const BASE_UPSHIFT_RPM = 7000;
 const DOWNSHIFT_RPM = 3000;
 
 let lastShiftTime = 0;
@@ -79,9 +78,7 @@ export function createEngine() {
         const now = performance.now();
         if (now - lastShiftTime < 750) return;
 
-        const targetUpshiftRpm = ECO_UPSHIFT_RPM + gasPedal * (BASE_UPSHIFT_RPM - ECO_UPSHIFT_RPM);
-
-        if (gear < GEAR_RATIOS.length && rpm > targetUpshiftRpm) {
+        if (gear < GEAR_RATIOS.length && rpm > BASE_UPSHIFT_RPM) {
             const nextGearRatio = GEAR_RATIOS[gear] * FINAL_DRIVE;
             const currentRatio = activeTotalRatio();
             const predictedRpm = rpm * (nextGearRatio / currentRatio);
