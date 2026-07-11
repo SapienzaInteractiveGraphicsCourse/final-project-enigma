@@ -443,14 +443,19 @@ export function setupGearSelectorCallback(engine) {
     });
 }
 
-export function updateTelemetryUI(engine) {
+export function updateTelemetryUI(engine, speedKmh = 0) {
     if (!engine) return;
 
     const hudGear = document.getElementById('hudGear');
     const hudRpm = document.getElementById('hudRpm');
     const revBarFill = document.getElementById('revBarFill');
+    const hudSpeed = document.getElementById('hudSpeed');
 
     if (!hudGear || !hudRpm || !revBarFill) return;
+
+    if (hudSpeed) {
+        hudSpeed.textContent = Math.round(Math.abs(speedKmh));
+    }
 
     if (!engine.isRunning()) {
         hudRpm.textContent = '0';
