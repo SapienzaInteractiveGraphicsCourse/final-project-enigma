@@ -443,24 +443,46 @@ export function setupGearSelectorCallback(engine) {
     });
 }
 
+const hudGear = document.getElementById('hudGear');
+const hudRpm = document.getElementById('hudRpm');
+const revBarFill = document.getElementById('revBarFill');
+const hudSpeed = document.getElementById('hudSpeed');
+
+let lastSpeed = null;
+let lastRpm = null;
+let lastGear = null;
+let lastWidth = null;
+let lastBackground = null;
+
 export function updateTelemetryUI(engine, speedKmh = 0) {
     if (!engine) return;
-
-    const hudGear = document.getElementById('hudGear');
-    const hudRpm = document.getElementById('hudRpm');
-    const revBarFill = document.getElementById('revBarFill');
-    const hudSpeed = document.getElementById('hudSpeed');
 
     if (!hudGear || !hudRpm || !revBarFill) return;
 
     if (hudSpeed) {
-        hudSpeed.textContent = Math.round(Math.abs(speedKmh));
+        const currentSpeed = Math.round(Math.abs(speedKmh));
+        if (lastSpeed !== currentSpeed) {
+            hudSpeed.textContent = currentSpeed;
+            lastSpeed = currentSpeed;
+        }
     }
 
     if (!engine.isRunning()) {
-        hudRpm.textContent = '0';
-        hudGear.textContent = engine.getMode();
-        revBarFill.style.width = '0%';
+        if (lastRpm !== '0') {
+            hudRpm.textContent = '0';
+            lastRpm = '0';
+        }
+
+        const mode = engine.getMode();
+        if (lastGear !== mode) {
+            hudGear.textContent = mode;
+            lastGear = mode;
+        }
+
+        if (lastWidth !== '0%') {
+            revBarFill.style.width = '0%';
+            lastWidth = '0%';
+        }
         return;
     }
 
@@ -469,22 +491,33 @@ export function updateTelemetryUI(engine, speedKmh = 0) {
     const currentGear = engine.getGear();
     const redline = engine.getRedline();
 
-    hudRpm.textContent = currentRpm;
+    const rpmText = String(currentRpm);
+    if (lastRpm !== rpmText) {
+        hudRpm.textContent = rpmText;
+        lastRpm = rpmText;
+    }
 
-    if (mode === 'D') {
-        hudGear.textContent = currentGear;
-    } else {
-        hudGear.textContent = mode;
+    const gearText = mode === 'D' ? String(currentGear) : mode;
+    if (lastGear !== gearText) {
+        hudGear.textContent = gearText;
+        lastGear = gearText;
     }
 
     let rpmPercent = (currentRpm / redline) * 100;
     rpmPercent = Math.max(0, Math.min(100, rpmPercent));
 
-    revBarFill.style.width = `${rpmPercent}%`;
+    const widthStr = `${rpmPercent}%`;
+    if (lastWidth !== widthStr) {
+        revBarFill.style.width = widthStr;
+        lastWidth = widthStr;
+    }
 
-    if (rpmPercent > 95) {
-        revBarFill.style.background = (Date.now() % 200 < 100) ? '#ff2a3b' : '#ffffff';
-    } else {
-        revBarFill.style.background = 'linear-gradient(90deg, #32d25a 0%, #e6821e 70%, #ff2a3b 100%)';
+    const bgStr = rpmPercent > 95
+        ? ((Date.now() % 200 < 100) ? '#ff2a3b' : '#ffffff')
+        : 'linear-gradient(90deg, #32d25a 0%, #e6821e 70%, #ff2a3b 100%)';
+
+    if (lastBackground !== bgStr) {
+        revBarFill.style.background = bgStr;
+        lastBackground = bgStr;
     }
 }
