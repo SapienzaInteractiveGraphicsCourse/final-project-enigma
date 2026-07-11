@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { createEngine } from './engine.js';
+import { setAnimationState } from './animations.js';
 
 export function createCarPhysics(model, trackMeshes = []) {
     const world = new CANNON.World();
@@ -202,6 +203,13 @@ export function createCarPhysics(model, trackMeshes = []) {
                 const dir = chassisBody.quaternion.vmult(new CANNON.Vec3(0, 0, 1));
                 return vel.dot(dir) * 3.6;
             })();
+
+            if (speedKmh > 80 && !model.state.wingOpen) {
+                setAnimationState(model, "Spoiler", true, true);
+            } 
+            else if (speedKmh < 0.5 && model.state.wingOpen) {
+                setAnimationState(model, "Spoiler", false, true);
+            }
 
             let targetSteer = 0;
             if (activeKeys.has('ArrowLeft')) targetSteer += 1;
