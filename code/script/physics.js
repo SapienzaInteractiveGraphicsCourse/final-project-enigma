@@ -43,7 +43,7 @@ export function createCarPhysics(model, trackMeshes = []) {
     const chassisShape = new CANNON.Box(new CANNON.Vec3(0.85, 0.25, 2.1));
     const chassisBody = new CANNON.Body({ mass: 1505 });
 
-    const COM_HEIGHT_OFFSET = 0.05; 
+    const COM_HEIGHT_OFFSET = 0.05;
     chassisBody.addShape(chassisShape, new CANNON.Vec3(0, COM_HEIGHT_OFFSET, 0));
 
     // Punto di spawn preso da un Empty in Blender (coordinate Z-up) e convertito
@@ -103,7 +103,7 @@ export function createCarPhysics(model, trackMeshes = []) {
         suspensionDampingRelaxation: 3.2,
         suspensionDampingCompression: 4.8,
         rollInfluence: 0.03,
-        frictionSlip: 4.5,       
+        frictionSlip: 4.5,
     };
 
     const rearWheelOptions = {
@@ -173,6 +173,19 @@ export function createCarPhysics(model, trackMeshes = []) {
 
     return {
         update: (dt) => {
+            const localUp = new CANNON.Vec3(0, 1, 0);
+            const worldUp = chassisBody.quaternion.vmult(localUp);
+            if (worldUp.y < -0.2) {
+                chassisBody.position.y += 2.5;
+
+                const euler = new CANNON.Vec3();
+                chassisBody.quaternion.toEuler(euler);
+                chassisBody.quaternion.setFromEuler(0, euler.y, 0);
+
+                chassisBody.velocity.set(0, 0, 0);
+                chassisBody.angularVelocity.set(0, 0, 0);
+            }
+
             const fixedDt = Math.min(dt, 0.03);
 
             let targetSteer = 0;
