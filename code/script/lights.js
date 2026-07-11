@@ -373,54 +373,109 @@ function getAverageNormal(mesh) {
     return sum;
 }
 
-export function setupTrackLights(trackModel) {
-    let lights = [];
+export function setupTrackLights(trackModel, scene) {
+    const lampPosts = [];
+    const inactiveMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        emissive: 0xd4e3ff,
+        emissiveIntensity: 0.0
+    });
+    const activeMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        emissive: 0xd4e3ff,
+        emissiveIntensity: 8.0
+    });
+
+    const expectedScale = 0.7498;
+    const tolerance = 0.05;
 
     trackModel.updateMatrixWorld(true);
     trackModel.traverse((mesh) => {
         let name = mesh.name;
         if (name && name.includes("LampPost") && name.includes("SUB") && !name.includes("SUB0")) {
-            upgradeToEmissiveMaterial(mesh, 0xd4e3ff);
+            const worldScale = new THREE.Vector3();
+            mesh.matrixWorld.decompose(new THREE.Vector3(), new THREE.Quaternion(), worldScale);
+            if (Math.abs(worldScale.x - expectedScale) > tolerance) return;
 
-            const worldCenter = new THREE.Vector3();
-            mesh.getWorldPosition(worldCenter);
+            mesh.material = inactiveMaterial;
+
+            if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+            const localCenter = new THREE.Vector3();
+            mesh.geometry.boundingBox.getCenter(localCenter);
+            const worldCenter = localCenter.clone();
+            mesh.localToWorld(worldCenter);
 
             const avgNormal = getAverageNormal(mesh);
-
-            const light = new THREE.SpotLight(0xd4e3ff, 1000.0, 0.0, Math.PI / 7, 0.6, 2.2);
-            light.position.copy(trackModel.worldToLocal(worldCenter.clone()));
-            light.castShadow = false;
-
             const targetWorldPos = worldCenter.clone().add(avgNormal.multiplyScalar(28));
-            const targetObj = new THREE.Object3D();
-            targetObj.position.copy(trackModel.worldToLocal(targetWorldPos.clone()));
 
-            trackModel.add(light);
-            trackModel.add(targetObj);
-            light.target = targetObj;
-            light.intensity = 0;
-
-            lights.push({ emissiveMesh: mesh, light });
+            lampPosts.push({
+                emissiveMesh: mesh,
+                worldPos: worldCenter.clone(),
+                worldTargetPos: targetWorldPos.clone()
+            });
         }
-    })
+    });
 
+    const POOL_SIZE = 21;
+    const ACTIVE_INTENSITY = 1000.0;
 
+    const pool = [];
+    for (let i = 0; i < POOL_SIZE; i++) {
+        const light = new THREE.SpotLight(0xd4e3ff, ACTIVE_INTENSITY, 0.0, Math.PI / 7, 0.6, 2.2);
+        light.castShadow = false;
+        light.intensity = 0;
+
+        const targetObj = new THREE.Object3D();
+        scene.add(light);
+        scene.add(targetObj);
+        light.target = targetObj;
+
+        pool.push({ light, targetObj });
+    }
+
+    const distScratch = new Array(lampPosts.length);
+    const indices = lampPosts.map((_, i) => i);
+
+    let currentIsNight = false;
     return {
-        update: (isNight) => {
-            for (const item of lights) {
-                if (isNight) {
-                    if (item.emissiveMesh.material) {
-                        item.emissiveMesh.material.emissiveIntensity = 8.0;
-                    }
-                    item.light.intensity = 1000.0;
+        setTime: (isNight) => {
+            currentIsNight = isNight;
+
+            if (!currentIsNight || lampPosts.length === 0) {
+                for (let i = 0; i < pool.length; i++) {
+                    pool[i].light.intensity = 0;
+                }
+                for (let i = 0; i < lampPosts.length; i++) {
+                    lampPosts[i].emissiveMesh.material = inactiveMaterial;
+                }
+            }
+        },
+
+        update: (carPosition) => {
+            if (!currentIsNight || lampPosts.length === 0) {
+                return;
+            }
+
+            for (let i = 0; i < lampPosts.length; i++) {
+                lampPosts[i].emissiveMesh.material = inactiveMaterial;
+                distScratch[i] = carPosition.distanceToSquared(lampPosts[i].worldPos);
+            }
+
+            indices.sort((a, b) => distScratch[a] - distScratch[b]);
+
+            const activeCount = Math.min(POOL_SIZE, lampPosts.length);
+            for (let slot = 0; slot < POOL_SIZE; slot++) {
+                const { light, targetObj } = pool[slot];
+                if (slot < activeCount) {
+                    const lamp = lampPosts[indices[slot]];
+                    light.position.copy(lamp.worldPos);
+                    targetObj.position.copy(lamp.worldTargetPos);
+                    light.intensity = ACTIVE_INTENSITY;
+                    lamp.emissiveMesh.material = activeMaterial;
                 } else {
-                    if (item.emissiveMesh.material) {
-                        item.emissiveMesh.material.emissiveIntensity = 0.0;
-                    }
-                    item.light.intensity = 0.0;
+                    light.intensity = 0;
                 }
             }
         }
-    }
+    };
 }
-

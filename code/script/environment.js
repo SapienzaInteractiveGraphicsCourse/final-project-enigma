@@ -79,7 +79,7 @@ export async function loadEnvironment(scene) {
                     }
                 });
 
-                scene.trackLights = setupTrackLights(environment);
+                scene.trackLights = setupTrackLights(environment, scene);
 
                 treesToRemove.forEach(tree => {
                     if (tree.parent) tree.parent.remove(tree);

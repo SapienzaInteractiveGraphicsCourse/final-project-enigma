@@ -138,6 +138,13 @@ function animate(scene, camera, renderer, steerControl, car_model, reflectionCon
             reflectionController.camera.userData.forceUpdate = false;
         }
     }
+
+    if (scene.trackLights) {
+        let carWorldPos = new THREE.Vector3();
+        car_model.root.getWorldPosition(carWorldPos);
+        scene.trackLights.update(carWorldPos);
+    }
+
     renderer.render(scene, camera);
 
 }
@@ -198,7 +205,7 @@ window.onload = async () => {
     initCameraUI(camera, car_model, scene, (time) => {
         reflectionController.camera.userData.forceUpdate = true;
         reflectionController.updateIntensity(time.dayFactor);
-        scene.trackLights.update(time.isNight);
+        scene.trackLights.setTime(time.isNight);
     });
 
     await prewarmScene(scene, camera, renderer, car_model, reflectionController);
