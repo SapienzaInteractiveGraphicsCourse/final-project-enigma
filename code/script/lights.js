@@ -19,23 +19,23 @@ export function setupEnvironmentLights(scene) {
     sunLight.shadow.camera.right = d;
     sunLight.shadow.camera.top = d;
     sunLight.shadow.camera.bottom = -d;
-    
+
     sunLight.shadow.camera.near = 1;
     sunLight.shadow.camera.far = 200;
 
     sunLight.shadow.mapSize.width = 2048;
     sunLight.shadow.mapSize.height = 2048;
-    
+
     sunLight.shadow.bias = -0.0005;
-    sunLight.shadow.normalBias = 0.02; 
-    
+    sunLight.shadow.normalBias = 0.02;
+
     scene.add(sunLight);
     scene.add(sunLight.target);
 }
 
 export function updateSunShadow(carPosition) {
     if (!sunLight) return;
-    
+
     sunLight.position.copy(carPosition).add(new THREE.Vector3(40, 60, 20));
     sunLight.target.position.copy(carPosition);
 }
@@ -103,9 +103,9 @@ function setupTailLight(modelRoot, meshName) {
     light.visible = true;
     light.intensity = 0;
 
-    return { 
-        mesh, 
-        light, 
+    return {
+        mesh,
+        light,
         maxLightInt: 1.0,
         maxEmissiveInt: 2.0
     };
@@ -165,13 +165,13 @@ function setupTurnSignal(modelRoot, meshName, targetPos = [0, 0, 1]) {
 
     const light = new THREE.SpotLight(0xffaa00, 0, 3, Math.PI / 2, 1.0, 2);
     light.position.set(0, 0, 0);
-    if (mesh.name.includes('LF') || mesh.name.includes('LB')) light.position.x += 0.2; 
-    else if (mesh.name.includes('RF') || mesh.name.includes('RB')) light.position.x -= 0.2; 
+    if (mesh.name.includes('LF') || mesh.name.includes('LB')) light.position.x += 0.2;
+    else if (mesh.name.includes('RF') || mesh.name.includes('RB')) light.position.x -= 0.2;
     light.castShadow = false;
 
     const targetObj = new THREE.Object3D();
-    targetObj.position.set(...targetPos); 
-    
+    targetObj.position.set(...targetPos);
+
     mesh.add(targetObj, light);
     light.target = targetObj;
     light.visible = true;
@@ -190,13 +190,13 @@ function setupAmbientLight(modelRoot, meshName) {
             if (child.isMesh && !actualMesh) actualMesh = child;
         });
     }
-    
+
     if (!actualMesh) { console.error(`error: no mesh found inside ${meshName}`); return null; }
 
     actualMesh.material = new THREE.MeshPhysicalMaterial({
         color: 0xffffff,
         emissive: 0xffffff,
-        emissiveIntensity: 0, 
+        emissiveIntensity: 0,
         roughness: 0.2,
         metalness: 0.1
     });
@@ -206,15 +206,15 @@ function setupAmbientLight(modelRoot, meshName) {
 
     const worldPos = new THREE.Vector3();
     actualMesh.getWorldPosition(worldPos);
-    
+
     modelRoot.worldToLocal(worldPos);
-    
+
     light.position.copy(worldPos);
     light.position.y -= 0.05;
 
     const targetObj = new THREE.Object3D();
     targetObj.position.copy(light.position);
-    targetObj.position.y -= 1.0; 
+    targetObj.position.y -= 1.0;
 
     modelRoot.add(light, targetObj);
     light.target = targetObj;
@@ -266,7 +266,7 @@ export function toggleCarLight(lightObject, isVisible) {
                 eInt: item.mesh && item.mesh.material ? item.mesh.material.emissiveIntensity : 0
             };
 
-            const targetLight = isVisible ? (item.maxLightInt ?? 3.0) : 0.0; 
+            const targetLight = isVisible ? (item.maxLightInt ?? 3.0) : 0.0;
             const targetEmissive = isVisible ? (item.maxEmissiveInt ?? 3.0) : 0.0;
 
             item.activeTween = new TWEEN.Tween(currentVals)
@@ -294,14 +294,14 @@ function setTurnSignalIntensity(signalObj, isOn) {
     }
     if (signalObj.light) {
         signalObj.light.visible = true;
-        signalObj.light.intensity = isOn ? (signalObj.maxLightInt ?? 5.0) : 0; 
+        signalObj.light.intensity = isOn ? (signalObj.maxLightInt ?? 5.0) : 0;
     }
 }
 
-let activeBlinks = new Map(); 
+let activeBlinks = new Map();
 
 export function startBlink(signals, id = 'turn_signal') {
-    if (activeBlinks.has(id)) return; 
+    if (activeBlinks.has(id)) return;
 
     let blinkState = true;
     signals.forEach(s => setTurnSignalIntensity(s, blinkState));
@@ -328,20 +328,20 @@ export function stopBlink(signals, id = 'turn_signal') {
 
 export function updateTimeOfDay(timeInHours, scene) {
     let dayFactor = 0;
-    
+
     if (timeInHours >= 5 && timeInHours < 9) {
         dayFactor = (timeInHours - 5) / 4;
-    } 
+    }
     else if (timeInHours >= 9 && timeInHours <= 16) {
         dayFactor = 1;
-    } 
+    }
     else if (timeInHours > 16 && timeInHours <= 20) {
         dayFactor = 1 - ((timeInHours - 16) / 4);
     }
 
     dayFactor = dayFactor * dayFactor * (3 - 2 * dayFactor);
 
-    const hemiIntensity = 0.35 + (0.85 * dayFactor); 
+    const hemiIntensity = 0.35 + (0.85 * dayFactor);
     const sunIntensity = 0.0 + (8.5 * dayFactor);
     const bgIntensity = 0.15 + (0.85 * dayFactor);
     const envIntensity = 0.3 + (0.7 * dayFactor);
@@ -352,6 +352,75 @@ export function updateTimeOfDay(timeInHours, scene) {
     if (scene.environmentIntensity !== undefined) scene.environmentIntensity = envIntensity;
 
     const isNight = timeInHours < 6.0 || timeInHours > 19.0;
-    
-    return dayFactor;
+
+    return { dayFactor, isNight };
 }
+
+function getAverageNormal(mesh) {
+    const normalAttr = mesh.geometry.attributes.normal;
+    const v = new THREE.Vector3();
+    const sum = new THREE.Vector3();
+
+    for (let i = 0; i < normalAttr.count; i++) {
+        v.fromBufferAttribute(normalAttr, i);
+        sum.add(v);
+    }
+    sum.normalize();
+
+    const normalMatrix = new THREE.Matrix3().getNormalMatrix(mesh.matrixWorld);
+    sum.applyMatrix3(normalMatrix).normalize();
+
+    return sum;
+}
+
+export function setupTrackLights(trackModel) {
+    let lights = [];
+
+    trackModel.updateMatrixWorld(true);
+    trackModel.traverse((mesh) => {
+        let name = mesh.name;
+        if (name && name.includes("LampPost") && name.includes("SUB") && !name.includes("SUB0")) {
+            upgradeToEmissiveMaterial(mesh, 0xd4e3ff);
+
+            const worldCenter = new THREE.Vector3();
+            mesh.getWorldPosition(worldCenter);
+
+            const avgNormal = getAverageNormal(mesh);
+
+            const light = new THREE.SpotLight(0xd4e3ff, 1000.0, 0.0, Math.PI / 7, 0.6, 2.2);
+            light.position.copy(trackModel.worldToLocal(worldCenter.clone()));
+            light.castShadow = false;
+
+            const targetWorldPos = worldCenter.clone().add(avgNormal.multiplyScalar(28));
+            const targetObj = new THREE.Object3D();
+            targetObj.position.copy(trackModel.worldToLocal(targetWorldPos.clone()));
+
+            trackModel.add(light);
+            trackModel.add(targetObj);
+            light.target = targetObj;
+            light.intensity = 0;
+
+            lights.push({ emissiveMesh: mesh, light });
+        }
+    })
+
+
+    return {
+        update: (isNight) => {
+            for (const item of lights) {
+                if (isNight) {
+                    if (item.emissiveMesh.material) {
+                        item.emissiveMesh.material.emissiveIntensity = 8.0;
+                    }
+                    item.light.intensity = 1000.0;
+                } else {
+                    if (item.emissiveMesh.material) {
+                        item.emissiveMesh.material.emissiveIntensity = 0.0;
+                    }
+                    item.light.intensity = 0.0;
+                }
+            }
+        }
+    }
+}
+

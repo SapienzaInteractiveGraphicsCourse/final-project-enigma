@@ -37,10 +37,10 @@ async function prewarmScene(scene, camera, renderer, model, reflectionController
     const forceLightsState = (isOn) => {
         [...lowBeams, ...highBeams, ...ambientLights, ...turnLeft, ...turnRight].forEach(item => {
             if (!item) return;
-            
+
             if (item.light) {
                 item.light.visible = true;
-                item.light.intensity = isOn ? 5.0 : 0.0; 
+                item.light.intensity = isOn ? 5.0 : 0.0;
             }
             if (item.mesh && item.mesh.material) {
                 item.mesh.material.emissiveIntensity = isOn ? 4.0 : 0.0;
@@ -53,7 +53,7 @@ async function prewarmScene(scene, camera, renderer, model, reflectionController
     updateSkyTexture(scene, true);
     renderer.compile(scene, camera);
     renderer.render(scene, camera);
-    
+
     updateSkyTexture(scene, false);
 
     renderer.compile(scene, camera);
@@ -75,7 +75,7 @@ async function prewarmScene(scene, camera, renderer, model, reflectionController
     const dummyRaycaster = new THREE.Raycaster();
     dummyRaycaster.set(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0));
     dummyRaycaster.intersectObject(model.root, true);
-    
+
     if (reflectionController) reflectionController.update();
     renderer.render(scene, camera);
     await new Promise((resolve) => requestAnimationFrame(resolve));
@@ -103,13 +103,13 @@ function animate(scene, camera, renderer, steerControl, car_model, reflectionCon
 
         if (engineAudioSystem) {
             const isRunning = steerControl.engine.isRunning();
-            
+
             if (isRunning) {
                 const currentRpm = steerControl.engine.getRpm();
                 // Recuperiamo il valore istantaneo del gas (0.0 o 1.0)
                 const gasPedal = steerControl.getGasPedal ? steerControl.getGasPedal() : 0.0;
-                
-                engineAudioSystem.start(); 
+
+                engineAudioSystem.start();
                 // Passiamo sia i giri che l'intensità dell'acceleratore
                 engineAudioSystem.update(currentRpm, gasPedal);
             } else {
@@ -117,20 +117,20 @@ function animate(scene, camera, renderer, steerControl, car_model, reflectionCon
             }
         }
     }
-    
+
     if (car_model && car_model.root) {
         const carPos = new THREE.Vector3();
         car_model.root.getWorldPosition(carPos);
         updateSunShadow(carPos);
     }
 
-    updateCameraMovement(camera, car_model, dt); 
-    
+    updateCameraMovement(camera, car_model, dt);
+
     TWEEN.update();
 
     if (reflectionController) {
         reflectionController.update();
-        
+
         if (reflectionController.camera.userData.forceUpdate) {
             car_model.root.visible = false;
             reflectionController.camera.update(renderer, scene);
@@ -139,7 +139,7 @@ function animate(scene, camera, renderer, steerControl, car_model, reflectionCon
         }
     }
     renderer.render(scene, camera);
-   
+
 }
 
 window.onload = async () => {
@@ -151,8 +151,8 @@ window.onload = async () => {
         loadModel(CAR_MODEL, scene)
     ]);
 
-     // car_model.root.rotation.y = THREE.MathUtils.degToRad(-110);
-    
+    // car_model.root.rotation.y = THREE.MathUtils.degToRad(-110);
+
     const carPhysicsNode = new THREE.Group();
     scene.add(carPhysicsNode);
     car_model.root.position.set(0, -0.60, 0);
@@ -168,7 +168,7 @@ window.onload = async () => {
     }
 
     syncMaterialControls();
-    
+
     const steerControl = createCarPhysics(car_model, trackMeshes);
     setupGearSelectorCallback(steerControl.engine);
     setupButtonsCallback(car_model);
@@ -180,7 +180,7 @@ window.onload = async () => {
 
     let engineAudioSystem = null;
     try {
-        const sampleMap = await loadEngineSamples(); 
+        const sampleMap = await loadEngineSamples();
         engineAudioSystem = createEngineSoundSystem(sampleMap);
     } catch (e) {
         console.warn("Impossibile caricare i sample del motore", e);
@@ -195,9 +195,10 @@ window.onload = async () => {
 
     enableClickToAnimate(scene, camera, renderer, car_model);
 
-    initCameraUI(camera, car_model, scene, (dayFactor) => {
+    initCameraUI(camera, car_model, scene, (time) => {
         reflectionController.camera.userData.forceUpdate = true;
-        reflectionController.updateIntensity(dayFactor);
+        reflectionController.updateIntensity(time.dayFactor);
+        scene.trackLights.update(time.isNight);
     });
 
     await prewarmScene(scene, camera, renderer, car_model, reflectionController);

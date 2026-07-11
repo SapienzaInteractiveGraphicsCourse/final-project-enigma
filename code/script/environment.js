@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { gltfLoader } from './loaders.js';
+import { setupTrackLights } from './lights.js'
 
 let dayTexture = null;
 let nightTexture = null;
@@ -43,7 +44,7 @@ export async function loadEnvironment(scene) {
                 const environment = gltf.scene;
                 environment.position.set(0, 0, 0);
                 environment.scale.set(1, 1, 1);
-                
+
                 const treeGroups = {};
                 const treesToRemove = [];
 
@@ -54,7 +55,7 @@ export async function loadEnvironment(scene) {
 
                         if (/\b(tree|albero)\b/.test(nameLower)) {
                             const baseName = child.name.split('.')[0];
-                            
+
                             if (!treeGroups[baseName]) {
                                 treeGroups[baseName] = {
                                     geometry: child.geometry,
@@ -62,21 +63,23 @@ export async function loadEnvironment(scene) {
                                     transforms: []
                                 };
                             }
-                            
+
                             child.updateMatrixWorld(true);
                             treeGroups[baseName].transforms.push(child.matrixWorld.clone());
                             treesToRemove.push(child);
-                            
+
                         } else {
                             child.updateMatrixWorld(true);
                             child.matrixAutoUpdate = false;
                             child.updateMatrix();
                             child.receiveShadow = true;
-                            child.castShadow = true; 
+                            child.castShadow = true;
                             child.userData.isPhysical = true;
                         }
                     }
                 });
+
+                scene.trackLights = setupTrackLights(environment);
 
                 treesToRemove.forEach(tree => {
                     if (tree.parent) tree.parent.remove(tree);
@@ -85,31 +88,31 @@ export async function loadEnvironment(scene) {
                 Object.keys(treeGroups).forEach(key => {
                     const group = treeGroups[key];
                     const totalInstances = group.transforms.length;
-                    
+
                     const instancedMesh = new THREE.InstancedMesh(group.geometry, group.material, totalInstances);
                     instancedMesh.castShadow = false;
                     instancedMesh.receiveShadow = false;
-                    
+
                     const position = new THREE.Vector3();
                     const quaternion = new THREE.Quaternion();
                     const scale = new THREE.Vector3();
-                    
+
                     group.transforms.forEach((matrix, index) => {
                         matrix.decompose(position, quaternion, scale);
-                        
+
                         const randomY = Math.random() * Math.PI * 2;
                         const randomRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), randomY);
                         quaternion.multiply(randomRotation);
-                        
+
                         const randomScale = 0.8 + (Math.random() * 0.4);
                         scale.multiplyScalar(randomScale);
-                        
+
                         const newMatrix = new THREE.Matrix4();
                         newMatrix.compose(position, quaternion, scale);
-                        
+
                         instancedMesh.setMatrixAt(index, newMatrix);
                     });
-                    
+
                     instancedMesh.instanceMatrix.needsUpdate = true;
                     environment.add(instancedMesh);
                 });
