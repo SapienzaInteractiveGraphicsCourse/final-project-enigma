@@ -42,7 +42,33 @@ export function createCarPhysics(model, trackMeshes = []) {
 
     const COM_HEIGHT_OFFSET = 0.05; 
     chassisBody.addShape(chassisShape, new CANNON.Vec3(0, COM_HEIGHT_OFFSET, 0));
-    chassisBody.position.set(0, 1.5, 0);
+
+    // Punto di spawn preso da un Empty in Blender (coordinate Z-up) e convertito
+    // in spazio Three.js/Cannon-es (Y-up): three.x = blender.x, three.y = blender.z,
+    // three.z = -blender.y. Aggiunto un piccolo margine in Y per farla scendere
+    // e assestarsi sulle sospensioni invece di spawnare incastrata nel mesh pista.
+    const SPAWN_POINT = { x: -58.837, y: -4.6549, z: 4.9186 };
+    const SPAWN_HEIGHT_MARGIN = 0.6;
+
+    // Orientamento di partenza confermato a 130°: il muso guarda verso la
+    // griglia. Angolo positivo = rotazione antioraria vista dall'alto.
+    const SPAWN_ROTATION_DEG = 130;
+
+    // Quanti metri indietro rispetto al punto rilevato in Blender, misurati
+    // lungo la direzione OPPOSTA al muso (così la macchina parte dietro la
+    // linea invece che sopra). Aumenta/diminuisci finché non è ben piazzata.
+    const SPAWN_BACK_OFFSET = 3;
+
+    const spawnQuaternion = new CANNON.Quaternion();
+    spawnQuaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), THREE.MathUtils.degToRad(SPAWN_ROTATION_DEG));
+    chassisBody.quaternion.copy(spawnQuaternion);
+
+    const forwardDir = spawnQuaternion.vmult(new CANNON.Vec3(0, 0, 1));
+    chassisBody.position.set(
+        SPAWN_POINT.x - forwardDir.x * SPAWN_BACK_OFFSET,
+        SPAWN_POINT.y + SPAWN_HEIGHT_MARGIN,
+        SPAWN_POINT.z - forwardDir.z * SPAWN_BACK_OFFSET
+    );
 
     chassisBody.allowSleep = true;
     chassisBody.sleepSpeedLimit = 0.15;
