@@ -99,7 +99,8 @@ function animate(scene, camera, renderer, steerControl, car_model, reflectionCon
 
     steerControl.update(dt);
     if (steerControl.engine) {
-        updateTelemetryUI(steerControl.engine);
+        const speedKmh = steerControl.getSpeed ? steerControl.getSpeed() : 0;
+        updateTelemetryUI(steerControl.engine, speedKmh);
 
         if (engineAudioSystem) {
             const isRunning = steerControl.engine.isRunning();
