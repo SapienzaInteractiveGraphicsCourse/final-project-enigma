@@ -2,12 +2,10 @@ import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { createEngine } from './engine.js';
 
-
-
 export function createCarPhysics(model, trackMeshes = []) {
     const world = new CANNON.World();
     world.gravity.set(0, -9.82, 0);
-    world.solver.iterations = 12;
+    world.solver.iterations = 30;
 
     trackMeshes.forEach((mesh) => {
         mesh.updateMatrixWorld(true);
@@ -79,28 +77,28 @@ export function createCarPhysics(model, trackMeshes = []) {
     const baseWheelOptions = {
         directionLocal: new CANNON.Vec3(0, -1, 0),
         axleLocal: new CANNON.Vec3(-1, 0, 0),
-        suspensionRestLength: 0.55,
+        suspensionRestLength: 0.22,
         maxSuspensionForce: 100000,
-        maxSuspensionTravel: 0.42,
+        maxSuspensionTravel: 0.25,
     };
 
     const frontWheelOptions = {
         ...baseWheelOptions,
         radius: 0.338,
-        suspensionStiffness: 38,
-        suspensionDampingRelaxation: 3.2,
-        suspensionDampingCompression: 4.8,
-        rollInfluence: 0.03,
-        frictionSlip: 4.5,
+        suspensionStiffness: 35,
+        suspensionDampingRelaxation: 3.8,
+        suspensionDampingCompression: 2.5,
+        rollInfluence: 0.01,
+        frictionSlip: 4.5,       
     };
 
     const rearWheelOptions = {
         ...baseWheelOptions,
         radius: 0.3445,
-        suspensionStiffness: 36,
-        suspensionDampingRelaxation: 2.8,
-        suspensionDampingCompression: 4.2,
-        rollInfluence: 0.04,
+        suspensionStiffness: 38,
+        suspensionDampingRelaxation: 3.6,
+        suspensionDampingCompression: 2.3,
+        rollInfluence: 0.01,
         frictionSlip: 4.5,
     };
 
@@ -258,15 +256,19 @@ export function createCarPhysics(model, trackMeshes = []) {
                 ? !engine.isRunning()
                 : false;
 
+            const isNeutral = engine.getMode() === 'N';
+
             let effectiveBrake = totalBrake;
             let forceOverride = wheelForce;
 
-            if (engineOff && Math.abs(speedKmh) < 2) {
-                effectiveBrake = Math.max(effectiveBrake, 400);
+            if (engineOff || isNeutral) {
+                effectiveBrake = Math.max(effectiveBrake, 1500);
                 forceOverride = 0;
             }
 
-            if (Math.abs(speedKmh) < LOW_SPEED_LOCK_KMH && smoothGas === 0 && (smoothBrake > 0.05 || (engineOff && Math.abs(speedKmh) < 2))) {
+            const shouldLock = (engineOff || isNeutral) || (smoothGas === 0 && smoothBrake > 0.05);
+
+            if (Math.abs(speedKmh) < LOW_SPEED_LOCK_KMH && shouldLock) {
                 chassisBody.velocity.set(0, chassisBody.velocity.y, 0);
                 chassisBody.angularVelocity.set(0, 0, 0);
             }
@@ -278,7 +280,7 @@ export function createCarPhysics(model, trackMeshes = []) {
 
             for (let i = 0; i < 4; i++) vehicle.setBrake(effectiveBrake, i);
 
-            world.step(1 / 60, dt, 3);
+            world.step(1 / 60, dt, 10);
 
             if (model.root && model.root.parent) {
                 model.root.parent.position.copy(chassisBody.position);

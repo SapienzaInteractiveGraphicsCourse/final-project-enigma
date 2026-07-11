@@ -221,7 +221,7 @@ function setupAmbientLight(modelRoot, meshName) {
 
     light.visible = true;
 
-    return { mesh: actualMesh, light: light, maxLightInt: 3.0, maxEmissiveInt: 8.0 };
+    return { mesh: actualMesh, light: light, maxLightInt: 1.0, maxEmissiveInt: 8.0 };
 }
 
 export function setupRunningLights(modelRoot, meshNames = ['Running_lights_RF', 'Running_lights_LF']) {

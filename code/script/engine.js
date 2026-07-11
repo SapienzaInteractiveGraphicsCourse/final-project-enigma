@@ -37,6 +37,7 @@ const GEAR_RATIOS = [
     1.68,
     1.18,
 ];
+
 const FINAL_DRIVE = 3.96;
 const REVERSE_RATIO = 2.80;
 const TRANSMISSION_EFF = 0.98;
