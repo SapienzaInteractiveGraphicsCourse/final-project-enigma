@@ -12,6 +12,7 @@ import { CubeMapReflections } from './reflections.js';
 import { ensureAudioContextResumed, loadEngineSamples, createEngineSoundSystem } from './audio.js';
 import { loadEnvironment, updateSkyTexture } from './environment.js';
 import { updateSunShadow } from './lights.js';
+import { createBestLapTracker } from './bestLap.js';
 
 let frameCount = 0;
 let lastTime = performance.now();
@@ -85,7 +86,16 @@ async function prewarmScene(scene, camera, renderer, model, reflectionController
 
 let reflectionFrameCounter = 0;
 
-function animate(scene, camera, renderer, steerControl, car_model, reflectionController, engineAudioSystem) {
+function animate(
+    scene,
+    camera,
+    renderer,
+    steerControl,
+    car_model,
+    reflectionController,
+    engineAudioSystem,
+    bestLapTracker,
+) {
     frameCount++;
     const currentTime = performance.now();
     if (currentTime - lastTime >= 1000) {
@@ -95,7 +105,7 @@ function animate(scene, camera, renderer, steerControl, car_model, reflectionCon
     }
 
     const dt = clock.getDelta();
-    requestAnimationFrame(() => animate(scene, camera, renderer, steerControl, car_model, reflectionController, engineAudioSystem));
+    requestAnimationFrame(() => animate(scene, camera, renderer, steerControl, car_model, reflectionController, engineAudioSystem, bestLapTracker));
 
     steerControl.update(dt);
     if (steerControl.engine) {
@@ -144,6 +154,12 @@ function animate(scene, camera, renderer, steerControl, car_model, reflectionCon
         let carWorldPos = new THREE.Vector3();
         car_model.root.getWorldPosition(carWorldPos);
         scene.trackLights.update(carWorldPos);
+    }
+
+    if (bestLapTracker) {
+        let carWorldPos = new THREE.Vector3();
+        car_model.root.getWorldPosition(carWorldPos);
+        bestLapTracker.update(carWorldPos);
     }
 
     renderer.render(scene, camera);
@@ -210,7 +226,18 @@ window.onload = async () => {
     await prewarmScene(scene, camera, renderer, car_model, reflectionController);
     setLoadingOverlayHidden();
 
-    animate(scene, camera, renderer, steerControl, car_model, reflectionController, engineAudioSystem);
+    let bestLapTracker = createBestLapTracker(env_model);
+
+    animate(
+        scene,
+        camera,
+        renderer,
+        steerControl,
+        car_model,
+        reflectionController,
+        engineAudioSystem,
+        bestLapTracker
+    );
 };
 
 window.addEventListener('pointerdown', () => {
