@@ -18,7 +18,9 @@ export function CubeMapReflections(car, scene, renderer) {
     cubeCamera.layers.set(1);
     scene.add(cubeCamera);
     
-    const worldPosition = new THREE.Vector3(); 
+    const worldPosition = new THREE.Vector3();
+    let lastUpdatePos = new THREE.Vector3(9999, 9999, 9999);
+    const updateDistanceThreshold = 10.0;
     let frameCounter = 0;
     let isStatic = false;
     let forceNextFrame = false;
@@ -70,10 +72,12 @@ export function CubeMapReflections(car, scene, renderer) {
         update: () => {
             if (isStatic && !forceNextFrame) return;
 
-            frameCounter++;
-        
-            if (forceNextFrame || frameCounter % 3 === 0) {
+            carRoot.getWorldPosition(worldPosition);
+            const dist = worldPosition.distanceToSquared(lastUpdatePos);
+
+            if (forceNextFrame || dist > (updateDistanceThreshold * updateDistanceThreshold)) {
                 renderCubeMap();
+                lastUpdatePos.copy(worldPosition);
                 forceNextFrame = false;
             }
         }

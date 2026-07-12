@@ -74,7 +74,14 @@ export async function loadEnvironment(scene) {
                             child.updateMatrix();
                             child.receiveShadow = true;
                             child.castShadow = true;
-                            child.userData.isPhysical = true;
+                            const isRoad = /\b(1grass|1road|1kerb)\b/.test(nameLower);
+    
+                            if (isRoad) {
+                                child.userData.isPhysical = true;
+                            } else {
+                                child.userData.isPhysical = false;
+                            }
+                                                    
                         }
                     }
                 });
