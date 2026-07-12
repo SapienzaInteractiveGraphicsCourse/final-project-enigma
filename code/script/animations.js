@@ -113,7 +113,19 @@ export function toggleAnimation(model, animationName) {
     if (!animation) return;
 
     const currentState = model.state[animation.stateKey] || false;
-    setAnimationState(model, animationName, !currentState, true);
+    const nextState = !currentState;
+
+    if (animationName === "Spoiler") {
+        if (nextState === true) {
+            model.state.manualSpoilerOpen = true;
+            model.state.manualSpoilerClosed = false;
+        } else {
+            model.state.manualSpoilerClosed = true;
+            model.state.manualSpoilerOpen = false;
+        }
+    }
+
+    setAnimationState(model, animationName, nextState, true);
 }
 
 export function animatePartToState(model, animationName, targetState) {
