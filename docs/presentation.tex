@@ -137,25 +137,25 @@ final-project-enigma/
 |   |   |-- index.html      # entry point, import map, UI markup
 |   |   \-- style.css       # UI/HUD styling
 |   \-- script/             # ES modules, no bundler
-|       |-- main.js         # bootstraps the app, render/animate loop
-|       |-- scene.js        # scene, camera and renderer setup
-|       |-- camera.js       # orbit / free / driver / drone camera modes
-|       |-- physics.js      # vehicle physics (RaycastVehicle)
-|       |-- engine.js       # engine and gearbox simulation
-|       |-- car_model.js    # declarative description of animatable parts
-|       |-- model.js        # generic GLTF loader + per-part tweening
-|       |-- loaders.js      # shared GLTFLoader + DRACOLoader
-|       |-- environment.js  # track loading, sky textures, tree instancing
-|       |-- lights.js       # scene lights, car lights, street lamp pool
-|       |-- reflections.js  # dynamic cube-map reflections
-|       |-- color.js        # material registry, live color/roughness edit
 |       |-- animations.js   # part animation + click-to-interact system
 |       |-- audio.js        # Web Audio SFX and engine sound synthesis
 |       |-- bestLap.js      # lap timing via a trigger zone
+|       |-- camera.js       # orbit / free / driver / drone camera modes
+|       |-- car_model.js    # declarative description of animatable parts
+|       |-- color.js        # material registry, live color/roughness edit
+|       |-- engine.js       # engine and gearbox simulation
+|       |-- environment.js  # track loading, sky textures, tree instancing
+|       |-- lights.js       # scene lights, car lights, street lamp pool
+|       |-- loaders.js      # shared GLTFLoader + DRACOLoader
+|       |-- main.js         # bootstraps the app, render/animate loop
+|       |-- model.js        # generic GLTF loader + per-part tweening
+|       |-- physics.js      # vehicle physics (RaycastVehicle)
+|       |-- reflections.js  # dynamic cube-map reflections
+|       |-- scene.js        # scene, camera and renderer setup    
 |       |-- settings.js     # small global settings store
 |       \-- ui.js           # DOM event wiring for sidebar and HUD
 \-- src/
-    |-- models/             # car, track and (unused) garage GLB files
+    |-- models/             # car and track GLB files
     |-- textures/           # sky and PBR ground/floor textures
     \-- audio/               # engine RPM samples and short SFX
 \end{verbatim}

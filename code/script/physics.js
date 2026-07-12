@@ -64,7 +64,7 @@ export function createCarPhysics(model, trackMeshes = []) {
     chassisBody.addShape(chassisShape, new CANNON.Vec3(0, COM_HEIGHT_OFFSET, 0));
 
     const SPAWN_POINT = { x: -58.837, y: -4.6549, z: 4.9186 };
-    const SPAWN_HEIGHT_MARGIN = 1;
+    const SPAWN_HEIGHT_MARGIN = 0.5;
     const SPAWN_ROTATION_DEG = 130;
     const SPAWN_BACK_OFFSET = 3;
 
@@ -356,9 +356,6 @@ export function createCarPhysics(model, trackMeshes = []) {
             world.step(1 / 60, dt, 10);
 
             if (model.root && model.root.parent) {
-
-                // Usiamo .set() per copiare i valori estratti dalle proprietà interpolate di Cannon
-                // Questo elimina qualsiasi stuttering grafico senza rompere i quaternioni di Three.js
                 model.root.parent.position.set(
                     chassisBody.interpolatedPosition.x,
                     chassisBody.interpolatedPosition.y,
