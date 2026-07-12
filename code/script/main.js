@@ -117,11 +117,8 @@ function animate(
 
             if (isRunning) {
                 const currentRpm = steerControl.engine.getRpm();
-                // Recuperiamo il valore istantaneo del gas (0.0 o 1.0)
                 const gasPedal = steerControl.getGasPedal ? steerControl.getGasPedal() : 0.0;
-
                 engineAudioSystem.start();
-                // Passiamo sia i giri che l'intensità dell'acceleratore
                 engineAudioSystem.update(currentRpm, gasPedal);
             } else {
                 engineAudioSystem.stop();

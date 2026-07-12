@@ -3,8 +3,6 @@ import * as CANNON from 'cannon-es';
 import { createEngine } from './engine.js';
 import { setAnimationState } from './animations.js';
 
-// Scratch objects reused every frame to avoid GC pressure from repeated
-// Vector3/Quaternion/CANNON.Vec3 allocation inside the hot update loop.
 const _localUp = new CANNON.Vec3(0, 1, 0);
 const _worldUpScratch = new CANNON.Vec3();
 const _eulerScratch = new CANNON.Vec3();
@@ -23,7 +21,7 @@ const _speedQuat = new THREE.Quaternion();
 export function createCarPhysics(model, trackMeshes = []) {
     const world = new CANNON.World();
     world.gravity.set(0, -9.82, 0);
-    world.solver.iterations = 50;
+    world.solver.iterations = 20;
 
     trackMeshes.forEach((mesh) => {
         mesh.updateMatrixWorld(true);
@@ -352,7 +350,7 @@ export function createCarPhysics(model, trackMeshes = []) {
 
             for (let i = 0; i < 4; i++) vehicle.setBrake(effectiveBrake, i);
 
-            world.step(1 / 60, dt, 10);
+            world.step(1 / 60, dt, 2);
 
             if (model.root && model.root.parent) {
                 model.root.parent.position.set(
@@ -367,8 +365,6 @@ export function createCarPhysics(model, trackMeshes = []) {
                     chassisBody.interpolatedQuaternion.z,
                     chassisBody.interpolatedQuaternion.w
                 );
-
-                model.root.parent.updateMatrixWorld(true);
             }
 
             for (let i = 0; i < vehicle.wheelInfos.length; i++) {
