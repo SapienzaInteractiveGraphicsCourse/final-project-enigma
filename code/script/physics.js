@@ -20,6 +20,8 @@ const _steeringWheelQuat = new THREE.Quaternion();
 const _rpmQuat = new THREE.Quaternion();
 const _speedQuat = new THREE.Quaternion();
 
+const FALL_RESET_Y = -20;
+
 export function createCarPhysics(model, trackMeshes = []) {
     const world = new CANNON.World();
     world.gravity.set(0, -9.82, 0);
@@ -221,6 +223,12 @@ export function createCarPhysics(model, trackMeshes = []) {
 
     return {
         update: (dt) => {
+            if (chassisBody.position.y < FALL_RESET_Y) {
+                chassisBody.position.y = SPAWN_POINT.y + SPAWN_HEIGHT_MARGIN;
+                chassisBody.velocity.set(0, 0, 0);
+                chassisBody.angularVelocity.set(0, 0, 0);
+            }
+
             chassisBody.quaternion.vmult(_localUp, _worldUpScratch);
             if (_worldUpScratch.y < -0.2) {
                 chassisBody.position.y += 2.5;
