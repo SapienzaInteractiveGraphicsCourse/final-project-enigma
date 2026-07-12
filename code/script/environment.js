@@ -42,6 +42,25 @@ export async function loadEnvironment(scene) {
             'src/models/track_1/track_1.glb',
             (gltf) => {
                 const environment = gltf.scene;
+
+                environment.traverse((child) => {
+                    if (child.isMesh && child.material) {
+                        const applyAnisotropy = (material) => {
+                            // 16 è il valore massimo standard supportato dalle GPU moderne
+                            if (material.map) material.map.anisotropy = 16;
+                            if (material.normalMap) material.normalMap.anisotropy = 16;
+                            if (material.roughnessMap) material.roughnessMap.anisotropy = 16;
+                            // Se usi altre mappe (es. aoMap, metalnessMap), puoi aggiungerle qui
+                        };
+
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach(applyAnisotropy);
+                        } else {
+                            applyAnisotropy(child.material);
+                        }
+                    }
+                });
+                
                 environment.position.set(0, 0, 0);
                 environment.scale.set(1, 1, 1);
 
