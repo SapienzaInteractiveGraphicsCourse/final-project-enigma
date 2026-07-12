@@ -3,8 +3,22 @@ import * as CANNON from 'cannon-es';
 import { createEngine } from './engine.js';
 import { setAnimationState } from './animations.js';
 
-let physicsAccumulator = 0;
-const FIXED_TIME_STEP = 1 / 60;
+// Scratch objects reused every frame to avoid GC pressure from repeated
+// Vector3/Quaternion/CANNON.Vec3 allocation inside the hot update loop.
+const _localUp = new CANNON.Vec3(0, 1, 0);
+const _worldUpScratch = new CANNON.Vec3();
+const _eulerScratch = new CANNON.Vec3();
+const _forwardLocal = new CANNON.Vec3(0, 0, 1);
+const _forwardWorldScratch = new CANNON.Vec3();
+
+const _axisY = new THREE.Vector3(0, 1, 0);
+const _axisX = new THREE.Vector3(1, 0, 0);
+const _axisZ = new THREE.Vector3(0, 0, 1);
+const _wheelSteerQuat = new THREE.Quaternion();
+const _wheelRollQuat = new THREE.Quaternion();
+const _steeringWheelQuat = new THREE.Quaternion();
+const _rpmQuat = new THREE.Quaternion();
+const _speedQuat = new THREE.Quaternion();
 
 export function createCarPhysics(model, trackMeshes = []) {
     const world = new CANNON.World();
@@ -93,7 +107,7 @@ export function createCarPhysics(model, trackMeshes = []) {
         suspensionDampingRelaxation: 8.5,
         suspensionDampingCompression: 8.5,
         rollInfluence: 0.01,
-        frictionSlip: 4.5,       
+        frictionSlip: 4.5,
     };
 
     const rearWheelOptions = {
@@ -162,12 +176,6 @@ export function createCarPhysics(model, trackMeshes = []) {
     let smoothGas = 0;
     let smoothBrake = 0;
 
-    const meshLF = anim["wheel_LF"]?.part;
-    const meshRF = anim["wheel_RF"]?.part;
-    const spinLF = anim["Moving_wheel_LF"]?.part;
-    const spinRF = anim["Moving_wheel_RF"]?.part;
-    const spinLR = anim["Moving_wheel_LR"]?.part;
-    const spinRR = anim["Moving_wheel_RR"]?.part;
     const steeringWheelMesh = anim["Steering_wheel"]?.part;
     const rpmIndicatorMesh = anim["RPM_indicator"]?.part;
     const speedIndicatorMesh = anim["SPEED_indicator"]?.part;
@@ -213,14 +221,12 @@ export function createCarPhysics(model, trackMeshes = []) {
 
     return {
         update: (dt) => {
-            const localUp = new CANNON.Vec3(0, 1, 0);
-            const worldUp = chassisBody.quaternion.vmult(localUp);
-            if (worldUp.y < -0.2) {
+            chassisBody.quaternion.vmult(_localUp, _worldUpScratch);
+            if (_worldUpScratch.y < -0.2) {
                 chassisBody.position.y += 2.5;
 
-                const euler = new CANNON.Vec3();
-                chassisBody.quaternion.toEuler(euler);
-                chassisBody.quaternion.setFromEuler(0, euler.y, 0);
+                chassisBody.quaternion.toEuler(_eulerScratch);
+                chassisBody.quaternion.setFromEuler(0, _eulerScratch.y, 0);
 
                 chassisBody.velocity.set(0, 0, 0);
                 chassisBody.angularVelocity.set(0, 0, 0);
@@ -228,8 +234,8 @@ export function createCarPhysics(model, trackMeshes = []) {
 
             const fixedDt = dt;
 
-            const engineIsOn = engine.isRunning?.() && engine.isRunning !== undefined 
-                ? engine.isRunning() 
+            const engineIsOn = engine.isRunning?.() && engine.isRunning !== undefined
+                ? engine.isRunning()
                 : false;
 
             if (displayMaterial) {
@@ -244,17 +250,14 @@ export function createCarPhysics(model, trackMeshes = []) {
                 }
             }
 
-            const speedKmh = (() => {
-                const vel = chassisBody.velocity;
-                const dir = chassisBody.quaternion.vmult(new CANNON.Vec3(0, 0, 1));
-                return vel.dot(dir) * 3.6;
-            })();
+            chassisBody.quaternion.vmult(_forwardLocal, _forwardWorldScratch);
+            const speedKmh = chassisBody.velocity.dot(_forwardWorldScratch) * 3.6;
 
             if (speedKmh > 80) {
                 if (!model.state.wingOpen && !model.state.manualSpoilerClosed) {
                     setAnimationState(model, "Spoiler", true, true);
                 }
-            } 
+            }
             else if (speedKmh < 0.5) {
                 model.state.manualSpoilerClosed = false;
 
@@ -274,13 +277,11 @@ export function createCarPhysics(model, trackMeshes = []) {
             }
             currentSteerAngle = THREE.MathUtils.clamp(currentSteerAngle, -maxSteerAngle, maxSteerAngle);
 
-            const sideVel = chassisBody.quaternion.vmult(new CANNON.Vec3(1, 0, 0)).dot(chassisBody.velocity);
-            
             let effectiveSteerAngle = currentSteerAngle;
 
             if (speedKmh > 50) {
                 const demandFactor = (Math.abs(currentSteerAngle) / maxSteerAngle) * (speedKmh / 120);
-                
+
                 if (demandFactor > 1.0) {
                     const understeerMultiplier = THREE.MathUtils.clamp(1.5 - demandFactor, 0.15, 1.0);
                     effectiveSteerAngle *= understeerMultiplier;
@@ -322,7 +323,7 @@ export function createCarPhysics(model, trackMeshes = []) {
             let forceOverride = wheelForce;
 
             if (engineOff || isNeutral) {
-                forceOverride = 0; 
+                forceOverride = 0;
             }
 
             if (isNeutral) {
@@ -347,7 +348,7 @@ export function createCarPhysics(model, trackMeshes = []) {
             world.step(1 / 60, dt, 10);
 
             if (model.root && model.root.parent) {
-    
+
                 // Usiamo .set() per copiare i valori estratti dalle proprietà interpolate di Cannon
                 // Questo elimina qualsiasi stuttering grafico senza rompere i quaternioni di Three.js
                 model.root.parent.position.set(
@@ -355,14 +356,14 @@ export function createCarPhysics(model, trackMeshes = []) {
                     chassisBody.interpolatedPosition.y,
                     chassisBody.interpolatedPosition.z
                 );
-                
+
                 model.root.parent.quaternion.set(
                     chassisBody.interpolatedQuaternion.x,
                     chassisBody.interpolatedQuaternion.y,
                     chassisBody.interpolatedQuaternion.z,
                     chassisBody.interpolatedQuaternion.w
                 );
-                
+
                 model.root.parent.updateMatrixWorld(true);
             }
 
@@ -384,57 +385,53 @@ export function createCarPhysics(model, trackMeshes = []) {
                     n.pivot.position.y = n.pivot.userData.restPos.y + compressionDelta;
 
                     const steerAngle = (i === 0 || i === 1) ? currentSteerAngle : 0;
-                    const localTurn = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), steerAngle);
-                    n.pivot.quaternion.copy(n.pivot.userData.restQuat).multiply(localTurn);
+                    _wheelSteerQuat.setFromAxisAngle(_axisY, steerAngle);
+                    n.pivot.quaternion.copy(n.pivot.userData.restQuat).multiply(_wheelSteerQuat);
                 }
 
                 if (n.spin) {
-                    const rollQuat = new THREE.Quaternion().setFromAxisAngle(
-                        new THREE.Vector3(1, 0, 0),
-                        -wheelInfo.rotation
-                    );
-                    n.spin.quaternion.copy(n.spin.userData.restQuat).multiply(rollQuat);
+                    _wheelRollQuat.setFromAxisAngle(_axisX, -wheelInfo.rotation);
+                    n.spin.quaternion.copy(n.spin.userData.restQuat).multiply(_wheelRollQuat);
                 }
             }
 
             if (steeringWheelMesh) {
-                const swRot = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -currentSteerAngle * 10);
-                steeringWheelMesh.quaternion.copy(anim["Steering_wheel"].restQuaternion).multiply(swRot);
+                _steeringWheelQuat.setFromAxisAngle(_axisZ, -currentSteerAngle * 10);
+                steeringWheelMesh.quaternion.copy(anim["Steering_wheel"].restQuaternion).multiply(_steeringWheelQuat);
             }
 
             if (rpmIndicatorMesh && engine) {
                 const currentRpm = engine.isRunning() ? engine.getRpm() : 0;
-                
+
                 let maxRpm = 8000.0;
                 let rpmPercent = Math.min(Math.max(currentRpm / maxRpm, 0.0), 1.0);
                 let maxAngleRad = THREE.MathUtils.degToRad(260);
-                
+
                 let rpmAngle = rpmPercent * maxAngleRad;
 
-                const rpmRot = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), rpmAngle);
-                
-                rpmIndicatorMesh.quaternion.copy(anim["RPM_indicator"].restQuaternion).multiply(rpmRot);
+                _rpmQuat.setFromAxisAngle(_axisZ, rpmAngle);
+
+                rpmIndicatorMesh.quaternion.copy(anim["RPM_indicator"].restQuaternion).multiply(_rpmQuat);
             }
 
             if (speedIndicatorMesh) {
-                const currentSpeed = Math.abs(speedKmh); 
-                
+                const currentSpeed = Math.abs(speedKmh);
+
                 const maxSpeed = 330.0;
                 const speedPercent = Math.min(Math.max(currentSpeed / maxSpeed, 0.0), 1.0);
-                
+
                 const maxSpeedAngleRad = THREE.MathUtils.degToRad(170);
-                
+
                 const speedAngle = speedPercent * maxSpeedAngleRad;
 
-                const speedRot = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), speedAngle);
-                
-                speedIndicatorMesh.quaternion.copy(anim["SPEED_indicator"].restQuaternion).multiply(speedRot);
+                _speedQuat.setFromAxisAngle(_axisZ, speedAngle);
+
+                speedIndicatorMesh.quaternion.copy(anim["SPEED_indicator"].restQuaternion).multiply(_speedQuat);
             }
         },
         getSpeed: () => {
-            const velocity = chassisBody.velocity;
-            const direction = chassisBody.quaternion.vmult(new CANNON.Vec3(0, 0, 1));
-            return velocity.dot(direction) * 3.6;
+            chassisBody.quaternion.vmult(_forwardLocal, _forwardWorldScratch);
+            return chassisBody.velocity.dot(_forwardWorldScratch) * 3.6;
         },
 
         getGasPedal: () => {

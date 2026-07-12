@@ -43,6 +43,22 @@ const INPUT_SMOOTHING = 0.5;
 let smoothedDeltaX = 0;
 let smoothedDeltaY = 0;
 
+// Scratch objects reused every frame inside updateCameraMovement to avoid
+// GC pressure from repeated Vector3/Quaternion/Euler allocation.
+const _currentCarPos = new THREE.Vector3();
+const _currentCarQuat = new THREE.Quaternion();
+const _topDownTargetPos = new THREE.Vector3();
+const _carForward = new THREE.Vector3();
+const _driverWorldPos = new THREE.Vector3();
+const _driverWorldQuat = new THREE.Quaternion();
+const _headRotation = new THREE.Quaternion();
+const _headEulerOffset = new THREE.Euler(0, 0, 0, 'YXZ');
+const _currentEuler = new THREE.Euler(0, 0, 0, 'YXZ');
+const _prevEuler = new THREE.Euler(0, 0, 0, 'YXZ');
+const _yawAxis = new THREE.Vector3(0, 1, 0);
+const _yawQuat = new THREE.Quaternion();
+const _orbitOffset = new THREE.Vector3();
+
 window.addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
     if (keys.hasOwnProperty(key)) keys[key] = true;
@@ -58,7 +74,7 @@ export const views = {
     Back: new THREE.Vector3(0, 1, -6),
     Left: new THREE.Vector3(-6, 1, 0),
     Right: new THREE.Vector3(6, 1, 0),
-    Top: new THREE.Vector3(0, 6, 0.01) 
+    Top: new THREE.Vector3(0, 6, 0.01)
 };
 
 function updateDriverButtonVisual() {
@@ -75,14 +91,14 @@ function updateDriverButtonVisual() {
 }
 
 export function animateCameraTransition(camera, targetPosition, targetLookAt) {
-    if (currentCameraMode !== 'orbit') return; 
-    
+    if (currentCameraMode !== 'orbit') return;
+
     let step = 0;
     const startPos = camera.position.clone();
     const startTarget = orbitControls.target.clone();
-    
-    const endTarget = targetLookAt || new THREE.Vector3(0, 0, 0); 
-    
+
+    const endTarget = targetLookAt || new THREE.Vector3(0, 0, 0);
+
     const startRelative = startPos.clone().sub(startTarget);
     const endRelative = targetPosition.clone().sub(endTarget);
 
@@ -106,13 +122,13 @@ export function animateCameraTransition(camera, targetPosition, targetLookAt) {
             );
 
             const currentTarget = new THREE.Vector3().lerpVectors(startTarget, endTarget, easeStep);
-            
+
             const currentRelative = new THREE.Vector3().setFromSpherical(currentSpherical);
             camera.position.copy(currentTarget).add(currentRelative);
-            
+
             orbitControls.target.copy(currentTarget);
             orbitControls.update();
-            
+
             requestAnimationFrame(transition);
         } else {
             camera.position.copy(targetPosition);
@@ -125,7 +141,7 @@ export function animateCameraTransition(camera, targetPosition, targetLookAt) {
 
 export function goToCameraView(camera, carModel, viewName) {
     isDriverViewActive = false;
-    isTopDownViewActive = false; 
+    isTopDownViewActive = false;
     updateDriverButtonVisual();
     updateTopDownButtonVisual();
 
@@ -138,17 +154,17 @@ export function goToCameraView(camera, carModel, viewName) {
     if (!localOffset) return;
 
     const targetPosition = localOffset.clone();
-    
+
     if (carModel && carModel.root) {
         const worldPos = new THREE.Vector3();
         const worldQuat = new THREE.Quaternion();
-        
+
         carModel.root.getWorldPosition(worldPos);
         carModel.root.getWorldQuaternion(worldQuat);
-        
+
         targetPosition.applyQuaternion(worldQuat);
         targetPosition.add(worldPos);
-        
+
         animateCameraTransition(camera, targetPosition, worldPos);
     } else {
         animateCameraTransition(camera, targetPosition, new THREE.Vector3(0, 0, 0));
@@ -246,7 +262,7 @@ export function setupCamera(camera, renderer) {
 }
 
 export function toggleCameraMode() {
-    isTopDownViewActive = false; 
+    isTopDownViewActive = false;
 
     if (currentCameraMode === 'orbit') {
         currentCameraMode = 'firstPerson';
@@ -287,7 +303,7 @@ export function setTopDownView(camera) {
     }
 
     isTopDownViewActive = true;
-    orbitControls.enabled = false; 
+    orbitControls.enabled = false;
     updateTopDownButtonVisual();
 
     if (isDriverViewActive) {
@@ -299,39 +315,36 @@ export function setTopDownView(camera) {
     }
 }
 
-export function updateCameraMovement(camera, carModel, delta = 0.016) { 
+export function updateCameraMovement(camera, carModel, delta = 0.016) {
     if (carModel && carModel.root) {
         carModel.root.updateMatrixWorld(true);
 
-        const currentCarPos = new THREE.Vector3();
-        const currentCarQuat = new THREE.Quaternion();
-        
-        carModel.root.getWorldPosition(currentCarPos);
-        carModel.root.getWorldQuaternion(currentCarQuat); 
+        carModel.root.getWorldPosition(_currentCarPos);
+        carModel.root.getWorldQuaternion(_currentCarQuat);
 
         if (!isTrackingInitialized) {
-            previousCarPosition.copy(currentCarPos);
-            previousCarQuaternion.copy(currentCarQuat); 
-            orbitControls.target.copy(currentCarPos);
+            previousCarPosition.copy(_currentCarPos);
+            previousCarQuaternion.copy(_currentCarQuat);
+            orbitControls.target.copy(_currentCarPos);
             isTrackingInitialized = true;
         }
 
         if (isTopDownViewActive) {
             freeLookSynced = false;
-            const targetPos = new THREE.Vector3(currentCarPos.x, currentCarPos.y + 15, currentCarPos.z);
+            _topDownTargetPos.set(_currentCarPos.x, _currentCarPos.y + 15, _currentCarPos.z);
             const lerpFactor = Math.min(10.0 * delta, 1.0);
-            camera.position.lerp(targetPos, lerpFactor);
+            camera.position.lerp(_topDownTargetPos, lerpFactor);
 
-            const carForward = new THREE.Vector3(0, 0, 1).applyQuaternion(currentCarQuat).normalize();
+            _carForward.set(0, 0, 1).applyQuaternion(_currentCarQuat).normalize();
 
-            camera.up.copy(carForward);
-            
-            camera.lookAt(currentCarPos);
+            camera.up.copy(_carForward);
 
-            orbitControls.target.copy(currentCarPos);
+            camera.lookAt(_currentCarPos);
 
-            previousCarPosition.copy(currentCarPos);
-            previousCarQuaternion.copy(currentCarQuat);
+            orbitControls.target.copy(_currentCarPos);
+
+            previousCarPosition.copy(_currentCarPos);
+            previousCarQuaternion.copy(_currentCarQuat);
             return;
         } else {
             if (camera.up.y !== 1) {
@@ -341,66 +354,63 @@ export function updateCameraMovement(camera, carModel, delta = 0.016) {
 
         if (isDriverViewActive && activeDriverCam) {
             freeLookSynced = false;
-            const worldPos = new THREE.Vector3();
-            const worldQuat = new THREE.Quaternion();
-            
-            activeDriverCam.getWorldPosition(worldPos);
-            activeDriverCam.getWorldQuaternion(worldQuat);
-            
-            camera.position.copy(worldPos); 
-            camera.quaternion.copy(worldQuat);
-            
+
+            activeDriverCam.getWorldPosition(_driverWorldPos);
+            activeDriverCam.getWorldQuaternion(_driverWorldQuat);
+
+            camera.position.copy(_driverWorldPos);
+            camera.quaternion.copy(_driverWorldQuat);
+
             const driverLookLerp = 1 - Math.exp(-lookSpeed * delta);
             driverLookYaw = THREE.MathUtils.lerp(driverLookYaw, targetDriverLookYaw, driverLookLerp);
             driverLookPitch = THREE.MathUtils.lerp(driverLookPitch, targetDriverLookPitch, driverLookLerp);
-            
+
             if (driverLookYaw !== 0 || driverLookPitch !== 0) {
-                const headRotation = new THREE.Quaternion();
-                const eulerOffset = new THREE.Euler(driverLookPitch, driverLookYaw, 0, 'YXZ');
-                headRotation.setFromEuler(eulerOffset);
-                camera.quaternion.multiply(headRotation);
+                _headEulerOffset.set(driverLookPitch, driverLookYaw, 0, 'YXZ');
+                _headRotation.setFromEuler(_headEulerOffset);
+                camera.quaternion.multiply(_headRotation);
             }
 
             if (!isDragging) {
                 targetDriverLookYaw = THREE.MathUtils.lerp(targetDriverLookYaw, 0, 5.0 * delta);
                 targetDriverLookPitch = THREE.MathUtils.lerp(targetDriverLookPitch, 0, 5.0 * delta);
             }
-            
-            previousCarPosition.copy(currentCarPos);
-            previousCarQuaternion.copy(currentCarQuat);
+
+            previousCarPosition.copy(_currentCarPos);
+            previousCarQuaternion.copy(_currentCarQuat);
             return;
         }
 
         if (currentCameraMode === 'orbit') {
             freeLookSynced = false;
-            
-            const currentEuler = new THREE.Euler().setFromQuaternion(currentCarQuat, 'YXZ');
-            const prevEuler = new THREE.Euler().setFromQuaternion(previousCarQuaternion, 'YXZ');
-            
-            let deltaYaw = currentEuler.y - prevEuler.y;
+
+            _currentEuler.setFromQuaternion(_currentCarQuat, 'YXZ');
+            _prevEuler.setFromQuaternion(previousCarQuaternion, 'YXZ');
+
+            let deltaYaw = _currentEuler.y - _prevEuler.y;
             while (deltaYaw > Math.PI) deltaYaw -= Math.PI * 2;
             while (deltaYaw < -Math.PI) deltaYaw += Math.PI * 2;
-            
-            const yawQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), deltaYaw);
-            
-            const offset = camera.position.clone().sub(previousCarPosition);
-            offset.applyQuaternion(yawQuat);
 
-            camera.position.copy(currentCarPos).add(offset);
-            orbitControls.target.copy(currentCarPos);
-            previousCarPosition.copy(currentCarPos);
-            previousCarQuaternion.copy(currentCarQuat);
-            
+            _yawQuat.setFromAxisAngle(_yawAxis, deltaYaw);
+
+            _orbitOffset.copy(camera.position).sub(previousCarPosition);
+            _orbitOffset.applyQuaternion(_yawQuat);
+
+            camera.position.copy(_currentCarPos).add(_orbitOffset);
+            orbitControls.target.copy(_currentCarPos);
+            previousCarPosition.copy(_currentCarPos);
+            previousCarQuaternion.copy(_currentCarQuat);
+
             const wasDamping = orbitControls.enableDamping;
             orbitControls.enableDamping = false;
             orbitControls.update();
             orbitControls.enableDamping = wasDamping;
-            
+
             return;
         }
 
-        previousCarPosition.copy(currentCarPos);
-        previousCarQuaternion.copy(currentCarQuat);
+        previousCarPosition.copy(_currentCarPos);
+        previousCarQuaternion.copy(_currentCarQuat);
     }
 
     if (isDriverViewActive || isTopDownViewActive) return;
@@ -417,7 +427,8 @@ export function updateCameraMovement(camera, carModel, delta = 0.016) {
     const freeLookLerp = 1 - Math.exp(-freeLookSpeed * delta);
     freeLookYaw = THREE.MathUtils.lerp(freeLookYaw, targetFreeLookYaw, freeLookLerp);
     freeLookPitch = THREE.MathUtils.lerp(freeLookPitch, targetFreeLookPitch, freeLookLerp);
-    camera.quaternion.setFromEuler(new THREE.Euler(freeLookPitch, freeLookYaw, 0, 'YXZ'));
+    euler.set(freeLookPitch, freeLookYaw, 0, 'YXZ');
+    camera.quaternion.setFromEuler(euler);
 
     moveVector.set(0, 0, 0);
 
@@ -454,7 +465,7 @@ export function setDriverView(camera, carModel, blenderCameraName) {
 
         camera.position.copy(previousCameraState.position);
         orbitControls.target.copy(previousCameraState.target);
-        
+
         if (currentCameraMode !== previousCameraState.mode) {
             toggleCameraMode();
         }
@@ -463,7 +474,7 @@ export function setDriverView(camera, carModel, blenderCameraName) {
     }
 
     const driverCam = carModel.root.getObjectByName(blenderCameraName);
-    
+
     if (!driverCam) {
         console.warn(`Attenzione: Camera '${blenderCameraName}' non trovata nel modello 3D.`);
         return;
@@ -504,7 +515,7 @@ export function snapFreeCameraToCar(camera, carModel) {
     carModel.root.getWorldPosition(carPos);
 
     camera.position.set(carPos.x, carPos.y + 3, carPos.z + 6);
-    
+
     camera.lookAt(carPos);
 
     if (orbitControls) {
