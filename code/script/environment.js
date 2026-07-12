@@ -45,28 +45,33 @@ export async function loadEnvironment(scene) {
                 environment.position.set(0, 0, 0);
                 environment.scale.set(1, 1, 1);
 
-                const treeGroups = {};
-                const treesToRemove = [];
+                const instanceGroups = {};
+                const objectsToRemove = [];
 
                 environment.traverse((child) => {
                     if (child.isMesh) {
                         child.layers.enable(1);
                         const nameLower = child.name.toLowerCase();
 
-                        if (/\b(tree|albero)\b/.test(nameLower)) {
+                        const isTree = /\b(tree|albero)\b/.test(nameLower);
+                        const isLamp = nameLower.includes("lamppost7_sub0");
+
+                        if (isTree || isLamp) {
+
                             const baseName = child.name.split('.')[0];
 
-                            if (!treeGroups[baseName]) {
-                                treeGroups[baseName] = {
+                            if (!instanceGroups[baseName]) {
+                                instanceGroups[baseName] = {
                                     geometry: child.geometry,
                                     material: child.material,
-                                    transforms: []
+                                    transforms: [],
+                                    isLamp: isLamp
                                 };
                             }
 
                             child.updateMatrixWorld(true);
-                            treeGroups[baseName].transforms.push(child.matrixWorld.clone());
-                            treesToRemove.push(child);
+                            instanceGroups[baseName].transforms.push(child.matrixWorld.clone());
+                            objectsToRemove.push(child);
 
                         } else {
                             child.updateMatrixWorld(true);
@@ -74,26 +79,25 @@ export async function loadEnvironment(scene) {
                             child.updateMatrix();
                             child.receiveShadow = true;
                             child.castShadow = true;
-                            const isRoad = /\b(1grass|1road|1kerb)\b/.test(nameLower);
+                            const isRoad = /\b(1grass|1road|1kerb|1pits-zone_sub)\b/.test(nameLower);
     
                             if (isRoad) {
                                 child.userData.isPhysical = true;
                             } else {
                                 child.userData.isPhysical = false;
                             }
-                                                    
                         }
                     }
                 });
 
                 scene.trackLights = setupTrackLights(environment, scene);
 
-                treesToRemove.forEach(tree => {
-                    if (tree.parent) tree.parent.remove(tree);
+                objectsToRemove.forEach(obj => {
+                    if (obj.parent) obj.parent.remove(obj);
                 });
 
-                Object.keys(treeGroups).forEach(key => {
-                    const group = treeGroups[key];
+                Object.keys(instanceGroups).forEach(key => {
+                    const group = instanceGroups[key];
                     const totalInstances = group.transforms.length;
 
                     const instancedMesh = new THREE.InstancedMesh(group.geometry, group.material, totalInstances);
@@ -105,19 +109,23 @@ export async function loadEnvironment(scene) {
                     const scale = new THREE.Vector3();
 
                     group.transforms.forEach((matrix, index) => {
-                        matrix.decompose(position, quaternion, scale);
+                        if (group.isLamp) {
+                            instancedMesh.setMatrixAt(index, matrix);
+                        } else {
+                            matrix.decompose(position, quaternion, scale);
 
-                        const randomY = Math.random() * Math.PI * 2;
-                        const randomRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), randomY);
-                        quaternion.multiply(randomRotation);
+                            const randomY = Math.random() * Math.PI * 2;
+                            const randomRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), randomY);
+                            quaternion.multiply(randomRotation);
 
-                        const randomScale = 0.8 + (Math.random() * 0.4);
-                        scale.multiplyScalar(randomScale);
+                            const randomScale = 0.8 + (Math.random() * 0.4);
+                            scale.multiplyScalar(randomScale);
 
-                        const newMatrix = new THREE.Matrix4();
-                        newMatrix.compose(position, quaternion, scale);
+                            const newMatrix = new THREE.Matrix4();
+                            newMatrix.compose(position, quaternion, scale);
 
-                        instancedMesh.setMatrixAt(index, newMatrix);
+                            instancedMesh.setMatrixAt(index, newMatrix);
+                        }
                     });
 
                     instancedMesh.instanceMatrix.needsUpdate = true;

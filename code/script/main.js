@@ -160,6 +160,7 @@ function animate(
     }
 
     renderer.render(scene, camera);
+    console.log("Draw Calls:", renderer.info.render.calls, "Poligoni:", renderer.info.render.triangles);
 
 }
 
