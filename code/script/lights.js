@@ -129,7 +129,7 @@ function setupLowBeam(modelRoot, meshName) {
 
     upgradeToEmissiveMaterial(mesh, 0xd4e3ff);
 
-    const light = new THREE.SpotLight(0xd4e3ff, 50.0, 35.0, Math.PI / 7, 0.6, 2.2);
+    const light = new THREE.SpotLight(0xd4e3ff, 50.0, 35.0, Math.PI / 8, 0.6, 2.2);
     const worldPos = new THREE.Vector3();
     mesh.getWorldPosition(worldPos);
     light.position.copy(worldPos);
@@ -143,7 +143,7 @@ function setupLowBeam(modelRoot, meshName) {
     light.visible = true;
     light.intensity = 0;
 
-    return { mesh, light, maxLightInt: 50.0, maxEmissiveInt: 6.0 };
+    return { mesh, light, maxLightInt: 100.0, maxEmissiveInt: 10.0 };
 }
 
 function setupHighBeam(modelRoot, meshName) {
@@ -152,7 +152,7 @@ function setupHighBeam(modelRoot, meshName) {
 
     upgradeToEmissiveMaterial(mesh, 0xd4e3ff);
 
-    const light = new THREE.SpotLight(0xd4e3ff, 180.0, 220.0, Math.PI / 16, 0.2, 1.4);
+    const light = new THREE.SpotLight(0xd4e3ff, 180.0, 220.0, Math.PI / 8, 0.2, 1.4);
     const worldPos = new THREE.Vector3();
     mesh.getWorldPosition(worldPos);
     light.position.copy(worldPos);
@@ -166,7 +166,7 @@ function setupHighBeam(modelRoot, meshName) {
     light.visible = true;
     light.intensity = 0;
 
-    return { mesh, light, maxLightInt: 180.0, maxEmissiveInt: 10.0 };
+    return { mesh, light, maxLightInt: 100.0, maxEmissiveInt: 10.0 };
 }
 
 function setupTurnSignal(modelRoot, meshName, targetPos = [0, 0, 1]) {

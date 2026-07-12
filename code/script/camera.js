@@ -39,10 +39,6 @@ const cameraVelocity = new THREE.Vector3();
 const moveAcceleration = 50.0;
 const moveFriction = 10.0;
 
-// Filtro passa-basso sul delta grezzo del mouse/touch: assorbe i micro-scatti
-// del puntatore prima che diventino input per lo sguardo, per un drag più
-// morbido. 1.0 = nessun filtro (comportamento precedente), valori più bassi
-// = più smoothing ma anche più "inerzia" percepita nel movimento.
 const INPUT_SMOOTHING = 0.5;
 let smoothedDeltaX = 0;
 let smoothedDeltaY = 0;
@@ -377,14 +373,21 @@ export function updateCameraMovement(camera, carModel, delta = 0.016) {
 
         if (currentCameraMode === 'orbit') {
             freeLookSynced = false;
-            const deltaQuat = currentCarQuat.clone().multiply(previousCarQuaternion.clone().invert());
+            
+            const currentEuler = new THREE.Euler().setFromQuaternion(currentCarQuat, 'YXZ');
+            const prevEuler = new THREE.Euler().setFromQuaternion(previousCarQuaternion, 'YXZ');
+            
+            let deltaYaw = currentEuler.y - prevEuler.y;
+            while (deltaYaw > Math.PI) deltaYaw -= Math.PI * 2;
+            while (deltaYaw < -Math.PI) deltaYaw += Math.PI * 2;
+            
+            const yawQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), deltaYaw);
+            
             const offset = camera.position.clone().sub(previousCarPosition);
-            
-            offset.applyQuaternion(deltaQuat);
+            offset.applyQuaternion(yawQuat);
+
             camera.position.copy(currentCarPos).add(offset);
-            
-            orbitControls.target.copy(currentCarPos); 
-            
+            orbitControls.target.copy(currentCarPos);
             previousCarPosition.copy(currentCarPos);
             previousCarQuaternion.copy(currentCarQuat);
             

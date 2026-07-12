@@ -3,11 +3,13 @@ import * as CANNON from 'cannon-es';
 import { createEngine } from './engine.js';
 import { setAnimationState } from './animations.js';
 
+let physicsAccumulator = 0;
+const FIXED_TIME_STEP = 1 / 60;
 
 export function createCarPhysics(model, trackMeshes = []) {
     const world = new CANNON.World();
     world.gravity.set(0, -9.82, 0);
-    world.solver.iterations = 30;
+    world.solver.iterations = 50;
 
     trackMeshes.forEach((mesh) => {
         mesh.updateMatrixWorld(true);
@@ -42,7 +44,7 @@ export function createCarPhysics(model, trackMeshes = []) {
     const chassisShape = new CANNON.Box(new CANNON.Vec3(0.905, 0.595, 2.25));
     const chassisBody = new CANNON.Body({ mass: 1500 });
 
-    const COM_HEIGHT_OFFSET = 0.05;
+    const COM_HEIGHT_OFFSET = 0.65;
     chassisBody.addShape(chassisShape, new CANNON.Vec3(0, COM_HEIGHT_OFFSET, 0));
 
     const SPAWN_POINT = { x: -58.837, y: -4.6549, z: 4.9186 };
@@ -80,16 +82,16 @@ export function createCarPhysics(model, trackMeshes = []) {
         directionLocal: new CANNON.Vec3(0, -1, 0),
         axleLocal: new CANNON.Vec3(-1, 0, 0),
         suspensionRestLength: 0.22,
-        maxSuspensionForce: 100000,
-        maxSuspensionTravel: 0.25,
+        maxSuspensionForce: 15000,
+        maxSuspensionTravel: 1.0,
     };
 
     const frontWheelOptions = {
         ...baseWheelOptions,
         radius: 0.338,
         suspensionStiffness: 35,
-        suspensionDampingRelaxation: 3.8,
-        suspensionDampingCompression: 2.5,
+        suspensionDampingRelaxation: 8.5,
+        suspensionDampingCompression: 8.5,
         rollInfluence: 0.01,
         frictionSlip: 4.5,       
     };
@@ -98,8 +100,8 @@ export function createCarPhysics(model, trackMeshes = []) {
         ...baseWheelOptions,
         radius: 0.3445,
         suspensionStiffness: 38,
-        suspensionDampingRelaxation: 3.6,
-        suspensionDampingCompression: 2.3,
+        suspensionDampingRelaxation: 9.0,
+        suspensionDampingCompression: 9.0,
         rollInfluence: 0.01,
         frictionSlip: 4.5,
     };
@@ -136,6 +138,10 @@ export function createCarPhysics(model, trackMeshes = []) {
         chassisConnectionPointLocal: new CANNON.Vec3(-halfWidth, rearWheelY, -1.2),
         isFrontWheel: false
     });
+
+    for (let i = 0; i < vehicle.wheelInfos.length; i++) {
+        vehicle.wheelInfos[i].sliding = true;
+    }
 
     vehicle.addToWorld(world);
 
@@ -220,7 +226,7 @@ export function createCarPhysics(model, trackMeshes = []) {
                 chassisBody.angularVelocity.set(0, 0, 0);
             }
 
-            const fixedDt = Math.min(dt, 0.03);
+            const fixedDt = dt;
 
             const engineIsOn = engine.isRunning?.() && engine.isRunning !== undefined 
                 ? engine.isRunning() 
@@ -341,8 +347,22 @@ export function createCarPhysics(model, trackMeshes = []) {
             world.step(1 / 60, dt, 10);
 
             if (model.root && model.root.parent) {
-                model.root.parent.position.copy(chassisBody.position);
-                model.root.parent.quaternion.copy(chassisBody.quaternion);
+    
+                // Usiamo .set() per copiare i valori estratti dalle proprietà interpolate di Cannon
+                // Questo elimina qualsiasi stuttering grafico senza rompere i quaternioni di Three.js
+                model.root.parent.position.set(
+                    chassisBody.interpolatedPosition.x,
+                    chassisBody.interpolatedPosition.y,
+                    chassisBody.interpolatedPosition.z
+                );
+                
+                model.root.parent.quaternion.set(
+                    chassisBody.interpolatedQuaternion.x,
+                    chassisBody.interpolatedQuaternion.y,
+                    chassisBody.interpolatedQuaternion.z,
+                    chassisBody.interpolatedQuaternion.w
+                );
+                
                 model.root.parent.updateMatrixWorld(true);
             }
 
