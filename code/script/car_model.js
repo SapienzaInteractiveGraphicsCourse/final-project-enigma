@@ -1,5 +1,5 @@
 export const CAR_MODEL = {
-    path: '../../src/models/car_1/car.glb',
+    path: 'src/models/car_1/car.glb',
     state: {
         leftDoorOpen: false,
         leftWindowOpen: false,

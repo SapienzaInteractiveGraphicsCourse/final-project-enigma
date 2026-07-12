@@ -24,10 +24,10 @@ export async function loadAudio(name, path) {
 }
 
 const SOUND_FILES = {
-    'turn_signal': '../../src/audio/turn_signal.wav',
-    'door_open': '../../src/audio/door_open.wav',
-    'door_close': '../../src/audio/door_close.wav',
-    'startup': '../../src/audio/startup.wav'
+    'turn_signal': 'src/audio/turn_signal.wav',
+    'door_open': 'src/audio/door_open.wav',
+    'door_close': 'src/audio/door_close.wav',
+    'startup': 'src/audio/startup.wav'
 };
 
 Object.entries(SOUND_FILES).forEach(([name, path]) => {
@@ -209,7 +209,7 @@ export async function loadEngineSamples() {
     const sampleMap = [];
 
     for (const rpm of rpmPoints) {
-        const response = await fetch(`../../src/audio/${rpm}.wav`);
+        const response = await fetch(`src/audio/${rpm}.wav`); 
         const arrayBuffer = await response.arrayBuffer();
         const buffer = await audioCtx.decodeAudioData(arrayBuffer);
         
