@@ -26,7 +26,7 @@ let previousCarQuaternion = new THREE.Quaternion();
 let isTrackingInitialized = false;
 let activeDriverCam = null;
 
-const keys = { w: false, a: false, s: false, d: false, q: false, e: false };
+const keys = { forward: false, back: false, left: false, right: false, down: false, up: false };
 let isDragging = false;
 let previousMousePosition = { x: 0, y: 0 };
 const euler = new THREE.Euler(0, 0, 0, 'YXZ');
@@ -59,14 +59,27 @@ const _yawAxis = new THREE.Vector3(0, 1, 0);
 const _yawQuat = new THREE.Quaternion();
 const _orbitOffset = new THREE.Vector3();
 
+const CAMERA_KEY_CODE_MAP = {
+    ArrowUp: 'forward',
+    ArrowDown: 'back',
+    ArrowLeft: 'left',
+    ArrowRight: 'right',
+    ShiftRight: 'up',
+    ControlRight: 'down',
+};
+
 window.addEventListener('keydown', (event) => {
-    const key = event.key.toLowerCase();
-    if (keys.hasOwnProperty(key)) keys[key] = true;
+    const action = CAMERA_KEY_CODE_MAP[event.code];
+    if (action) {
+        // Prevent browser defaults (Alt opening menus, Ctrl shortcuts) while flying the camera.
+        event.preventDefault();
+        keys[action] = true;
+    }
 });
 
 window.addEventListener('keyup', (event) => {
-    const key = event.key.toLowerCase();
-    if (keys.hasOwnProperty(key)) keys[key] = false;
+    const action = CAMERA_KEY_CODE_MAP[event.code];
+    if (action) keys[action] = false;
 });
 
 export const views = {
@@ -436,12 +449,12 @@ export function updateCameraMovement(camera, carModel, delta = 0.016) {
     rightVector.set(1, 0, 0).applyQuaternion(camera.quaternion).normalize();
     downVector.set(0, -1, 0).applyQuaternion(camera.quaternion).normalize();
 
-    if (keys.w) moveVector.add(forwardVector);
-    if (keys.s) moveVector.sub(forwardVector);
-    if (keys.a) moveVector.sub(rightVector);
-    if (keys.d) moveVector.add(rightVector);
-    if (keys.q) moveVector.add(downVector);
-    if (keys.e) moveVector.sub(downVector);
+    if (keys.forward) moveVector.add(forwardVector);
+    if (keys.back) moveVector.sub(forwardVector);
+    if (keys.left) moveVector.sub(rightVector);
+    if (keys.right) moveVector.add(rightVector);
+    if (keys.down) moveVector.add(downVector);
+    if (keys.up) moveVector.sub(downVector);
 
     if (moveVector.lengthSq() > 0) {
         moveVector.normalize();

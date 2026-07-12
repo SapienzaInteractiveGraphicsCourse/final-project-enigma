@@ -314,13 +314,13 @@ export function setupTurnSignalCallbacks(model) {
 
 
 export function setupBrakeLightCallbacks(model) {
-    let isBraking = false; 
+    let isBraking = false;
 
     const handleKeyDown = (event) => {
         if (event.key === 'ArrowDown' || event.key.toLowerCase() === 's') {
             if (!isBraking) {
                 isBraking = true;
-                toggleCarLight(model.brakeLights, true); 
+                toggleCarLight(model.brakeLights, true);
             }
         }
     };
@@ -329,7 +329,7 @@ export function setupBrakeLightCallbacks(model) {
         if (event.key === 'ArrowDown' || event.key.toLowerCase() === 's') {
             if (isBraking) {
                 isBraking = false;
-                toggleCarLight(model.brakeLights, false); 
+                toggleCarLight(model.brakeLights, false);
             }
         }
     };
@@ -392,58 +392,66 @@ export function setupEngineCallback(model, physicsController = null) {
 
     applyEngineLogic(false);
 
+    const handleEngineToggle = () => {
+        if (isCranking) {
+            isCranking = false;
+            stopStartupSound();
+            applyEngineLogic(false);
+            animatePartToState(model, 'key', false);
+            return;
+        }
+
+        const isPhysicallyRunning = physicsController ? physicsController.engine.isRunning() : false;
+        const next = !isPhysicallyRunning;
+
+        if (next) {
+            isCranking = true;
+            if (statusText) statusText.textContent = 'CRANK';
+
+            model.state.ignitionOn = true;
+            animatePartToState(model, 'key', true);
+
+            const source = playSfx('startup');
+
+            if (source && source.buffer) {
+                const durationMs = source.buffer.duration * 1000;
+                let hasFired = false;
+
+                const triggerEngineStart = () => {
+                    if (hasFired) return;
+                    hasFired = true;
+
+                    if (isCranking) {
+                        isCranking = false;
+                        applyEngineLogic(true);
+                    }
+                };
+
+                source.onended = triggerEngineStart;
+                setTimeout(triggerEngineStart, durationMs + 50);
+
+            } else {
+                isCranking = false;
+                applyEngineLogic(true);
+            }
+        }
+        else {
+            applyEngineLogic(false);
+            animatePartToState(model, 'key', false);
+        }
+    };
+
     if (engineBtn) {
         engineBtn.addEventListener('click', (e) => {
             e.stopImmediatePropagation();
-
-            if (isCranking) {
-                isCranking = false;
-                stopStartupSound();
-                applyEngineLogic(false);
-                animatePartToState(model, 'key', false);
-                return;
-            }
-
-            const isPhysicallyRunning = physicsController ? physicsController.engine.isRunning() : false;
-            const next = !isPhysicallyRunning;
-
-            if (next) {
-                isCranking = true;
-                if (statusText) statusText.textContent = 'CRANK';
-
-                model.state.ignitionOn = true;
-                animatePartToState(model, 'key', true);
-
-                const source = playSfx('startup');
-
-                if (source && source.buffer) {
-                    const durationMs = source.buffer.duration * 1000;
-                    let hasFired = false;
-
-                    const triggerEngineStart = () => {
-                        if (hasFired) return;
-                        hasFired = true;
-
-                        if (isCranking) {
-                            isCranking = false;
-                            applyEngineLogic(true);
-                        }
-                    };
-
-                    source.onended = triggerEngineStart;
-                    setTimeout(triggerEngineStart, durationMs + 50);
-
-                } else {
-                    isCranking = false;
-                    applyEngineLogic(true);
-                }
-            }
-            else {
-                applyEngineLogic(false);
-                animatePartToState(model, 'key', false);
-            }
+            handleEngineToggle();
         });
     }
+
+    window.addEventListener('keydown', (e) => {
+        if (e.repeat) return;
+        if (e.code === 'KeyE') handleEngineToggle();
+    });
 }
 
 export function setupGearSelectorCallback(engine) {
@@ -455,17 +463,32 @@ export function setupGearSelectorCallback(engine) {
         R: document.getElementById('gearBtnR')
     };
 
+    const gearOrder = ['R', 'N', 'D'];
+    const selectGearMode = (mode) => {
+        engine.setMode(mode);
+        Object.entries(buttons).forEach(([m, b]) => {
+            if (!b) return;
+            b.classList.toggle('active', m === mode);
+        });
+    };
+
     const initialMode = engine.getMode();
     Object.entries(buttons).forEach(([mode, btn]) => {
         if (!btn) return;
 
         if (mode === initialMode) btn.classList.add('active');
 
-        btn.addEventListener('click', () => {
-            engine.setMode(mode);
-            Object.values(buttons).forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-        });
+        btn.addEventListener('click', () => selectGearMode(mode));
+    });
+
+    window.addEventListener('keydown', (e) => {
+        if (e.repeat) return;
+        if (e.code !== 'ShiftLeft' && e.code !== 'ControlLeft') return;
+
+        const direction = e.code === 'ShiftLeft' ? 1 : -1;
+        const currentIndex = gearOrder.indexOf(engine.getMode());
+        const nextIndex = Math.max(0, Math.min(gearOrder.length - 1, currentIndex + direction));
+        selectGearMode(gearOrder[nextIndex]);
     });
 }
 

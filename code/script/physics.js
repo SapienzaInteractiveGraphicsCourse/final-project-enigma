@@ -20,8 +20,6 @@ const _steeringWheelQuat = new THREE.Quaternion();
 const _rpmQuat = new THREE.Quaternion();
 const _speedQuat = new THREE.Quaternion();
 
-const FALL_RESET_Y = -20;
-
 export function createCarPhysics(model, trackMeshes = []) {
     const world = new CANNON.World();
     world.gravity.set(0, -9.82, 0);
@@ -221,10 +219,11 @@ export function createCarPhysics(model, trackMeshes = []) {
         }
     });
 
+    const FALL_RESET_Y = SPAWN_POINT.y - 15;
     return {
         update: (dt) => {
             if (chassisBody.position.y < FALL_RESET_Y) {
-                chassisBody.position.y = SPAWN_POINT.y + SPAWN_HEIGHT_MARGIN;
+                chassisBody.position.y = SPAWN_POINT.y + SPAWN_HEIGHT_MARGIN * 3;
                 chassisBody.velocity.set(0, 0, 0);
                 chassisBody.angularVelocity.set(0, 0, 0);
             }
@@ -275,8 +274,8 @@ export function createCarPhysics(model, trackMeshes = []) {
             }
 
             let targetSteer = 0;
-            if (activeKeys.has('ArrowLeft')) targetSteer += 1;
-            if (activeKeys.has('ArrowRight')) targetSteer -= 1;
+            if (activeKeys.has('KeyA')) targetSteer += 1;
+            if (activeKeys.has('KeyD')) targetSteer -= 1;
 
             if (targetSteer !== 0) {
                 currentSteerAngle += targetSteer * steerSpeed * fixedDt;
@@ -305,8 +304,8 @@ export function createCarPhysics(model, trackMeshes = []) {
             vehicle.setSteeringValue(effectiveSteerAngle, 0);
             vehicle.setSteeringValue(effectiveSteerAngle, 1);
 
-            const rawGas = activeKeys.has('ArrowUp') ? 1.0 : 0.0;
-            const rawBrake = (activeKeys.has('ArrowDown') || activeKeys.has('Space')) ? 1.0 : 0.0;
+            const rawGas = activeKeys.has('KeyW') ? 1.0 : 0.0;
+            const rawBrake = (activeKeys.has('KeyS') || activeKeys.has('Space')) ? 1.0 : 0.0;
             const gasSpeed = rawGas > 0 ? 4.0 : 10.0;
             const brakeSpeed = rawBrake > 0 ? 6.0 : 15.0;
             smoothGas += (rawGas - smoothGas) * gasSpeed * fixedDt;
@@ -440,7 +439,7 @@ export function createCarPhysics(model, trackMeshes = []) {
         },
 
         getGasPedal: () => {
-            return activeKeys.has('ArrowUp') ? 1.0 : 0.0;
+            return activeKeys.has('KeyW') ? 1.0 : 0.0;
         },
 
         setEngineRunning: (v) => engine.setRunning(v),
