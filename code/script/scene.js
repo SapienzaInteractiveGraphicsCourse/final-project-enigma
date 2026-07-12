@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { createFloor } from './floor.js'
 import { setupCamera } from './camera.js'
 import { setupEnvironmentLights } from './lights.js';
 
