@@ -27,8 +27,8 @@ export async function loadEnvironment(scene) {
     });
 
     const [day, night] = await Promise.all([
-        loadTex('../../src/textures/day_sky.jpg'),
-        loadTex('../../src/textures/night_sky.jpg')
+        loadTex('src/textures/day_sky.jpg'),
+        loadTex('src/textures/night_sky.jpg')
     ]);
 
     dayTexture = day;
@@ -39,7 +39,7 @@ export async function loadEnvironment(scene) {
 
     return new Promise((resolve, reject) => {
         gltfLoader.load(
-            '../../src/models/track_1/track_1.glb',
+            'src/models/track_1/track_1.glb',
             (gltf) => {
                 const environment = gltf.scene;
                 environment.position.set(0, 0, 0);
