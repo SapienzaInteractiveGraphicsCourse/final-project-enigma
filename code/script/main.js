@@ -147,22 +147,16 @@ function animate(
         }
     }
 
-    if (scene.trackLights) {
-        let carWorldPos = new THREE.Vector3();
-        car_model.root.getWorldPosition(carWorldPos);
-        scene.trackLights.update(carWorldPos);
+    const _carWorldPosScratch = new THREE.Vector3();
+    if (scene.trackLights || bestLapTracker) {
+        car_model.root.getWorldPosition(_carWorldPosScratch);
+        if (scene.trackLights) scene.trackLights.update(_carWorldPosScratch);
+        if (bestLapTracker) bestLapTracker.update(_carWorldPosScratch);
     }
-
-    if (bestLapTracker) {
-        let carWorldPos = new THREE.Vector3();
-        car_model.root.getWorldPosition(carWorldPos);
-        bestLapTracker.update(carWorldPos);
+        
+        renderer.render(scene, camera);
+        console.log("Draw Calls:", renderer.info.render.calls, "Poligoni:", renderer.info.render.triangles);
     }
-
-    renderer.render(scene, camera);
-    console.log("Draw Calls:", renderer.info.render.calls, "Poligoni:", renderer.info.render.triangles);
-
-}
 
 window.onload = async () => {
     Settings.init();
