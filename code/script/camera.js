@@ -43,8 +43,6 @@ const INPUT_SMOOTHING = 0.5;
 let smoothedDeltaX = 0;
 let smoothedDeltaY = 0;
 
-// Scratch objects reused every frame inside updateCameraMovement to avoid
-// GC pressure from repeated Vector3/Quaternion/Euler allocation.
 const _currentCarPos = new THREE.Vector3();
 const _currentCarQuat = new THREE.Quaternion();
 const _topDownTargetPos = new THREE.Vector3();
@@ -71,7 +69,6 @@ const CAMERA_KEY_CODE_MAP = {
 window.addEventListener('keydown', (event) => {
     const action = CAMERA_KEY_CODE_MAP[event.code];
     if (action) {
-        // Prevent browser defaults (Alt opening menus, Ctrl shortcuts) while flying the camera.
         event.preventDefault();
         keys[action] = true;
     }

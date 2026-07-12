@@ -169,9 +169,6 @@ function getRayHits(renderer, camera, mouse, raycaster, targetObjects, event) {
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-
-    // Passiamo direttamente l'array di bersagli pre-calcolati.
-    // Il 'true' serve perché le portiere potrebbero essere Gruppi contenenti la mesh vera e propria.
     return raycaster.intersectObjects(targetObjects, true);
 }
 
@@ -245,8 +242,6 @@ function clearHoverHighlight(renderer) {
 export function enableClickToAnimate(scene, camera, renderer, model) {
     const mouse = new THREE.Vector2();
     const raycaster = new THREE.Raycaster();
-    
-    // 1. FILTRO: Creiamo una lista che contiene SOLO i pezzi che si possono cliccare
     const clickableTargets = [];
     Object.values(model.animations).forEach(anim => {
         if (anim.clickable && anim.part) {
@@ -271,7 +266,6 @@ export function enableClickToAnimate(scene, camera, renderer, model) {
             }
             lastHoverCheck = now;
 
-            // 2. Passiamo l'array filtrato invece dell'intero modello
             const hits = getRayHits(renderer, camera, mouse, raycaster, clickableTargets, e);
             const animation = hits.length ? pickAnimationFromHits(model, hits) : null;
 
@@ -297,7 +291,6 @@ export function enableClickToAnimate(scene, camera, renderer, model) {
             return;
         }
 
-        // 3. Stessa cosa per il click effettivo
         const hits = getRayHits(renderer, camera, mouse, raycaster, clickableTargets, e);
         const animation = hits.length ? pickAnimationFromHits(model, hits) : null;
         if (animation) {
@@ -322,34 +315,30 @@ export function continuousAnimationController({
     input = 0,
     speed = 1.0,
     clamp = [-1, 1],
-    epsilon = 0.0001 // Soglia per interrompere i calcoli
+    epsilon = 0.0001
 }) {
     if (!(stateKey in model.state)) {
         model.state[stateKey] = 0;
     }
 
     const [min, max] = clamp;
-    // Limita il target iniziale
     let target = Math.max(min, Math.min(max, input));
 
     return {
         setInput: (v) => { 
-            // Limita immediatamente i futuri input
             target = Math.max(min, Math.min(max, v)); 
         },
         update: (dt) => {
             const current = model.state[stateKey];
 
-            // Se siamo abbastanza vicini al target, allineiamoci ed usciamo
             if (Math.abs(target - current) < epsilon) {
                 if (current !== target) {
                     model.state[stateKey] = target;
                     applyValue(model, target, dt);
                 }
-                return; // Sleep: Nessun calcolo necessario in questo frame
+                return;
             }
 
-            // Smoothing esponenziale indipendente dal framerate
             const lerpFactor = 1 - Math.exp(-speed * dt);
             const next = current + (target - current) * lerpFactor;
 
