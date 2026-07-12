@@ -218,27 +218,41 @@ export function createCarPhysics(model, trackMeshes = []) {
     });
 
     const FALL_RESET_Y = SPAWN_POINT.y - 15;
+
+    let resetCooldown = 0;
+    let tiltedTime = 0;
+    const lastSafePosition = new CANNON.Vec3().copy(chassisBody.position);
+    const lastSafeQuaternion = new CANNON.Quaternion().copy(chassisBody.quaternion);
     return {
         update: (dt) => {
-            if (chassisBody.position.y < FALL_RESET_Y) {
-                chassisBody.position.y = SPAWN_POINT.y + SPAWN_HEIGHT_MARGIN * 3;
-                chassisBody.velocity.set(0, 0, 0);
-                chassisBody.angularVelocity.set(0, 0, 0);
-            }
+            if (resetCooldown > 0) resetCooldown -= dt;
 
             chassisBody.quaternion.vmult(_localUp, _worldUpScratch);
-            if (_worldUpScratch.y < -0.2) {
-                chassisBody.position.y += 2.5;
+            if (_worldUpScratch.y > 0.85 && resetCooldown <= 0) {
+                lastSafePosition.copy(chassisBody.position);
+                lastSafeQuaternion.copy(chassisBody.quaternion);
+            }
 
-                chassisBody.quaternion.toEuler(_eulerScratch);
-                chassisBody.quaternion.setFromEuler(0, _eulerScratch.y, 0);
+            if (_worldUpScratch.y < 0.0) {
+                tiltedTime += dt;
+            } else {
+                tiltedTime = 0;
+            }
 
+            const isBelowWorld = chassisBody.position.y < FALL_RESET_Y;
+            const isStuckTilted = tiltedTime > 1.0;
+
+            if ((isBelowWorld || isStuckTilted) && resetCooldown <= 0) {
+                chassisBody.position.copy(lastSafePosition);
+                chassisBody.position.y += 1.0;
+                chassisBody.quaternion.copy(lastSafeQuaternion);
                 chassisBody.velocity.set(0, 0, 0);
                 chassisBody.angularVelocity.set(0, 0, 0);
+                tiltedTime = 0;
+                resetCooldown = 0.5;
             }
 
             const fixedDt = dt;
-
             const engineIsOn = engine.isRunning?.() && engine.isRunning !== undefined
                 ? engine.isRunning()
                 : false;
