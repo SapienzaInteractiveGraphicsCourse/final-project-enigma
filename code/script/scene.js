@@ -17,12 +17,12 @@ export function createScene() {
     );
     camera.position.set(0, 1, 6);
 
-    const renderer = new THREE.WebGLRenderer({ 
+    const renderer = new THREE.WebGLRenderer({
         antialias: true,
         powerPreference: "high-performance"
     });
     renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setPixelRatio(1.5);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 
     renderer.outputColorSpace = THREE.SRGBColorSpace;
 
