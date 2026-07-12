@@ -25,8 +25,8 @@
 Enigma Engine is a browser-based, real-time 3D car experience built with
 WebGL. It lets the user drive a car around a race track using a
 physics-based driving model, customize the car's paint and materials, open
-its doors and windows, control its lights, and switch between several
-camera views (orbit, free camera, driver view, drone view). A dashboard
+its doors and windows, control its lights, switch between several
+camera views (orbit, free camera, driver view, drone view), while tracking your best lap time. A dashboard
 sidebar exposes all of these options through a simple graphical interface,
 and a heads-up display shows live telemetry (speed, RPM, gear, lap time).
 
@@ -69,8 +69,6 @@ The renderer is configured for a realistic look:
     \item Output color space set to sRGB, with ACES filmic tone mapping
     (exposure 1.0) for a more cinematic contrast curve.
     \item Shadows enabled with a soft PCF shadow map.
-    \item Pixel ratio capped at 1.5 (instead of the raw device pixel ratio)
-    to keep the frame rate stable on high-DPI screens.
 \end{itemize}
 The camera is a standard perspective camera with a 60\textdegree{} field of
 view and near/far clipping planes at 0.1 and 1000 units.
@@ -151,7 +149,7 @@ final-project-enigma/
 |       |-- model.js        # generic GLTF loader + per-part tweening
 |       |-- physics.js      # vehicle physics (RaycastVehicle)
 |       |-- reflections.js  # dynamic cube-map reflections
-|       |-- scene.js        # scene, camera and renderer setup    
+|       |-- scene.js        # scene, camera and renderer setup
 |       |-- settings.js     # small global settings store
 |       \-- ui.js           # DOM event wiring for sidebar and HUD
 \-- src/
@@ -399,8 +397,8 @@ rate high:
 Open \texttt{code/page/index.html} through a local web server (opening the
 file directly may be blocked by the browser's security policy for module
 imports). Wait for the loading screen to disappear, then press the
-\textbf{ENGINE} button in the instrument cluster to start the car, select
-\textbf{D} in the gear selector, and use the arrow keys to drive.
+\textbf{ENGINE} button in the instrument cluster to start the car, or press \textbf{E}, select
+\textbf{D} in the gear selector, and use WASD drive.
 
 \subsection{Driving controls}
 \begin{table}[h]
@@ -410,12 +408,14 @@ imports). Wait for the loading screen to disappear, then press the
 \toprule
 Input & Action \\
 \midrule
-Up arrow & Accelerate \\
-Down arrow / Space & Brake \\
-Left / Right arrow & Steer \\
-Down arrow / S & Brake lights on (while held) \\
-HUD engine button & Start / stop the engine (with crank sound) \\
-HUD gear selector (N / D / R) & Neutral / Drive (automatic) / Reverse \\
+W & Accelerate \\
+S / Space & Brake \\
+A / Right arrow & Steer \\
+S / Space & Brake lights on (while held) \\
+E / HUD engine button & Start / stop the engine (with crank sound) \\
+HUD gear selector (N / D / R) & Neutral / Drive / Reverse \\
+Left Shift & Upshift gears in order Reverse, Neutral, Drive \\
+Left Control & Downshifts gears in order Drive, Neutral, Reverse \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -433,7 +433,7 @@ Input / button & Action \\
 \midrule
 Mouse drag (orbit mode) & Rotate the camera around the car \\
 Mouse scroll (orbit mode) & Zoom in / out (clamped range) \\
-W / A / S / D, Q / E (free mode) & Fly forward/back/left/right, down/up \\
+Up/Left/Down/Right Arrow keys, Right/Left Control (free mode) & Fly forward/back/left/right, down/up \\
 Mouse drag (free / driver mode) & Look around \\
 "Orbit Camera" / "Free Camera" button & Toggle between orbit and free-fly \\
 Compass buttons (Front/Back/Left/Right/Top) & Jump to a preset view \\
