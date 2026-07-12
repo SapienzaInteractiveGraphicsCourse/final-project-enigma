@@ -93,7 +93,7 @@ export function createEngine() {
 
         if (gear > 1) {
             const targetDownshiftRpm = DOWNSHIFT_RPM + (gasPedal * 1000);
-            
+
             if (rpm < targetDownshiftRpm) {
                 const lowerGearRatio = GEAR_RATIOS[gear - 2] * FINAL_DRIVE;
                 const currentRatio = activeTotalRatio();
@@ -122,7 +122,7 @@ export function createEngine() {
 
         if (mode === GEAR_MODE.N) {
             const targetRpm = IDLE_RPM + gasPedal * (REDLINE_RPM - IDLE_RPM);
-            const response = gasPedal > 0.1 ? 35 : 12; 
+            const response = gasPedal > 0.1 ? 35 : 12;
             rpm += (targetRpm - rpm) * Math.min(1, dt * response);
             _wheelForce = 0;
         } else {
